@@ -1,0 +1,8 @@
+1.In the shooting script under the if Input.GetKey(KeyCode.LeftShift) && Input.GetKey(KeyCode.Escape) statemnt, the code under "if
+  scene is active" is commented out, so if you ever get issues when moving from one scene to another, look into that point.
+
+2. On The Move Script in the player's inspector. The UDP code on start is commented out, Comment it back on whenever you need to
+   use UDP communication.
+
+3. In the Police Behavious script Under the Apply Damage function, the "changeState(states.patrol)" code is commented out. visit 
+   this line when ever you face problems with changing states.

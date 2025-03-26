@@ -1,0 +1,1 @@
+curl post -X "https://www.imx-omp.com/api/imx/login.php"

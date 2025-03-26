@@ -1,0 +1,7 @@
+server_url=http://127.0.0.1
+stress_vest_url=192.168.0.255
+login_endpoint=/imx-sim-portal/imx/login.php
+scoring_endpoint=/imx-sim-portal/imx/activescene.php
+get_trainees_endpoint=/imx-sim-portal/imx/datareq.php
+range_scoring_endpoint=/imx-sim-portal/imx/scorereq.php
+get_allowed_scenes_endpoint=/imx-sim-portal/imx/login.php
