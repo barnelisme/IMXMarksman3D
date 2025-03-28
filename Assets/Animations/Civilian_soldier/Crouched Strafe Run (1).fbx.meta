@@ -1,0 +1,174 @@
+fileFormatVersion: 2
+guid: e777edde2198bb14a91eaaa30e1a7bd5
+ModelImporter:
+  serializedVersion: 21202
+  internalIDToNameTable:
+  - first:
+      74: 5091382013855636441
+    second: opening_door_with_hand
+  - first:
+      74: 3656124972409180976
+    second: kicking door
+  - first:
+      74: -8763128646019738773
+    second: one hand flick
+  - first:
+      74: 971100751789506352
+    second: waving hands (2)
+  - first:
+      74: -6163099921385995531
+    second: angry beheivor
+  - first:
+      74: 2871360598112017858
+    second: pounch&uppercut
+  - first:
+      74: 6252635504927636188
+    second: flying kick (3)
+  - first:
+      74: -7867522825330981291
+    second: strangling (2)
+  - first:
+      74: -1625584218439803975
+    second: reaction hit on the left (2)
+  - first:
+      74: 2039191778748898903
+    second: reaction hit on the right (3)
+  - first:
+      74: -4611407814124028835
+    second: explosion from behind
+  - first:
+      74: 7476135439224942290
+    second: upward thrust
+  - first:
+      74: 6862288562690232769
+    second: leg sweep
+  - first:
+      74: 3436055996094206041
+    second: knee jabs to uppercut
+  - first:
+      74: -1988019387198253205
+    second: hit to the face
+  - first:
+      74: -2194593950452543206
+    second: hit to the leg
+  - first:
+      74: -7359905060104090291
+    second: hit to the leg left
+  - first:
+      74: 4007345744956896713
+    second: being strangled
+  - first:
+      74: 8452261966844647281
+    second: punching bag
+  - first:
+      74: 8181269427967144172
+    second: knocked out
+  - first:
+      74: 1464434514373087130
+    second: headbutt (2)
+  - first:
+      74: 7663900014552115361
+    second: body block
+  - first:
+      74: -203655887218126122
+    second: mixamo.com
+  externalObjects: {}
+  materials:
+    materialImportMode: 2
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    removeConstantScaleCurves: 1
+    motionNodeName: 
+    rigImportErrors: 
+    rigImportWarnings: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations: []
+    isReadable: 0
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    useSRGBMaterialColor: 1
+    sortHierarchyByName: 1
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    nodeNameCollisionStrategy: 1
+    fileIdsGeneration: 2
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    keepQuads: 0
+    weldVertices: 1
+    bakeAxisConversion: 0
+    preserveHierarchy: 0
+    skinWeightsMode: 0
+    maxBonesPerVertex: 4
+    minBoneWeight: 0.001
+    optimizeBones: 0
+    meshOptimizationFlags: -1
+    indexFormat: 0
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVMarginMethod: 1
+    secondaryUVMinLightmapResolution: 40
+    secondaryUVMinObjectScale: 1
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 0
+    blendShapeNormalImportMode: 1
+    normalSmoothingSource: 0
+  referencedClips: []
+  importAnimation: 1
+  humanDescription:
+    serializedVersion: 3
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    globalScale: 1
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  autoGenerateAvatarMappingIfUnspecified: 1
+  animationType: 2
+  humanoidOversampling: 1
+  avatarSetup: 0
+  addHumanoidExtraRootOnlyWhenUsingAvatar: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
