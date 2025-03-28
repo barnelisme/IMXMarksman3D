@@ -1,0 +1,21 @@
+
+2022/01/21 12:52:56 AM:Response:success
+
+2022/01/21 12:52:56 AM:We got success
+2022/01/21 12:54:14 AM:Response:success
+
+2022/01/21 12:54:14 AM:We got success
+2022/01/21 12:59:20 AM:Response:success
+
+2022/01/21 12:59:20 AM:We got success
+2022/01/21 1:00:35 AM:Response:success
+
+2022/01/21 1:00:35 AM:We got success
+2022/01/21 1:10:58 AM:Sending login to :http://127.0.0.1/Clockin-student/imx/login.php
+2022/01/21 1:10:58 AM:Response:success
+
+2022/01/21 1:10:58 AM:We got success
+2022/01/21 1:18:17 AM:Sending login to :http://127.0.0.1/Clockin-student/imx/login.php
+2022/01/21 1:18:17 AM:Response:success
+
+2022/01/21 1:18:17 AM:We got success
