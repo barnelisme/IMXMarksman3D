@@ -1,0 +1,88 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1395111271617470844
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4740277040842630646}
+  - component: {fileID: 8359610152952823321}
+  - component: {fileID: 2056293159861018377}
+  - component: {fileID: 2094391747025568575}
+  m_Layer: 0
+  m_Name: Acc Settings Manager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4740277040842630646
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1395111271617470844}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 471.19998, y: 370.8, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8359610152952823321
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1395111271617470844}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b48dcddd4a6720c4b98854d20f1bd771, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mainMenu: {fileID: 0}
+  quitMenu: {fileID: 0}
+  Exit_Menu: {fileID: 0}
+  typeOfGun: {fileID: 0}
+  ammoSetting: {fileID: 0}
+  paperSetting: {fileID: 0}
+  simType: {fileID: 0}
+  PlayerID: {fileID: 0}
+  mainCamera: {fileID: 0}
+  activeScene: 
+  global_time_warning: {fileID: 0}
+--- !u!114 &2056293159861018377
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1395111271617470844}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a4c705d2a7e50f24698615d8ebf34070, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &2094391747025568575
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1395111271617470844}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 43841d252a6ed3b45b7a93351e8c3408, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Calibration_button: {fileID: 0}
+  Acc_button: {fileID: 0}
+  password_panel: {fileID: 0}
+  password_field: {fileID: 0}
+  password_warning: {fileID: 0}

@@ -1,0 +1,3 @@
+
+
+{"allowed_static_scenarios":["Bullseye Challenge","ROYGBIV","Numseq","Man Threat 2","Man Threat 8","IPSC Man 4","IPSC Man 10","Hostage Situation","Diverse Bullseye","Pole Alignment","Indoor Range","Animal Target"],"allowed_animated3d_scenarios":["Hunting","Indoor Restaurant","Suspect Shoot"],"allowed_moving_targets_scenarios":["Balloon Shooting","Racetrack Target","Hidden Shape","Clay Pigeon","Rising Target"],"allowed_static_response_scenarios":["Falling Plates","Shifting IPSC Targets","Dueling Tree","Rising Plates","Hidden Shape","Diverse Bullseye","Man Threat 2","Man Threat 8","IPSC Man 4","IPSC Man 10","Hostage Situation","Animal Target","Expression Shoot"]}
