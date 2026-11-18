@@ -706,7 +706,7 @@ public class SuspectTargetManager : MonoBehaviour
         randonNonThreathIndex = Random.Range(0, nonThreaths.Length - 1);
         while (existingLane1NonThreats.Contains(randonNonThreathIndex))
         {
-            randonNonThreathIndex = Random.Range(0, 9);
+            randonNonThreathIndex = Random.Range(0, nonThreaths.Length - 1);
         }
 
         return randonNonThreathIndex;

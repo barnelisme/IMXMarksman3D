@@ -1,6 +1,7 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -11,6 +12,7 @@ public class BackgroundSetImageManager : MonoBehaviour
     public TextMeshProUGUI backgroundTypeTxt;
     public Image backgroundImage;
     string backgroundName = "";
+    private static bool updateBackgoundData = false;
 
     private List<Sprite> backgroundImages = new List<Sprite>();
     private List<Color> backgroundColors = new List<Color> { Color.black, Color.white, Color.blue, Color.red, Color.green, Color.yellow };
@@ -34,12 +36,222 @@ public class BackgroundSetImageManager : MonoBehaviour
         }
         else
         {
+            // HandleExteralBackgrounds(TestConditionsManager.backgroundOptions_Static);
 
             StaticVariableManager.backgroundImages = settingsManager.GetComponent<TestConditionsManager>().backgroundImages;
             StaticVariableManager.backgroundColors = backgroundColors;
             StaticVariableManager.isShowCurrBackground = true;
         }
 
+    }
+
+    private void Update()
+    {
+        if (updateBackgoundData)
+        {
+            UpdateClassData();
+            updateBackgoundData = false;
+        }
+    }
+
+    public static void HandleExteralBackgrounds(TMP_Dropdown dropDown)
+    {
+        // Debug.Log("Adding external backgrounds...");
+
+        // ----------------------------
+        // 1️⃣ External Documents Folder
+        // ----------------------------
+        string documentsFolder = System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments);
+
+        string externalImageLocation = Path.Combine(
+            documentsFolder,
+            "IMX",
+            "BackgroundImages"
+        );
+
+        if (!Directory.Exists(externalImageLocation))
+        {
+            Directory.CreateDirectory(externalImageLocation);
+            Debug.Log("Created external image folder: " + externalImageLocation);
+        }
+
+        string[] extensions = { "*.png", "*.jpg", "*.jpeg" };
+
+
+        // ----------------------------
+        // 4️⃣ Load Images From Game Folder
+        // ----------------------------
+        List<string> newOptions = new List<string>();
+
+        foreach (string extension in extensions)
+        {
+            string[] files = Directory.GetFiles(externalImageLocation, extension);
+
+            foreach (string file in files)
+            {
+                string fileName = Path.GetFileNameWithoutExtension(file);
+
+                // Skip if already in dropdown
+                bool alreadyExistsInDropdown = dropDown.options.Exists(option => option.text == fileName);
+                if (alreadyExistsInDropdown)
+                    continue;
+
+                byte[] imageBytes = File.ReadAllBytes(file);
+
+                Texture2D texture = new Texture2D(2, 2);
+                if (texture.LoadImage(imageBytes))
+                {
+                    texture.wrapMode = TextureWrapMode.Clamp;
+                    texture.filterMode = FilterMode.Bilinear;
+
+                    Sprite sprite = Sprite.Create(
+                        texture,
+                        new Rect(0, 0, texture.width, texture.height),
+                        new Vector2(0.5f, 0.5f)
+                    );
+
+                    // 🔥 Ensure sprite name matches file name exactly
+                    sprite.name = fileName;
+
+                    StaticVariableManager.backgroundImages.Add(sprite);
+                    newOptions.Add(fileName);
+                }
+            }
+        }
+
+        if (newOptions.Count > 0)
+        {
+            dropDown.AddOptions(newOptions);
+            Debug.Log("Added " + newOptions.Count + " new external backgrounds.");
+        }
+        else
+        {
+            Debug.Log("No new external backgrounds found.");
+        }
+    }
+
+    public static void HandleExteralBackgrounds_2(TMP_Dropdown dropDown)
+    {
+        Debug.Log("Adding external backgrounds...");
+
+        // ----------------------------
+        // 1️⃣ External Documents Folder
+        // ----------------------------
+        string documentsPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments);
+
+        string externalImageLocation = Path.Combine(
+            documentsPath,
+            "IMX",
+            "BackgroundImages"
+        );
+
+        if (!Directory.Exists(externalImageLocation))
+        {
+            Directory.CreateDirectory(externalImageLocation);
+            Debug.Log("Created external image folder: " + externalImageLocation);
+        }
+
+        // ----------------------------
+        // 2️⃣ Internal Game Folder
+        // ----------------------------
+        string imageLocation = Path.Combine(
+            FileManager.gamePath,
+            "Background Images",
+            "Training Background"
+        );
+
+        if (!Directory.Exists(imageLocation))
+        {
+            Directory.CreateDirectory(imageLocation);
+            Debug.Log("Created game background folder: " + imageLocation);
+        }
+
+        string[] extensions = { "*.png", "*.jpg", "*.jpeg" };
+
+        // ----------------------------
+        // 3️⃣ Copy NEW Images Only
+        // ----------------------------
+        foreach (string extension in extensions)
+        {
+            string[] externalFiles = Directory.GetFiles(externalImageLocation, extension);
+
+            foreach (string externalFile in externalFiles)
+            {
+                string fileName = Path.GetFileName(externalFile);
+                string destinationPath = Path.Combine(imageLocation, fileName);
+
+                // Copy only if file does not already exist
+                if (!File.Exists(destinationPath))
+                {
+                    File.Copy(externalFile, destinationPath);
+                    Debug.Log("Copied new external image: " + fileName);
+                }
+            }
+        }
+
+        // ----------------------------
+        // 4️⃣ Load Images From Game Folder
+        // ----------------------------
+        List<string> newOptions = new List<string>();
+
+        foreach (string extension in extensions)
+        {
+            string[] files = Directory.GetFiles(imageLocation, extension);
+
+            foreach (string file in files)
+            {
+                string fileName = Path.GetFileNameWithoutExtension(file);
+
+                // Skip if already in dropdown
+                bool alreadyExistsInDropdown = dropDown.options.Exists(option => option.text == fileName);
+                if (alreadyExistsInDropdown)
+                    continue;
+
+                byte[] imageBytes = File.ReadAllBytes(file);
+
+                Texture2D texture = new Texture2D(2, 2);
+                if (texture.LoadImage(imageBytes))
+                {
+                    texture.wrapMode = TextureWrapMode.Clamp;
+                    texture.filterMode = FilterMode.Bilinear;
+
+                    Sprite sprite = Sprite.Create(
+                        texture,
+                        new Rect(0, 0, texture.width, texture.height),
+                        new Vector2(0.5f, 0.5f)
+                    );
+
+                    // 🔥 Ensure sprite name matches file name exactly
+                    sprite.name = fileName;
+
+                    StaticVariableManager.backgroundImages.Add(sprite);
+                    newOptions.Add(fileName);
+                }
+            }
+        }
+
+        if (newOptions.Count > 0)
+        {
+            dropDown.AddOptions(newOptions);
+            Debug.Log("Added " + newOptions.Count + " new external backgrounds.");
+        }
+        else
+        {
+            Debug.Log("No new external backgrounds found.");
+        }
+    }
+
+    private void UpdateClassData()
+    {
+        // backgroundImages = settingsManager.GetComponent<TestConditionsManager>().backgroundImages;
+    }
+
+    public void AddExternalImages()
+    {
+        // Open files
+        // allow a person to navigate to their Image, then when they double click the Image or
+        // click open, the Image should be copied to the project folder using the file manager FileManager.CopyImageToProject()
+        print("Adding Image");
     }
 
     private void SetBackgoundImage(string background)
@@ -113,11 +325,35 @@ public class BackgroundSetImageManager : MonoBehaviour
                 backgroundImage.sprite = backgroundImages[9];
                 break;
         }
+
+        // Handle external backgrounds
+        int index = 0;
+        foreach(Sprite image in StaticVariableManager.backgroundImages)
+        {
+            if(background == image.name)
+            {
+                backgroundImage.transform.gameObject.SetActive(true);
+                backgroundImage.GetComponent<Image>().sprite = image;
+            }
+
+            index++;
+        }
+
     }
 
-    public static void SetBackGroundImage(int val, Image imageDisplay)
+    public static void SetBackGroundImage(int val, Image imageDisplay, string activeScene)
     {
-        // print("Point reached...");
+        if (activeScene.ToLower().Contains("duelingtree"))
+        {
+            StaticVariableManager.backgroundColors.Remove(Color.red);
+            StaticVariableManager.backgroundColors.Remove(Color.yellow);
+            StaticVariableManager.currDuelingTreeBackgroundPos = val;
+        }
+        else
+        {
+            StaticVariableManager.currBackgroundBackupPos = val;
+        }
+
         bool isBasicColor = false;
         backgroundImagesSet = StaticVariableManager.backgroundImages;
         backgroundColorsSet = StaticVariableManager.backgroundColors;
@@ -140,6 +376,11 @@ public class BackgroundSetImageManager : MonoBehaviour
         }
 
         StaticVariableManager.currBackgroundImagePos = val;
+    }
+
+    public static void SetHuntGroundImage(int val, List<Sprite> backgroundImages, Image imageDisplay)
+    {
+        imageDisplay.sprite = backgroundImages[val];
     }
 
     public static void SetBackgroundMaterialImage(int val, Material mat)

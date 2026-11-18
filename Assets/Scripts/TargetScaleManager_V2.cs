@@ -14,7 +14,6 @@ public class TargetScaleManager_V2 : MonoBehaviour
     private int scaleDistance = 5;
     private int initialDistance = 5;
     private bool upScaleUpdated = false, downScaleUpdated = false;
-    
 
     private string scaleFilePath = "Assets/Resources/AllScales.txt"; // Single file for all scales
     private Dictionary<string, string> scaleData = new Dictionary<string, string>();
@@ -79,17 +78,15 @@ public class TargetScaleManager_V2 : MonoBehaviour
                 }
             }
         }
-        else if (StaticVariableManager.isPlatesDisplayed == false )// To enable targets after training...
+        else // To enable targets after training...
         {
-            if(targets != null)
+            if (targets != null)
             {
-                foreach(GameObject target in targets)
+                foreach (GameObject target in targets)
                 {
                     target.SetActive(true);
                 }
             }
-
-            StaticVariableManager.isPlatesDisplayed = true;
         }
     }
 
@@ -125,9 +122,11 @@ public class TargetScaleManager_V2 : MonoBehaviour
             scaleDistance += scaleLoopValue;
             UpdateScaleSizeDisplay();
 
-            //activeScene = SceneManager.GetActiveScene().name;
-            if (activeScene.ToLower().Contains("targetpopupfreeshoot") || activeScene == "BasicTargetPopUpOneHand" 
-                || activeScene.ToLower().Contains("threatening") || activeScene.ToLower().Contains("pointman") 
+            // activeScene = SceneManager.GetActiveScene().name;
+            // SaveScaleData();
+
+            if (activeScene.ToLower().Contains("targetpopupfreeshoot") || activeScene == "BasicTargetPopUpOneHand"
+                || activeScene.ToLower().Contains("threatening") || activeScene.ToLower().Contains("pointman")
                 || activeScene.ToLower().Contains("pointbullseye"))
             {
                 SaveScaleData();
@@ -150,9 +149,11 @@ public class TargetScaleManager_V2 : MonoBehaviour
             scaleDistance -= scaleLoopValue;
             UpdateScaleSizeDisplay();
 
-            //activeScene = SceneManager.GetActiveScene().name;
-            if (activeScene.ToLower().Contains("targetpopupfreeshoot") || activeScene == "BasicTargetPopUpOneHand" 
-                || activeScene.ToLower().Contains("threatening") || activeScene.ToLower().Contains("pointman") 
+            // SaveScaleData();
+
+            // activeScene = SceneManager.GetActiveScene().name;
+            if (activeScene.ToLower().Contains("targetpopupfreeshoot") || activeScene == "BasicTargetPopUpOneHand"
+                || activeScene.ToLower().Contains("threatening") || activeScene.ToLower().Contains("pointman")
                 || activeScene.ToLower().Contains("pointbullseye"))
             {
                 SaveScaleData();
@@ -164,8 +165,8 @@ public class TargetScaleManager_V2 : MonoBehaviour
     {
         transform.localScale = initialScale;
         modeScale = initialScale;
-        if (activeScene.ToLower().Contains("targetpopupfreeshoot") || activeScene == "BasicTargetPopUpOneHand" 
-            || activeScene.ToLower().Contains("threatening") || activeScene.ToLower().Contains("pointman") 
+        if (activeScene.ToLower().Contains("targetpopupfreeshoot") || activeScene == "BasicTargetPopUpOneHand"
+            || activeScene.ToLower().Contains("threatening") || activeScene.ToLower().Contains("pointman")
             || activeScene.ToLower().Contains("pointbullseye"))
         {
             scaleDistance = initialDistance;
@@ -245,7 +246,7 @@ public class TargetScaleManager_V2 : MonoBehaviour
             lines.Add($"{entry.Key}={entry.Value}");
             //print("Saving: " + entry.Key + ":" + entry.Value);
         }
-        
+
         File.WriteAllLines(scaleFilePath, lines.ToArray());
     }
 
@@ -279,7 +280,7 @@ public class TargetScaleManager_V2 : MonoBehaviour
 
     private void SetTextStartColors()
     {
-        if(shooterDistanceDisplay != null)
+        if (shooterDistanceDisplay != null)
         {
             if (Scoring.ammo_setting.ToLower().Contains("live") || Scoring.ammo_setting.ToLower().Contains("infrared"))
             {

@@ -39,7 +39,8 @@ public class countDownStart : MonoBehaviour
         LivetimeTxt.fontSize = 75;
         LivetimeTxt.text = "PREPARE";
 
-        if (activeScene == "CalibrationTest" || Scoring.ammo_setting == " " || activeScene.ToLower().Contains("range") || activeScene.ToLower().Contains("hunting") ) //training
+        if (activeScene == "CalibrationTest" || Scoring.ammo_setting == " " || activeScene.ToLower().Contains("range") 
+            || (activeScene.ToLower().Contains("hunting") && !activeScene.ToLower().Contains("bird")) ) //training
         {
             start_training = true;
         }
@@ -146,7 +147,7 @@ public class countDownStart : MonoBehaviour
                 }
             }
         }
-        else if (timeCount <= 0)
+        else if (timeCount <= 0 && start_training == false)
         {
             LasertimeTxt.text = "GO";
             if(!isBuzzerPlayed)
@@ -189,11 +190,17 @@ public class countDownStart : MonoBehaviour
 
     private void setUIStartSetting()
     {
-        if (Scoring.ammo_setting.ToLower().Contains("live") || Scoring.ammo_setting.ToLower().Contains("infrared"))
+        if (Scoring.ammo_setting.ToLower().Contains("live"))
         {
             //InstructionTxt
             LasertimeTxt.color = Color.white;
             InstructionTxt.color = Color.white;
+        }
+        else if (Scoring.ammo_setting.ToLower().Contains("infrared"))
+        {
+            // Color bright_blue = new Color(0f / 255f, 50f / 255f, 170f / 255f);
+            LasertimeTxt.color = UITextColorManager.bright_blue;
+            InstructionTxt.color = UITextColorManager.bright_blue;
         }
         else
         {

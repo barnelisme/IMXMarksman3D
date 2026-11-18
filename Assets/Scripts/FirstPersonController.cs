@@ -1,4 +1,4 @@
-using Unity.VisualScripting;
+﻿using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
@@ -9,23 +9,27 @@ using UnityEngine.UI;
 [RequireComponent(typeof(CharacterController))]
 public class FirstPersonController : MonoBehaviour
 {
-    private float mouseSensitivity = 0.5f;
-    private Camera m_Camera;
-    private float m_YRotation;
+    [Header("Mouse Settings")]
+    [SerializeField] private float mouseSensitivity = 150f;
+    [SerializeField] private float rotationSmoothSpeed = 12f;
+
+    private float yaw;
+    private float pitch;
     private bool cursor_unlocked = false;
     private string activeScene = "";
-    private bool mouseReleased = false;
+    private bool mouseReleased = true;
     private bool mouse_locked = false;
+    private bool training_stopped = false;
 
-    //UI Button Variables
+    private List<Camera> cameras = new List<Camera>();
+    private GameObject player;
+    private GameObject ButtonsManager;
+
+    // UI handling
     public GameObject ui_canvas;
     GraphicRaycaster ui_raycaster;
     PointerEventData click_data;
     List<RaycastResult> click_results;
-    private bool ui_mouse_pressed = false;
-    private bool ui_mouse_reset = false;
-    private GameObject player;
-    private GameObject ButtonsManager;
 
     private void Start()
     {
@@ -33,23 +37,32 @@ public class FirstPersonController : MonoBehaviour
         player = GameObject.FindGameObjectWithTag("Player");
         ButtonsManager = GameObject.FindGameObjectWithTag("ControlButtonsManager");
 
-        ui_canvas = GameObject.FindGameObjectWithTag("StartCountCanvas");
-        ui_raycaster = ui_canvas.GetComponent<GraphicRaycaster>();
+        // ✅ Initialize UI Raycaster
+        if (ui_canvas == null)
+            ui_canvas = GameObject.FindGameObjectWithTag("StartCanvas"); // or your canvas tag name
+
+        if (ui_canvas != null)
+            ui_raycaster = ui_canvas.GetComponent<GraphicRaycaster>();
+        else
+            Debug.LogWarning("UI Canvas not found! Make sure it's tagged correctly.");
+
         click_data = new PointerEventData(EventSystem.current);
         click_results = new List<RaycastResult>();
 
-        if(!activeScene.ToLower().Contains("hunting"))
+        if (!activeScene.ToLower().Contains("hunting"))
         {
-            LockMouse();
+            // LockMouse();
         }
     }
 
+
     private void Update()
     {
-        if(!activeScene.ToLower().Contains("hunting"))
-        {  
+        if (!activeScene.ToLower().Contains("hunting"))
+        {
             handleUI();
-            if (mouseReleased == false)
+
+            if (!mouseReleased)
             {
                 RotateView();
             }
@@ -58,88 +71,120 @@ public class FirstPersonController : MonoBehaviour
                 UnlockCursor();
                 cursor_unlocked = true;
             }
-
         }
     }
 
     private void RotateView()
     {
-        Vector2 mouseInput = Mouse.current.delta.ReadValue();
-        m_YRotation += mouseInput.x * mouseSensitivity;
-        transform.localRotation = Quaternion.Euler(0, m_YRotation, 0);
-        
-        float xRotation = -mouseInput.y * mouseSensitivity;
-        m_Camera.transform.localRotation *= Quaternion.Euler(xRotation, 0, 0);
+        Vector2 mouseInput = Mouse.current.delta.ReadValue() * mouseSensitivity * Time.deltaTime;
+
+        yaw += mouseInput.x;
+        pitch -= mouseInput.y;
+        pitch = Mathf.Clamp(pitch, -80f, 80f); // prevent over-rotation vertically
+
+        // Smoothly interpolate player rotation (yaw)
+        Quaternion targetBodyRotation = Quaternion.Euler(0f, yaw, 0f);
+        transform.localRotation = Quaternion.Slerp(transform.localRotation, targetBodyRotation, rotationSmoothSpeed * Time.deltaTime);
+
+        // Smoothly interpolate camera rotations (pitch)
+        foreach (Camera cam in cameras)
+        {
+            if (cam != null)
+            {
+                Quaternion targetCamRotation = Quaternion.Euler(pitch, 0f, 0f);
+                cam.transform.localRotation = Quaternion.Slerp(cam.transform.localRotation, targetCamRotation, rotationSmoothSpeed * Time.deltaTime);
+            }
+        }
     }
-    private void UnlockCursor()
+
+    public void UnlockCursor()
     {
-        Cursor.lockState = CursorLockMode.None; // Unlock the cursor
-        Cursor.visible = true; // Optionally show the cursor
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
     }
-    private void LockMouse()
+
+    public void LockMouse()
     {
-        m_Camera = Camera.main;
-        Cursor.lockState = CursorLockMode.Locked; // Lock cursor to the center of the screen
-        mouse_locked = true;
+        if(!DropDown.softwareSceneName.ToLower().Contains("hunting"))
+        {
+            cameras.Clear();
+            cameras.AddRange(FindObjectsOfType<Camera>());
+
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+            mouse_locked = true;
+            mouseReleased = false;
+        }
     }
+
     private void handleUI()
     {
+        // If ESC is pressed → unlock mouse and show cursor
         if (Keyboard.current.escapeKey.isPressed)
         {
             mouseReleased = true;
             cursor_unlocked = false;
             mouse_locked = false;
+            UnlockCursor();
         }
-        else if (Mouse.current.leftButton.wasPressedThisFrame && StaticVariableManager.isStopTraining == false)
+        // Handle left-click: only lock mouse if NOT clicking UI
+        else if (Mouse.current.leftButton.wasPressedThisFrame && StaticVariableManager.isStopTraining == false
+            && countDownStart.start_training )
         {
-            ui_mouse_pressed = GetUiElementsClicked();
+            // Check if the click hit any UI element
+            bool clickedUI = GetUiElementsClicked();
 
-            if(ui_mouse_pressed == false)
+            // Only lock mouse if click was outside UI
+            if (!clickedUI)
             {
+                LockMouse();
                 mouseReleased = false;
-                if(mouse_locked == false)
-                {
-                    LockMouse();
-                }
             }
-            
         }
     }
 
+
     private bool GetUiElementsClicked()
     {
-        bool process_result = false;
-        //print("Mouse Pressed...");
+        if (ui_raycaster == null)
+            return false;
+
         click_data.position = Mouse.current.position.ReadValue();
         click_results.Clear();
 
         ui_raycaster.Raycast(click_data, click_results);
 
+        if (click_results.Count == 0)
+            return false;
+
         foreach (RaycastResult result in click_results)
         {
             GameObject ui_element = result.gameObject;
-            //print("Element pressed is: " + ui_element.name);
-            if(ui_element.name.ToLower().Contains("start"))
+
+            // Example action triggers (optional)
+            if (ui_element.name.ToLower().Contains("start"))
             {
-                //ButtonsManager.GetComponent<ControlButtonsManager>().StartScenario();
+                // ButtonsManager.GetComponent<ControlButtonsManager>().StartScenario();
             }
-            else if(ui_element.name.ToLower().Contains("exit"))
+            else if (ui_element.name.ToLower().Contains("exit"))
             {
-                //ButtonsManager.GetComponent<ControlButtonsManager>().loadMainMenu();
+                // ButtonsManager.GetComponent<ControlButtonsManager>().loadMainMenu();
             }
-            process_result = true;
         }
-        return process_result;
+
+        return true; // A UI element was clicked
     }
+
+
     public void GoToMainMenu()
     {
         SceneManager.LoadScene("MainMenu");
         Destroy(player.gameObject);
     }
+
     public void ReloadScene()
     {
         SceneManager.LoadScene(activeScene);
         Destroy(player.gameObject);
     }
-
 }

@@ -16,6 +16,7 @@ public class TargetMovementManager : MonoBehaviour
     private float scaleReductionRate = 7f;
     private float zScaleReductionRate = 0.001f;
     private string activeScene = "";
+    private float liveTimer = 20f;
 
     void Start()
     {
@@ -23,7 +24,18 @@ public class TargetMovementManager : MonoBehaviour
 
         //startPosition = this.gameObject.transform.position.x;
         verticalSpeed = StaticVariableManager.verticalSpeed;
-        horizontalSpeed = .5f;
+        horizontalSpeed = 1.5f;
+        if (activeScene.ToLower().Contains("2lane"))
+        {
+            horizontalSpeed = horizontalSpeed / 2;
+            // horizontalDistance = 0f;
+        }
+        else if (activeScene.ToLower().Contains("3lane"))
+        {
+            horizontalSpeed = horizontalSpeed / 3;
+            // horizontalDistance = 0f;
+        }
+
         horizontalDistance = StaticVariableManager.horizontalDistance;
         moveLeft = false;
         moveRight = false;
@@ -42,6 +54,10 @@ public class TargetMovementManager : MonoBehaviour
         transform.Translate(Vector3.up * verticalSpeed * Time.deltaTime);
         manageScale();
 
+
+        print(horizontalSpeed);
+        // horizontalSpeed = 0f;
+
         if (moveLeft)
         {
             transform.Translate(Vector3.left * horizontalSpeed * Time.deltaTime);
@@ -50,6 +66,21 @@ public class TargetMovementManager : MonoBehaviour
         {
             transform.Translate(Vector3.right * horizontalSpeed * Time.deltaTime);
         }
+
+
+        // Start timer to destroy the model from the scenario
+        if(activeScene.ToLower().Contains("pigeon") || activeScene.ToLower().Contains("risingshape"))
+        {
+            liveTimer -= Time.deltaTime * 1;
+
+            if(liveTimer <= 0f)
+            {
+                // print("Plate destroyed");
+                StaticVariableManager.plateDestroyed = true;
+                Destroy(this.gameObject);
+            }
+        }
+
     }
 
     private void manageScale()
@@ -70,7 +101,7 @@ public class TargetMovementManager : MonoBehaviour
     private void assignStartConditions()
     {
         verticalSpeed = 3;
-        horizontalSpeed = 1.5f;
+        // horizontalSpeed = 1.5f;
 
         if (verticalSpeed != StaticVariableManager.pigeonSpeed)
         {
@@ -119,23 +150,23 @@ public class TargetMovementManager : MonoBehaviour
         switch (StaticVariableManager.pigeonSpeed)
         {
             case 1:
-                horizontalSpeed = .3f;
+                // horizontalSpeed = .3f;
                 scaleReductionRate = 6.5f;
                 break;
             case 2:
-                horizontalSpeed = .4f;
+                // horizontalSpeed = .4f;
                 scaleReductionRate = 7f;
                 break;
             case 3:
-                horizontalSpeed = .45f;
+                // horizontalSpeed = .45f;
                 scaleReductionRate = 8f;
                 break;
             case 4:
-                horizontalSpeed = 1f;
+                // horizontalSpeed = 1f;
                 scaleReductionRate = 10f;
                 break;
             case 5:
-                horizontalSpeed = 1.5f; ;
+                // horizontalSpeed = 1.5f; ;
                 scaleReductionRate = 10f;
                 break;
 

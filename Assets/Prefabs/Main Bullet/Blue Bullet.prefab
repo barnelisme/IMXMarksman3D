@@ -103,7 +103,7 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1561500630719789851}
   m_LocalRotation: {x: -0, y: -1, z: -0, w: 0}
-  m_LocalPosition: {x: 0, y: 0, z: 239}
+  m_LocalPosition: {x: 0, y: 0, z: 344}
   m_LocalScale: {x: 1.8352859, y: 3.0301795, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -112,7 +112,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 2.33, y: -5.21}
+  m_AnchoredPosition: {x: 2.1, y: -5.21}
   m_SizeDelta: {x: 1.9561, y: 1.676}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!223 &910633354939292570
@@ -326,6 +326,7 @@ GameObject:
   - component: {fileID: 2871544008383109158}
   - component: {fileID: 2871544008383109159}
   - component: {fileID: 2502075511303329938}
+  - component: {fileID: 1207218733778379070}
   m_Layer: 0
   m_Name: Blue Bullet
   m_TagString: bullethole
@@ -420,6 +421,18 @@ MonoBehaviour:
   bullet_number_text: {fileID: 8971223782310991092}
   number_canvas: {fileID: 1561500630719789851}
   target_hit: {fileID: 0}
+--- !u!114 &1207218733778379070
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2871544008383109157}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fa8c514316287d547a84cc35d4b19647, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &4284552728523558151
 GameObject:
   m_ObjectHideFlags: 0
@@ -583,7 +596,7 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4880786619424814715}
   m_LocalRotation: {x: -0, y: -1, z: -0, w: 0}
-  m_LocalPosition: {x: 0, y: 0, z: 239.01367}
+  m_LocalPosition: {x: 0, y: 0, z: 343.99414}
   m_LocalScale: {x: 5.0628576, y: 3.0301795, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -592,7 +605,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 5.3699284, y: -5.210003}
+  m_AnchoredPosition: {x: 5.1400294, y: -5.210003}
   m_SizeDelta: {x: 1.9561, y: 1.676}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!223 &61045965731034869

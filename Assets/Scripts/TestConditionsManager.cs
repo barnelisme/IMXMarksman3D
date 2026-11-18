@@ -6,6 +6,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using System;
+using NUnit.Framework.Internal.Commands;
 
 public class TestConditionsManager : MonoBehaviour
 {
@@ -14,6 +15,7 @@ public class TestConditionsManager : MonoBehaviour
     public TextMeshProUGUI currentPlateColor;
     public TextMeshProUGUI currentBackroundColor;
     [SerializeField] GameObject targetColorPanel;
+    [SerializeField] GameObject backgroundPanel;
 
     [Header("Input Fields")]
     public TMP_InputField num_bullets_per_Meg;
@@ -21,9 +23,19 @@ public class TestConditionsManager : MonoBehaviour
     public TMP_InputField num_Megs;
     public TMP_InputField num_Lanes;
     public TMP_InputField num_strikes;
+    // Hunting fields
     public TMP_Dropdown HuntTypeHandler;
     public TextMeshProUGUI huntTypeLabel;
     public TMP_Dropdown AnimalNameHandler;
+    public TMP_Dropdown TimeOfDayHandler;
+    public TMP_Dropdown SeasonHandler;
+    public TMP_Dropdown DifficultyHandler;
+    public TMP_Dropdown PlayerSpeedHandler;
+    public TextMeshProUGUI timeOfDayLabel;
+    public TextMeshProUGUI seasonLabel;
+    public TextMeshProUGUI difficultyLabel;
+    public TextMeshProUGUI playerSpeedLabel;
+
     public TMP_Dropdown colorIndicatorHandler;
     public TMP_Dropdown trainingLevelHandler;
     public TMP_Dropdown trainingModeHandler;
@@ -33,6 +45,7 @@ public class TestConditionsManager : MonoBehaviour
     public TMP_Dropdown targetTypeHandler;
     public TMP_Dropdown numTargetHandler;
     public TMP_Dropdown backgroundOptions;
+    public static TMP_Dropdown backgroundOptions_Static;
     public TextMeshProUGUI animaNameLabel;
     public TextMeshProUGUI colorIndicatorLabel;
     public TextMeshProUGUI targetTypeLabel;
@@ -79,19 +92,24 @@ public class TestConditionsManager : MonoBehaviour
     public static int numLanesLimit = 3;
     public static int setNumLanes = 1;
     public static int numLaneTargets = 1;
-    public static int totalAllowedHitShots = 100;
+    public static int totalAllowedHitShots = 10000;
+    private static int backupTAH = totalAllowedHitShots;
     public static int numStrikes = 4;
     public static int total_test_time = 10000;
     public static string colorIndicator = "Shape"; //Default Setting
     public static string trainingLevel = "Easy"; //Default Setting
     public static string trainingMode = "Once-off"; //Default Setting
     public static string baloonDirection = "upwards";
-    public static string typeOfHunt = "...select...";
-    public static string animalName = "...select...";
+    public static string typeOfHunt = "Search hunt"; // Search hunt // Guided hunt
+    public static string spawnSetting = "All";
+    public static string animalName = "Deer";
+    public static string timeOfDay = "Day";
+    public static string seasonWeather = "Clear sky"; // Clear sky
+    public static string difficultySetting = "Medium";
     public static string lane1TraineeName = "Lane 1";
     public static string lane2TraineeName = "Lane 2";
     public static string lane3TraineeName = "Lane 3";
-    public static string targetType = "Circle";
+    public static string targetType = "Circle"; 
 
     [Header("Trainee Handlers")]
     public GameObject trainees_link;
@@ -114,13 +132,26 @@ public class TestConditionsManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        // backgroundOptions_Static = backgroundOptions;
         activeScene = SceneManager.GetActiveScene().name;
         scene_name_label.text = DropDown.ompSceneName;
         numLanes = setNumLanes; // Reset to original setting
-        MainMenuUDPSetup.FindLocalIP();
+        UDPSetup.FindLocalIP();
 
         ResetStaticVariables();
         AddBackgroundOptions();
+
+        if (DropDown.softwareSceneName.ToLower().Contains("duelingtree"))
+        {
+            StaticVariableManager.currBackgroundImagePos = StaticVariableManager.currDuelingTreeBackgroundPos;
+        }
+        else
+        {
+            StaticVariableManager.currBackgroundImagePos = StaticVariableManager.currBackgroundBackupPos;
+        }
+        HandleBackgoundImages(StaticVariableManager.currBackgroundImagePos);
+        if (activeScene == "TestConditionSetting") populateTraineeDropDown();
+
         if (true)
         {
             startCounterHolder.SetActive(true);
@@ -128,31 +159,49 @@ public class TestConditionsManager : MonoBehaviour
             //ConfigureGuns();
         }
 
-        //print("Scene name is: " + DropDown.softwareSceneName);
-        if (DropDown.softwareSceneName.ToLower().Contains("hunting") && DropDown.softwareSceneName.ToLower().Contains("outdoor"))
+
+        // print("Scene name is: " + DropDown.softwareSceneName);
+        // DropDown.softwareSceneName = "wildlifehunting";
+
+        if (DropDown.softwareSceneName.ToLower().Contains("hunting") && DropDown.softwareSceneName.ToLower().Contains("wildlife"))
         {
-            print("Scene name is: " + DropDown.softwareSceneName);
-            num_Hits.text = totalAllowedHitShots.ToString("0");
-            totalTestTime.text = total_test_time.ToString("0");
-            huntTypeLabel.text = typeOfHunt;
-            animaNameLabel.text = animalName;
-            populateOutdoorDropDown();
-            moveCamera = false;
-        }
-        else if (DropDown.softwareSceneName.ToLower().Contains("hunting") && DropDown.softwareSceneName.ToLower().Contains("ground"))
-        {
-            print("Scene name is: " + DropDown.softwareSceneName);
-            num_Hits.text = totalAllowedHitShots.ToString("0");
-            totalTestTime.text = total_test_time.ToString("0");
-            huntTypeLabel.text = typeOfHunt;
-            animaNameLabel.text = animalName;
-            populateGroundDropDown();
-            moveCamera = false;
+            if(activeScene == "HuntingConditionSetting")
+            {
+                HandleHuntGoundImages(StaticVariableManager.currHuntGroundImagePos);
+                populateForestDropDown();
+
+                huntTypeLabel.text = typeOfHunt;
+                animaNameLabel.text = animalName;
+                timeOfDayLabel.text = timeOfDay;
+                seasonLabel.text = seasonWeather;
+                difficultyLabel.text = difficultySetting;
+                playerSpeedLabel.text = StaticVariableManager.playerMoveSetting;
+
+                moveCamera = false;
+            }
+            else if(activeScene == "TestConditionSetting")
+            {
+                numMegsHolder.transform.position = numBulletsHolder.transform.position;
+                numBulletsHolder.transform.position = numHitsHolder.transform.position;
+
+                totalTestTime.text = total_test_time.ToString("0");
+                num_bullets_per_Meg.text = numBullets.ToString("0");
+                num_Megs.text = numMegs.ToString("0");
+
+
+
+                numBulletsHolder.SetActive(true);
+                numMegsHolder.SetActive(true);
+                numHitsHolder.SetActive(false);
+                targetColorPanel.SetActive(false);
+                backgroundPanel.SetActive(false);
+            }
+
         }
         else if(DropDown.softwareSceneName.ToLower().Contains("lane"))
         {
             targetColorPanel.SetActive(false);
-            populateTraineeDropDown();
+
 
             if (Scoring.ammo_setting.ToLower().Contains("laser"))
             {
@@ -225,7 +274,8 @@ public class TestConditionsManager : MonoBehaviour
             if (DropDown.softwareSceneName.ToLower().Contains("plat") || DropDown.softwareSceneName.ToLower().Contains("dice") || DropDown.softwareSceneName.ToLower().Contains("lightpole")
                 || DropDown.softwareSceneName.ToLower().Contains("dice") || DropDown.softwareSceneName.ToLower().Contains("hidden") || DropDown.softwareSceneName.ToLower().Contains("sequencenum")
                 || DropDown.softwareSceneName.ToLower().Contains("colorsequence") || DropDown.softwareSceneName.ToLower().Contains("distancesimulator") 
-                || DropDown.softwareSceneName.ToLower().Contains("colorexpressionshoot"))
+                || DropDown.softwareSceneName.ToLower().Contains("colorexpressionshoot") || DropDown.softwareSceneName.ToLower().Contains("rifflepole")
+                || DropDown.softwareSceneName.Contains("IPECBoard"))
             {
                 targetType = StaticVariableManager.targetType;
                 populateTargetTypeDropDown();
@@ -241,7 +291,7 @@ public class TestConditionsManager : MonoBehaviour
 
             moveCamera = true;
             numLanesHolder.SetActive(true);
-            if(DropDown.softwareSceneName.ToLower().Contains("laneplates"))
+            if(DropDown.softwareSceneName.ToLower().Contains("laneplates") || DropDown.softwareSceneName.ToLower().Contains("targetrecognition"))
             {
                 numLaneTargetsHolder.SetActive(true);
             }
@@ -259,8 +309,7 @@ public class TestConditionsManager : MonoBehaviour
         }
         else
         {
-            targetColorPanel.SetActive(false);
-            populateTraineeDropDown();
+            if(targetColorPanel != null) targetColorPanel.SetActive(false);
 
             
             if (Scoring.ammo_setting.ToLower().Contains("laser"))
@@ -308,7 +357,8 @@ public class TestConditionsManager : MonoBehaviour
         //print("RE: " + DropDown.softwareSceneName);
         if (DropDown.softwareSceneName.ToLower().Contains("plat") || DropDown.softwareSceneName.ToLower().Contains("hidden") 
             || DropDown.softwareSceneName.ToLower().Contains("ipec") || DropDown.softwareSceneName.ToLower().Contains("rifflepole") 
-            || DropDown.softwareSceneName.ToLower().Contains("sequencenum") || DropDown.softwareSceneName.ToLower().Contains("duelingtree"))
+            || DropDown.softwareSceneName.ToLower().Contains("sequencenum") || DropDown.softwareSceneName.ToLower().Contains("duelingtree")
+            || DropDown.softwareSceneName.Contains("IPSCExtended") || DropDown.softwareSceneName.ToLower().Contains("claypigeon")) // 
         {
             targetColorPanel.SetActive(true);
         }
@@ -339,7 +389,7 @@ public class TestConditionsManager : MonoBehaviour
 
         if (StaticVariableManager.isShowCurrBackground && backgroundImagesSet == false)
         {
-            HandleBackgoundImages(StaticVariableManager.currBackgroundImagePos);
+            // HandleBackgoundImages(StaticVariableManager.currBackgroundImagePos);
             // StaticVariableManager.isShowCurrBackground = false;
 
             backgroundImagesSet = true;
@@ -428,33 +478,69 @@ public class TestConditionsManager : MonoBehaviour
 
     private void AddBackgroundOptions()
     {
-        if(DropDown.scene_type != "3D")
+        // DropDown.scene_type = "3D";
+        if (DropDown.scene_type != "3D" || DropDown.softwareSceneName.Contains("Hunting"))
         {
+            if (backgroundOptions == null) return; // Skip execution
+
             backgroundOptions.options.Clear();
+
+            if(activeScene == "TestConditionSetting")
+            {
+                if (DropDown.softwareSceneName.ToLower().Contains("duelingtree"))
+                {
+                    backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "Set Backgound" });
+                    backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "Black" });
+                    backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "White" });
+                    backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "Blue" });
+                    backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "Green" });
+                }
+                else
+                {
+                    backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "Set Backgound" });
+                    backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "Black" });
+                    backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "White" });
+                    backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "Blue" });
+                    backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "Red" });
+                    backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "Green" });
+                    backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "Yellow" });
+                }
+
+                backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "AI Attack" });
+                backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "Alien invasion" });
+                backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "B City" });
+                backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "Living Room" });
+                backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "Mother City" });
+                backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "Outer Space" });
+                backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "African Jungle" });
+                backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "Desert" });
+                backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "War Desert Weed" });
+                backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "War Torn City" });
+                // AddExternalBackgrounds(backgroundOptions);
+                BackgroundSetImageManager.HandleExteralBackgrounds(backgroundOptions);
+            }
+            else
+            {
+                // print("Point reached...");
+
+                backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "Select Environment" });
+                backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "Inland Forest" });
+                backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "East Coast" });
+            }
+
 
             // training type handler
             // numTargetLabel.text = StaticVariableManager.numberPlate.ToString();
-            backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "Set Backgound" });
 
-            backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "Black" });
-            backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "White" });
-            backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "Blue" });
-            backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "Red" });
-            backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "Green" });
-            backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "Yellow" });
-            backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "AI Attack" });
-            backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "Alien invasion" });
-            backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "B City" });
-            backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "Living Room" });
-            backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "Mother City" });
-            backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "Outer Space" });
-            backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "African Jungle" });
-            backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "Desert" });
-            backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "War Desert Weed" });
-            backgroundOptions.options.Add(new TMP_Dropdown.OptionData() { text = "War Torn City" });
         }
 
     }
+
+    private void AddExternalBackgrounds(TMP_Dropdown dropDown)
+    {
+        // 
+    }
+
     private void manageGlobalActiveTime()
     {
         login_Manager.global_active_timer -= Time.deltaTime * 1;
@@ -474,9 +560,9 @@ public class TestConditionsManager : MonoBehaviour
         mainCamera.transform.Rotate(Vector3.up, speed * Time.deltaTime);
         if (moveCamera)
         {
-            if (speed <= 2.5f)
+            if (speed <= 5f)
             {
-                speed += Time.deltaTime * 1.8f;
+                speed += Time.deltaTime * 1.5f;
             }
         }
         else
@@ -490,53 +576,52 @@ public class TestConditionsManager : MonoBehaviour
     }
     public void loadScene()
     {
+
+        if (activeScene == "TestConditionSetting") ApplyBaseSettings(); // Apply standard settings.
+
         if (DropDown.softwareSceneName.ToLower().Contains("hunting"))
         {
-            totalAllowedHitShots = int.Parse(num_Hits.text);
-            total_test_time = int.Parse(totalTestTime.text);
 
-            if (Scoring.ammo_setting.ToLower().Contains("laser"))
+            if (DropDown.softwareSceneName.ToLower().Contains("wildlife"))
             {
-                StaticVariableManager.start_counter = int.Parse(start_counter_value.text); ;
+                if(activeScene == "TestConditionSetting")
+                {
+                    SceneManager.LoadScene("HuntingConditionSetting");
+                }
+                else if(activeScene == "HuntingConditionSetting")
+                {
+
+                    if (StaticVariableManager.currentHuntingEnv == "Inland Forest")
+                    {
+                        SceneManager.LoadScene("DirectForestHunting");
+                    }
+                    else if(StaticVariableManager.currentHuntingEnv == "East Coast")
+                    {
+                        SceneManager.LoadScene("DirectCoastForestHunting");
+                    }
+
+                }
+
             }
-
-            if (DropDown.softwareSceneName.ToLower().Contains("outdoor"))
+            else if(DropDown.softwareSceneName.ToLower().Contains("bird"))
             {
-                if (typeOfHunt.ToLower().Contains("direct"))
-                {
-                    SceneManager.LoadScene("Outdoor_Direct_Deer_Hunting");
-                }
-                else if (typeOfHunt.ToLower().Contains("avoid"))
-                {
-                    SceneManager.LoadScene("Outdoor_Avoid_Deer_Hunting");
-                }
-            }
-
-            if (DropDown.softwareSceneName.ToLower().Contains("ground"))
-            {
-                if (typeOfHunt.ToLower().Contains("direct"))
-                {
-                    SceneManager.LoadScene("Ground_Direct_Hunting");
-                }
-                else if (typeOfHunt.ToLower().Contains("avoid"))
-                {
-                    SceneManager.LoadScene("Ground_Avoid_Hunting");
-                }
+                OpenScenario();
             }
 
         }
         else
         {
-            numBullets = int.Parse(num_bullets_per_Meg.text);
-            numMegs = int.Parse(num_Megs.text);
+
             totalAllowedHitShots = int.Parse(num_Hits.text);
-            total_test_time = int.Parse(totalTestTime.text);
             numLanes = int.Parse(num_Lanes.text);
             numStrikes = int.Parse(num_strikes.text);
             numLaneTargets = int.Parse(num_LaneTargets.text);
             lane1TraineeName = lane1TraineeLabel.text;
             lane2TraineeName = lane2TraineeLabel.text;
             lane3TraineeName = lane3TraineeLabel.text;
+
+
+            backupTAH = totalAllowedHitShots; // Backup
             //setStopSeconds = int.Parse(num_StopSeconds.text);
             //colorIndicator = colorIndicatorLabel.text;
 
@@ -549,25 +634,28 @@ public class TestConditionsManager : MonoBehaviour
                 }
             }
 
-            if (Scoring.ammo_setting.ToLower().Contains("live"))
-            {
-                StaticVariableManager.start_counter = int.Parse(start_counter_value.text);
-                OpenScenario();
-            }
-            else
-            {
-                StaticVariableManager.start_counter = int.Parse(start_counter_value.text);
-                OpenScenario();
-            }
+            OpenScenario();
         }
     }
+
+    private void ApplyBaseSettings()
+    {
+        numBullets = int.Parse(num_bullets_per_Meg.text);
+        numMegs = int.Parse(num_Megs.text);
+        total_test_time = int.Parse(totalTestTime.text);
+
+        StaticVariableManager.start_counter = int.Parse(start_counter_value.text);
+    }
+
     public static void OpenScenario()
     {
+        if (numLanes > 3) numLanes = 3;
         setNumLanes = numLanes; //Do not remove to properly reset number off lanes to selected setting.
 
         if (DropDown.softwareSceneName.ToLower().Contains("lane"))
         {
             //numLaneTargets
+            // numLaneTargets
 
             if (DropDown.softwareSceneName.ToLower().Contains("circular"))
             {
@@ -584,8 +672,25 @@ public class TestConditionsManager : MonoBehaviour
                         break;
                 }
             }
+            else if (DropDown.softwareSceneName.ToLower().Contains("duelingtree"))
+            {
+                switch (TestConditionsManager.numLanes)
+                {
+                    case 1:
+                        SceneManager.LoadScene("Basic1LaneDuelingTree");
+                        break;
+                    case 2:
+                        SceneManager.LoadScene("Basic2LaneDuelingTree");
+                        break;
+                    case 3:
+                        SceneManager.LoadScene("Basic2LaneDuelingTree");
+                        break;
+                }
+            }
             else if (DropDown.softwareSceneName.ToLower().Contains("laneplates"))
             {
+                Update_RPS_Hits(numLaneTargets); // Set the total expexted hits
+
                 switch (numLanes)
                 {
                     case 1:
@@ -643,7 +748,7 @@ public class TestConditionsManager : MonoBehaviour
             }
             else if (DropDown.softwareSceneName.ToLower().Contains("lane_baloons"))
             {
-                if (numLanes > 2) numLanes = 2;
+                
                 switch (numLanes)
                 {
                     case 1:
@@ -671,6 +776,20 @@ public class TestConditionsManager : MonoBehaviour
                                 break;
                             case "Opp Word":
                                 SceneManager.LoadScene("BasicOWCIBaloon2LaneShoot");
+                                break;
+                        }
+                        break;
+                    case 3:
+                        switch (colorIndicator)
+                        {
+                            case "Shape":
+                                SceneManager.LoadScene("BasicCIBaloon3LaneShoot");
+                                break;
+                            case "Word":
+                                SceneManager.LoadScene("BasicWCIBaloon3LaneShoot");
+                                break;
+                            case "Opp Word":
+                                SceneManager.LoadScene("BasicOWCIBaloon3LaneShoot");
                                 break;
                         }
                         break;
@@ -717,14 +836,16 @@ public class TestConditionsManager : MonoBehaviour
             }
             else if (DropDown.softwareSceneName.ToLower().Contains("fallingplat"))
             {
-                if (numLanes > 1) numLanes = 1;
                 switch (numLanes)
                 {
                     case 1:
                         SceneManager.LoadScene("Basic1LaneFallingPlat");
                         break;
                     case 2:
-                        SceneManager.LoadScene("Basic1LaneFallingPlat");
+                        SceneManager.LoadScene("Basic2LaneFallingPlat");
+                        break;
+                    case 3:
+                        SceneManager.LoadScene("Basic3LaneFallingPlat");
                         break;
                 }
             }
@@ -802,6 +923,41 @@ public class TestConditionsManager : MonoBehaviour
                         break;
                 }
             }
+            else if (DropDown.softwareSceneName.ToLower().Contains("targetrecognition"))
+            {
+                if (numLanes > 3) numLanes = 3;
+                // if (numLanes < 2) numLanes = 2;
+                StaticVariableManager.numTargetBoards = numLaneTargets;
+                switch (numLanes)
+                {
+                    case 1:
+                        SceneManager.LoadScene(DropDown.softwareSceneName);
+                        break;
+
+                    case 2:
+                        SceneManager.LoadScene(DropDown.softwareSceneName);
+                        break;
+
+                    case 3:
+                        SceneManager.LoadScene(DropDown.softwareSceneName);
+                        break;
+                }
+            }
+            else if (DropDown.softwareSceneName.ToLower().Contains("risingshape"))
+            {
+                switch (numLanes)
+                {
+                    case 1:
+                        SceneManager.LoadScene("BasicRisingShapePlat1LaneShoot");
+                        break;
+                    case 2:
+                        SceneManager.LoadScene("BasicRisingShapePlat2LaneShoot");
+                        break;
+                    case 3:
+                        SceneManager.LoadScene("BasicRisingShapePlat3LaneShoot");
+                        break;
+                }
+            }
             else
             {
                 SceneManager.LoadScene(DropDown.softwareSceneName);
@@ -823,6 +979,12 @@ public class TestConditionsManager : MonoBehaviour
             }
         }
     }
+
+    private static void Update_RPS_Hits(int number_of_targets)
+    {
+        totalAllowedHitShots = 11 * number_of_targets;
+    }
+
     private void populateOutdoorDropDown()
     {
         HuntTypeHandler.options.Clear();
@@ -858,10 +1020,21 @@ public class TestConditionsManager : MonoBehaviour
         targetTypeHandler.options.Add(new TMP_Dropdown.OptionData() { text = "..select.." });
         targetTypeHandler.options.Add(new TMP_Dropdown.OptionData() { text = "Circle" });
         targetTypeHandler.options.Add(new TMP_Dropdown.OptionData() { text = "Square" });
-        targetTypeHandler.options.Add(new TMP_Dropdown.OptionData() { text = "Rhombas" });
+        targetTypeHandler.options.Add(new TMP_Dropdown.OptionData() { text = "Rhombus" });
         targetTypeHandler.options.Add(new TMP_Dropdown.OptionData() { text = "Triangle" });
         targetTypeHandler.options.Add(new TMP_Dropdown.OptionData() { text = "Pentagon" });
         targetTypeHandler.options.Add(new TMP_Dropdown.OptionData() { text = "Octagon" });
+        targetTypeHandler.options.Add(new TMP_Dropdown.OptionData() { text = "squirrel" });
+        targetTypeHandler.options.Add(new TMP_Dropdown.OptionData() { text = "rabbit" });
+        targetTypeHandler.options.Add(new TMP_Dropdown.OptionData() { text = "bird" });
+        targetTypeHandler.options.Add(new TMP_Dropdown.OptionData() { text = "clown" });
+        targetTypeHandler.options.Add(new TMP_Dropdown.OptionData() { text = "laughing clown" });
+        targetTypeHandler.options.Add(new TMP_Dropdown.OptionData() { text = "monster pumpkin" });
+        targetTypeHandler.options.Add(new TMP_Dropdown.OptionData() { text = "pumpkin" });
+        targetTypeHandler.options.Add(new TMP_Dropdown.OptionData() { text = "race car" });
+        targetTypeHandler.options.Add(new TMP_Dropdown.OptionData() { text = "spaceship" });
+        targetTypeHandler.options.Add(new TMP_Dropdown.OptionData() { text = "twin zombies" });
+        targetTypeHandler.options.Add(new TMP_Dropdown.OptionData() { text = "zombie candy" });
     }
     private void populateNumTargetDropDown()
     {
@@ -1006,6 +1179,46 @@ public class TestConditionsManager : MonoBehaviour
         AnimalNameHandler.options.Add(new TMP_Dropdown.OptionData() { text = "comodo" });
         AnimalNameHandler.options.Add(new TMP_Dropdown.OptionData() { text = "pig" });
     }
+    private void populateForestDropDown()
+    {
+        HuntTypeHandler.options.Clear();
+        AnimalNameHandler.options.Clear();
+
+        //training type handler
+        HuntTypeHandler.options.Add(new TMP_Dropdown.OptionData() { text = "...select..." });
+        //HuntTypeHandler.options.Add(new TMP_Dropdown.OptionData() { text = "Direct hunt" });
+        HuntTypeHandler.options.Add(new TMP_Dropdown.OptionData() { text = "Search hunt" });
+        HuntTypeHandler.options.Add(new TMP_Dropdown.OptionData() { text = "Guided hunt" });
+
+        //Animal Name handler
+        AnimalNameHandler.options.Add(new TMP_Dropdown.OptionData() { text = "...select..." });
+        AnimalNameHandler.options.Add(new TMP_Dropdown.OptionData() { text = "Deer" });
+        AnimalNameHandler.options.Add(new TMP_Dropdown.OptionData() { text = "Boar" });
+        AnimalNameHandler.options.Add(new TMP_Dropdown.OptionData() { text = "Buffalo" });
+        AnimalNameHandler.options.Add(new TMP_Dropdown.OptionData() { text = "Moose" });
+
+        // Time of day handler
+        TimeOfDayHandler.options.Add(new TMP_Dropdown.OptionData() { text = "...select..." });
+        TimeOfDayHandler.options.Add(new TMP_Dropdown.OptionData() { text = "Day" });
+        TimeOfDayHandler.options.Add(new TMP_Dropdown.OptionData() { text = "Night" });
+
+        // Season
+        SeasonHandler.options.Add(new TMP_Dropdown.OptionData() { text = "...select..." });
+        SeasonHandler.options.Add(new TMP_Dropdown.OptionData() { text = "Clear sky" });
+        SeasonHandler.options.Add(new TMP_Dropdown.OptionData() { text = "Rain" });
+
+        // Difficulty
+        DifficultyHandler.options.Add(new TMP_Dropdown.OptionData() { text = "...select..." });
+        DifficultyHandler.options.Add(new TMP_Dropdown.OptionData() { text = "Easy" });
+        DifficultyHandler.options.Add(new TMP_Dropdown.OptionData() { text = "Medium" });
+        DifficultyHandler.options.Add(new TMP_Dropdown.OptionData() { text = "Hard" });
+
+        // Player speed
+        PlayerSpeedHandler.options.Add(new TMP_Dropdown.OptionData() { text = "...select..." });
+        PlayerSpeedHandler.options.Add(new TMP_Dropdown.OptionData() { text = "Slow" });
+        PlayerSpeedHandler.options.Add(new TMP_Dropdown.OptionData() { text = "Medium" });
+        PlayerSpeedHandler.options.Add(new TMP_Dropdown.OptionData() { text = "Fast" });
+    }
     public void ConfigureGuns()
     {
         if (Scoring.gun == "Handgun")
@@ -1050,6 +1263,30 @@ public class TestConditionsManager : MonoBehaviour
         //print(val);
         typeOfHunt = huntTypeLabel.text;
 
+    }
+    public void HandleTimeOfDayInput(int val)
+    {
+        //print(val);
+        timeOfDay = TimeOfDayHandler.options[val].text;
+        print(timeOfDay);
+    }
+    public void HandleSeasonInput(int val)
+    {
+        //print(val);
+        seasonWeather = SeasonHandler.options[val].text;
+        print(seasonWeather);
+    }
+    public void HandleDifficultyInput(int val)
+    {
+        //print(val);
+        difficultySetting = DifficultyHandler.options[val].text;
+        print(difficultySetting);
+    }
+    public void HandlePlayerSpeedInput(int val)
+    {
+        //print(val);
+        StaticVariableManager.playerMoveSetting = PlayerSpeedHandler.options[val].text;
+        print(StaticVariableManager.playerMoveSetting);
     }
     public void HandleAnimalNameInput(int val)
     {
@@ -1117,14 +1354,60 @@ public class TestConditionsManager : MonoBehaviour
     }
     public void HandleBackgoundImages(int val)
     {
-        BackgroundSetImageManager.SetBackGroundImage(val, backgroundImageDisplay);
+
+        // print(backgroundOptions.options.Count);
+        // DropDown.softwareSceneName = "wildlife";
+        if (DropDown.scene_type != "3D" || DropDown.softwareSceneName.ToLower().Contains("wildlife"))
+        {
+            if (activeScene == "TestConditionSetting")
+            {
+                BackgroundSetImageManager.SetBackGroundImage(val, backgroundImageDisplay, DropDown.softwareSceneName);
+            }
+        }
+
     }
+
+    public void HandleHuntGoundImages(int val)
+    {
+        int index = val - 1;
+        // print(backgroundOptions.options[val].text);
+        // print("Pos: " + val);
+        // print("Options: " + backgroundOptions.options.Count);
+
+
+        if (DropDown.softwareSceneName.ToLower().Contains("wildlife") && activeScene != "TestConditionSetting")
+        {
+            BackgroundSetImageManager.SetHuntGroundImage(index, backgroundImages, backgroundImageDisplay);
+            StaticVariableManager.currentHuntingEnv = backgroundOptions.options[val].text;
+        }
+
+        // print(StaticVariableManager.currentHuntingEnv);
+        StaticVariableManager.currHuntGroundImagePos = val;
+    }
+
     public void LoadMainMenu()
     {
-        SceneManager.LoadScene("SceneManager");
+        if(activeScene == "HuntingConditionSetting")
+        {
+            SceneManager.LoadScene("TestConditionSetting");
+        }
+        else if(activeScene == "TestConditionSetting")
+        {
+            if (DropDown.softwareSceneName.Contains("Video"))
+            {
+                SceneManager.LoadScene("VideoSceneOptions");
+            }
+            else
+            {
+                SceneManager.LoadScene("SceneManager");
+            }
+
+        }
     }
     private void ResetStaticVariables()
     {
+        StaticVariableManager.isMaterialUpdated = false; // Target type variables
+
         GetTrainees.TraineeLane_1 = "";
         GetTrainees.TraineeLane_2 = "";
         GetTrainees.TraineeLane_3 = "";
@@ -1132,5 +1415,13 @@ public class TestConditionsManager : MonoBehaviour
         lane1TraineeName = "Lane 1";
         lane2TraineeName = "Lane 2";
         lane3TraineeName = "Lane 3";
+
+        // Load backup values
+        if (!DropDown.softwareSceneName.ToLower().Contains("wildlife"))
+        {
+            totalAllowedHitShots = backupTAH;
+        }
+
+        totalAllowedHitShots = backupTAH; // Always reset for now
     }   
 }       

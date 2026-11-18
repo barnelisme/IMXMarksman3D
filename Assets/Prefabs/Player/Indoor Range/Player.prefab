@@ -218,6 +218,18 @@ MonoBehaviour:
   standbyTimeSlider: {fileID: 0}
   shootTimeSlider: {fileID: 0}
   tableSpeed: {fileID: 0}
+  redSettingSlider: {fileID: 0}
+  yellowSettingSlider: {fileID: 0}
+  blueSettingSlider: {fileID: 0}
+  greenSettingSlider: {fileID: 0}
+  blackSettingSlider: {fileID: 0}
+  redSettingTxt: {fileID: 0}
+  yellowSettingTxt: {fileID: 0}
+  blueSettingTxt: {fileID: 0}
+  greenSettingTxt: {fileID: 0}
+  blackSettingTxt: {fileID: 0}
+  levelSettingSlider: {fileID: 0}
+  levelSettingTxt: {fileID: 0}
   standByTimeTxt: {fileID: 0}
   shootTimeTxt: {fileID: 0}
   tableSpeedTxt: {fileID: 0}
@@ -23641,6 +23653,7 @@ MonoBehaviour:
   civilian: {fileID: 8046698088700506007, guid: 79715ae85d95efe4c8951fcb85313d6d, type: 3}
   range: 100
   fpsCam: {fileID: 7650414034964269989}
+  backgroundImageDisplay: {fileID: 0}
   muzzleFlash: {fileID: 0}
   impactEffect: {fileID: 6249033329114681786, guid: 823306b97171d7548ae2869b562ed01e, type: 3}
   blood: {fileID: 6717048648218965576, guid: 0d2a0b937e364174689d35627bcd9f66, type: 3}
@@ -23684,7 +23697,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 0
   carLife: 2
-  numEnemies: 0
+  remainingNumEnemies: 0
   reloadCount: 15
   reloadTimeOut: 3
   ShootSateText: {fileID: 7152544296007696006}
@@ -23694,7 +23707,9 @@ MonoBehaviour:
   gunTypeAdmin: {fileID: 87501535348513361}
   camStatusAdmin: {fileID: 87501535155459565}
   ShootDelayTxt: {fileID: 7152544296522521275}
-  shootDelay: 0
+  lane1ShootDelayTimer: 0
+  lane2ShootDelayTimer: 0
+  lane3ShootDelayTimer: 0
   aimingImage: {fileID: 6418884568969816121}
   rayDistance: 1000
   hitTime: 0.5
@@ -23757,6 +23772,10 @@ MonoBehaviour:
   accLight: {fileID: 7152544295998574551}
   numTargetInput: {fileID: 87501535347721747}
   standby_txt: {fileID: 0}
+  lane1ResponseTime: []
+  lane2ResponseTime: []
+  lane3ResponseTime: []
+  lane4ResponseTime: []
   lane1SplitTimeDisplay: {fileID: 87501534611488206}
   lane2SplitTimeDisplay: {fileID: 8230474170022002479}
   lane3SplitTimeDisplay: {fileID: 7155047894747160269}
@@ -24865,8 +24884,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -431, y: -461}
-  m_SizeDelta: {x: -1559.4, y: -1010.0053}
+  m_AnchoredPosition: {x: 779, y: -461}
+  m_SizeDelta: {x: -1715.3169, y: -1010.0053}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3706669897131426263
 CanvasRenderer:
@@ -24889,7 +24908,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0, b: 0, a: 0.5176471}
+  m_Color: {r: 0, g: 0, b: 0, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -27446,7 +27465,7 @@ Transform:
   m_GameObject: {fileID: 7250397847826962580}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.80000305, z: 0}
+  m_LocalPosition: {x: 0, y: 1.56, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -27793,8 +27812,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4281479730
-  m_fontColor: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
+    rgba: 4293454056
+  m_fontColor: {r: 0.90943396, g: 0.90943396, b: 0.90943396, a: 1}
   m_enableVertexGradient: 1
   m_colorMode: 3
   m_fontColorGradient:
@@ -27811,8 +27830,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 40
-  m_fontSizeBase: 40
+  m_fontSize: 32
+  m_fontSizeBase: 32
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -27883,7 +27902,7 @@ RectTransform:
   m_GameObject: {fileID: 7250397849002874216}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.9344728, y: 0.91626114, z: 1}
+  m_LocalScale: {x: 1.0839884, y: 1.0903507, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 7250397848878151466}
@@ -27891,7 +27910,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -85.90808, y: -0.66693115}
+  m_AnchoredPosition: {x: 0.97008, y: -0.63211}
   m_SizeDelta: {x: 181.469, y: 57.1941}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7250397849002874212
@@ -27915,7 +27934,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.06037459, g: 0.9245283, b: 0.040120937, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -28549,7 +28568,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &7070203089743680115
 RectTransform:
   m_ObjectHideFlags: 0
@@ -28804,12 +28823,24 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 1288642996297109552, guid: de08b1051c16f67469f2a58f815059ee, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.5288581
+      objectReference: {fileID: 0}
+    - target: {fileID: 1288642996297109552, guid: de08b1051c16f67469f2a58f815059ee, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.33598533
+      objectReference: {fileID: 0}
+    - target: {fileID: 1288642996297109552, guid: de08b1051c16f67469f2a58f815059ee, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1.5015049
+      objectReference: {fileID: 0}
+    - target: {fileID: 1288642996297109552, guid: de08b1051c16f67469f2a58f815059ee, type: 3}
       propertyPath: m_LocalPosition.x
       value: -0.25
       objectReference: {fileID: 0}
     - target: {fileID: 1288642996297109552, guid: de08b1051c16f67469f2a58f815059ee, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 3.719997
+      value: 4.0053
       objectReference: {fileID: 0}
     - target: {fileID: 1288642996297109552, guid: de08b1051c16f67469f2a58f815059ee, type: 3}
       propertyPath: m_LocalPosition.z
@@ -28844,12 +28875,20 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1288642996297109554, guid: de08b1051c16f67469f2a58f815059ee, type: 3}
+      propertyPath: m_Text
+      value: '-'
+      objectReference: {fileID: 0}
+    - target: {fileID: 1288642996297109554, guid: de08b1051c16f67469f2a58f815059ee, type: 3}
       propertyPath: m_Color.rgba
-      value: 973079562
+      value: 553655366
       objectReference: {fileID: 0}
     - target: {fileID: 1288642996297109555, guid: de08b1051c16f67469f2a58f815059ee, type: 3}
       propertyPath: m_Name
       value: Buzzer
+      objectReference: {fileID: 0}
+    - target: {fileID: 1288642996297109555, guid: de08b1051c16f67469f2a58f815059ee, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -29209,12 +29248,20 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 3566486240992880209, guid: 46cb9788cb587124b899dca4ceb2c4ca, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.3406071
+      objectReference: {fileID: 0}
+    - target: {fileID: 3566486240992880209, guid: 46cb9788cb587124b899dca4ceb2c4ca, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.2729942
+      objectReference: {fileID: 0}
+    - target: {fileID: 3566486240992880209, guid: 46cb9788cb587124b899dca4ceb2c4ca, type: 3}
       propertyPath: m_LocalPosition.x
       value: -0.25
       objectReference: {fileID: 0}
     - target: {fileID: 3566486240992880209, guid: 46cb9788cb587124b899dca4ceb2c4ca, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 3.375997
+      value: 3.4117
       objectReference: {fileID: 0}
     - target: {fileID: 3566486240992880209, guid: 46cb9788cb587124b899dca4ceb2c4ca, type: 3}
       propertyPath: m_LocalPosition.z
@@ -29262,7 +29309,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3566486240992880211, guid: 46cb9788cb587124b899dca4ceb2c4ca, type: 3}
       propertyPath: m_Color.rgba
-      value: 2147812613
+      value: 656548386
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

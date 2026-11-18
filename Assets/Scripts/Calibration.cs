@@ -20,7 +20,7 @@ public class Calibration : MonoBehaviour
 
     [Header("Acc Varibales")]
     //SCENE: Accurate point Calibration
-    public static bool isAccMode = false;
+    public static bool isAccMode = true;
     public static bool isAccSet = false;
     public static float y_CentrePos = 0;
     public static float x_CentrePos = 0;
@@ -143,17 +143,14 @@ public class Calibration : MonoBehaviour
 
     public void LoadAccFromFile()
     {
-
-        string base64 = FileManager.ReadFromFile(AccSavePath);
-        Encryption encrypt = new Encryption();
-        AccSaveData = encrypt.AESDecryption(base64);                    //decryption code                  //decryption code
-        //print("Acc Data is " + AccSaveData);
-
+        AccSaveData = FileManager.decryptFile(AccSavePath);    //decryption code
+        // print("Acc Data is " + AccSaveData);
     }
 
     public void ExitCalibration()
     {
         SceneManager.LoadScene("Calib_Acc_Page");
+        StaticVariableManager.isCalibrationComplete = true;
     }
 
 }

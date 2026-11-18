@@ -6,6 +6,7 @@ using TMPro;
 using UnityEngine.SceneManagement;
 using UnityEngine.InputSystem;
 using System.Text.RegularExpressions;
+using UnityEngine.UI;
 
 public class TargetMessageReceive : MonoBehaviour
 {
@@ -26,6 +27,7 @@ public class TargetMessageReceive : MonoBehaviour
     public bool isNotActive = false;
     private bool isPlateShot = false;
     public TextMeshProUGUI targetText;
+    public TextMesh targetText2;
     public GameObject player;
     public Animator anim;
 
@@ -118,12 +120,19 @@ public class TargetMessageReceive : MonoBehaviour
     private float currPlateSpeed = 0;
     float previousPlateSpeed = 0;
 
+    // Dueling Tree
+    private bool isTargetActivated = false;
+
+    [Header("Car training:")]
+    public GameObject pair;
+
     void Start()
     {
         objectLive = 1;
         player = GameObject.FindGameObjectWithTag("Player");
         body_head_ishit = false;
         activeScene = SceneManager.GetActiveScene().name;
+        StaticVariableManager.isStopTraining = false;
 
         if(activeScene.ToLower().Contains("shell"))
         {
@@ -148,7 +157,7 @@ public class TargetMessageReceive : MonoBehaviour
             targetText.enabled = false;
             isTargetTextActive = false;
             setTime = 1;
-        }
+        } // 
         else if (activeScene.ToLower().Contains("ipec"))
         {
             if (gameObject.name.ToLower().Contains("body") || gameObject.name.ToLower().Contains("head"))
@@ -162,9 +171,10 @@ public class TargetMessageReceive : MonoBehaviour
             
         }
         else if(activeScene.ToLower().Contains("plat") || activeScene.ToLower().Contains("hidden") || activeScene.ToLower().Contains("sequencenum") 
-            || activeScene.ToLower().Contains("distancesimulator") || activeScene.ToLower().Contains("duelingtree"))
+            || activeScene.ToLower().Contains("distancesimulator") || activeScene.ToLower().Contains("duelingtree") || activeScene.ToLower().Contains("pepperpopper")
+            || activeScene.ToLower().Contains("ipscextended") || activeScene.ToLower().Contains("claypigeon") || activeScene.ToLower().Contains("rifflepole"))
         {
-            loadTargetColor();
+            if(!this.transform.name.ToLower().Contains("board")) loadTargetColor();
         }
         else if(activeScene.ToLower().Contains("suspectshoot"))
         {
@@ -194,7 +204,12 @@ public class TargetMessageReceive : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        HandleDependencies();
+        // ActivateTarget();
+    }
 
+    private void HandleDependencies()
+    {
         if (isTargetTextActive && !activeScene.ToLower().Contains("risingplate"))
         {
             //targetText.enabled = true;
@@ -210,27 +225,27 @@ public class TargetMessageReceive : MonoBehaviour
             //targetText.enabled = false;
             textActiveTimer = setTime;
         }
-        if(isNotActive)
+        if (isNotActive)
         {
             destroyTimer -= Time.deltaTime * 1;
 
-            if(destroyTimer <= 0f && currect_Target != null)
+            if (destroyTimer <= 0f && currect_Target != null)
             {
                 currect_Target.SetActive(false);
                 isNotActive = false;
             }
         }
 
-        if(isPlateHit)
+        if (isPlateHit)
         {
             destroyTimer -= Time.deltaTime * 1;
-            if(destroyTimer <= 0f)
+            if (destroyTimer <= 0f)
             {
-                // StaticVariableManager.plateDestroyed = true;
+                StaticVariableManager.plateDestroyed = true;
                 Destroy(this.gameObject);
             }
         }
-        if(targetShot)
+        if (targetShot)
         {
             animTimeOut -= Time.deltaTime * 1;
             if (animTimeOut <= 0f)
@@ -244,28 +259,28 @@ public class TargetMessageReceive : MonoBehaviour
         {
             animTimeOut = animSetTime;
         }
-        if(body_head_ishit == true)
+        if (body_head_ishit == true)
         {
             Time.timeScale = 1f;
             bodyHitTimer -= Time.deltaTime * 1;
-            
-            if(bodyHitTimer <= 0f)
+
+            if (bodyHitTimer <= 0f)
             {
                 revertTargetColor();
                 body_head_ishit = false;
-            }     
+            }
         }
         else
         {
             bodyHitTimer = ipec_setTimerValue;
         }
-        if(activeScene == ("BasicBreakMTarget"))
+        if (activeScene == ("BasicBreakMTarget"))
         {
             this.transform.position += new Vector3(0, speed * Time.deltaTime, 0);  // move UP
         }
-        if(activeScene.ToLower().Contains("claypigeon"))
+        if (activeScene.ToLower().Contains("claypigeon"))
         {
-            if(currPlateSpeed != StaticVariableManager.pigeonSpeed)
+            if (currPlateSpeed != StaticVariableManager.pigeonSpeed)
             {
                 assignDestroyTime();
                 currPlateSpeed = StaticVariableManager.pigeonSpeed;
@@ -274,7 +289,7 @@ public class TargetMessageReceive : MonoBehaviour
 
         }
 
-        if (activeScene.ToLower().Contains("shell") && countDownStart.start_training == true )
+        if (activeScene.ToLower().Contains("shell") && countDownStart.start_training == true)
         {
             if (transform.name.ToLower().Contains("holder") && holderRevealed == false)
             {
@@ -283,7 +298,7 @@ public class TargetMessageReceive : MonoBehaviour
                 holderRevealed = true;
                 StaticVariableManager.isHolderRevealed = true;
             }
-            else if(transform.name.ToLower().Contains("holder") && StaticVariableManager.isHolderRevealed == false)
+            else if (transform.name.ToLower().Contains("holder") && StaticVariableManager.isHolderRevealed == false)
             {
                 ApplyDamage(transform.name);
                 StaticVariableManager.isHolderRevealed = true;
@@ -292,7 +307,7 @@ public class TargetMessageReceive : MonoBehaviour
 
         if (isCupHit)
         {
-            if(moveUp == true)
+            if (moveUp == true)
             {
                 // Move the GameObject upwards along the y-axis
                 transform.Translate(Vector3.back * moveSpeed * Time.deltaTime);
@@ -311,7 +326,7 @@ public class TargetMessageReceive : MonoBehaviour
             else if (moveDown == true)
             {
 
-                if(hitRevealTimer <= 0f)
+                if (hitRevealTimer <= 0f)
                 {
                     transform.Translate(Vector3.forward * moveSpeed * Time.deltaTime);
 
@@ -345,7 +360,7 @@ public class TargetMessageReceive : MonoBehaviour
     {
         string name = this.transform.name;
 
-        if (gameObject.name.ToLower().Contains("body") || gameObject.name.ToLower().Contains("head"))
+        if ((gameObject.name.ToLower().Contains("body") || gameObject.name.ToLower().Contains("head")) && !activeScene.Contains("VideoT"))
         {
             objectMaterial = gameObject.GetComponent<Renderer>().material;
             objectMateria2 = ipec_head.GetComponent<Renderer>().material;
@@ -363,7 +378,10 @@ public class TargetMessageReceive : MonoBehaviour
             a = PlayerPrefs.GetFloat("ObjectColorA");
         }
 
-        if(!activeScene.ToLower().Contains("colorexpression") && (DropDown.scene_type == "static" || DropDown.scene_type == "static response"))
+        ReplayCounter RC = player.GetComponent<ReplayCounter>();
+
+        if (!activeScene.ToLower().Contains("colorexpression") && (DropDown.scene_type == "static" || DropDown.scene_type == "static response")
+            || activeScene.ToLower().Contains("hiddentarget") && RC != null)
         {
             if (name[0].ToString().Contains("1"))
             {
@@ -385,63 +403,120 @@ public class TargetMessageReceive : MonoBehaviour
             targetSpawner.GetComponent<RisingPlatesDisabler>().currHiddenTarget = this.gameObject;
         }
     }
-
+     
     private void loadTargetColor()
     {
-        if(Scoring.ammo_setting.ToLower().Contains("live") || Scoring.ammo_setting.ToLower().Contains("infrared"))
+        if (StaticVariableManager.isMaterialUpdated && !activeScene.ToLower().Contains("claypigeon")) return; // Skip if material is already updated
+
+        if (Scoring.ammo_setting.ToLower().Contains("live") || Scoring.ammo_setting.ToLower().Contains("infrared"))
         {
             Renderer renderer = this.GetComponent<Renderer>();
-            //StaticVariableManager.targetColorSetting = "black";
-            switch (StaticVariableManager.targetColorSetting.ToLower())
+
+            if (activeScene.ToLower().Contains("duelingtree"))
             {
-                case "black":
-                    r = 42f / 255f;
-                    g = 42f / 255f;
-                    b = 42f / 255f;
-                    a = 1f;
-                    renderer.material.color = new Color(r, g, b, a);
+                // print("Point Reached: "+ StaticVariableManager.backgroundColorSetting);
+                if(StaticVariableManager.backgroundColorSetting.ToLower() == "blue")
+                {
+                    if (this.transform.name.Contains("1.Target"))
+                    {
+                        // Yellow
+                        r = 217f / 255f;
+                        g = 200f / 255f;
+                        b = 0f / 255f;
+                        a = 1f;
+                        renderer.material.color = new Color(r, g, b, a);
 
-                    break;
-                case "white":
-                    r = 212f / 255f;
-                    g = 212f / 255f;
-                    b = 212f / 255f;
-                    a = 1f;
-                    renderer.material.color = new Color(r, g, b, a);
+                    }
+                    else if (this.transform.name.Contains("2.Target"))
+                    {
+                        // Red
+                        r = 234f / 255f;
+                        g = 54f / 255f;
+                        b = 54f / 255f;
+                        a = 1f;
+                        renderer.material.color = new Color(r, g, b, a);
+                    }
+                }
+                else if (StaticVariableManager.backgroundColorSetting.ToLower() == "white")
+                {
+                    if (this.transform.name.Contains("1.Target"))
+                    {
+                        // Red
+                        r = 234f / 255f;
+                        g = 54f / 255f;
+                        b = 54f / 255f;
+                        a = 1f;
+                        renderer.material.color = new Color(r, g, b, a);
 
-                    break;
-                case "yellow":
-                    //fpsCam.backgroundColor = Color.blue;
-                    r = 217f / 255f;
-                    g = 200f / 255f;
-                    b = 0f / 255f;
-                    a = 1f;
-                    renderer.material.color = new Color(r, g, b, a);
+                    }
+                    else if (this.transform.name.Contains("2.Target"))
+                    {
+                        // Black
+                        r = 42f / 255f;
+                        g = 42f / 255f;
+                        b = 42f / 255f;
+                        a = 1f;
+                        renderer.material.color = new Color(r, g, b, a);
+                    }
+                }
 
-                    break;
-                case "red":
-                    r = 234f / 255f;
-                    g = 54f / 255f;
-                    b = 54f / 255f;
-                    a = 1f;
-                    renderer.material.color = new Color(r, g, b, a);
-                    break;
-                case "blue":
-                    //fpsCam.backgroundColor = Color.blue;
-                    r = 59f / 255f;
-                    g = 59f / 255f;
-                    b = 236f / 255f;
-                    a = 1f;
-                    renderer.material.color = new Color(r, g, b, a);
-                    break;
 
-                case "green":
-                    r = 54f / 255f;
-                    g = 181f / 255f;
-                    b = 54f / 255f;
-                    a = 1f;
-                    renderer.material.color = new Color(r, g, b, a);
-                    break;
+            }
+            else
+            {
+                
+                //StaticVariableManager.targetColorSetting = "black";
+                switch (StaticVariableManager.targetColorSetting.ToLower())
+                {
+                    case "black":
+                        r = 42f / 255f;
+                        g = 42f / 255f;
+                        b = 42f / 255f;
+                        a = 1f;
+                        renderer.material.color = new Color(r, g, b, a);
+
+                        break;
+                    case "white":
+                        r = 212f / 255f;
+                        g = 212f / 255f;
+                        b = 212f / 255f;
+                        a = 1f;
+                        renderer.material.color = new Color(r, g, b, a);
+
+                        break;
+                    case "yellow":
+                        //fpsCam.backgroundColor = Color.blue;
+                        r = 217f / 255f;
+                        g = 200f / 255f;
+                        b = 0f / 255f;
+                        a = 1f;
+                        renderer.material.color = new Color(r, g, b, a);
+
+                        break;
+                    case "red":
+                        r = 234f / 255f;
+                        g = 54f / 255f;
+                        b = 54f / 255f;
+                        a = 1f;
+                        renderer.material.color = new Color(r, g, b, a);
+                        break;
+                    case "blue":
+                        //fpsCam.backgroundColor = Color.blue;
+                        r = 59f / 255f;
+                        g = 59f / 255f;
+                        b = 236f / 255f;
+                        a = 1f;
+                        renderer.material.color = new Color(r, g, b, a);
+                        break;
+
+                    case "green":
+                        r = 54f / 255f;
+                        g = 181f / 255f;
+                        b = 54f / 255f;
+                        a = 1f;
+                        renderer.material.color = new Color(r, g, b, a);
+                        break;
+                }
             }
         }
     }
@@ -493,11 +568,11 @@ public class TargetMessageReceive : MonoBehaviour
             case 3:
                 if (previousPlateSpeed > StaticVariableManager.pigeonSpeed)
                 {
-                    destroyTimer = 5f - destroyTimer;
+                    destroyTimer = 5.5f - destroyTimer;
                 }
                 else
                 {
-                    destroyTimer = 5f;
+                    destroyTimer = 5.5f;
                 }
                 break;
             case 4:
@@ -530,6 +605,8 @@ public class TargetMessageReceive : MonoBehaviour
         activeScene = player.GetComponent<Shooting>().activeScene;
         // Debug.Log("I was hit:" + transform.name + " apply Damage sent:" + tagged);
 
+        // print("Point reached...");
+
         if (this.transform.name == tagged)
         {
             //print("I JUST HIT SOMETHING");  
@@ -543,7 +620,7 @@ public class TargetMessageReceive : MonoBehaviour
 
                 //this.gameObject.GetComponent<Renderer>().material.color = Color.blue;
             }
-            if(activeScene.ToLower().Contains("block"))
+            if (activeScene.ToLower().Contains("block"))
             {
                 //Shooting.numBlockesHit++;
                 //received = false;
@@ -566,20 +643,23 @@ public class TargetMessageReceive : MonoBehaviour
                     //changeState(states.patrol);
                 }
             }
-            if(activeScene.ToLower().Contains("fallingplat"))
+            if (activeScene.ToLower().Contains("fallingplat"))
             {
                 objectLive--;
                 isTargetTextActive = true;
+                MeshCollider nextTargetMeshCollider = next_Target.transform.gameObject.GetComponent<MeshCollider>();
+                MeshCollider thisTargetMeshCollider = this.transform.gameObject.GetComponent<MeshCollider>();
+
                 //platHitSound.Play();
                 currentPosition = gameObject.transform.position;
-                //targetText.text = "Hit " + this.gameObject.name + "";
-                //print("Head is DEADLY SHOT!!!!!!!!");
                 if (objectLive <= 0f)
                 {
                     player.GetComponent<ReplayCounter>().SetCurrReplayTarget(("next"), next_Target, this.gameObject); // Set current target to the currently activated target.
-                    this.transform.gameObject.GetComponent<MeshCollider>().enabled = false;
+                    if(thisTargetMeshCollider != null) thisTargetMeshCollider.enabled = false; // disable the hit target collider
 
                     next_Target.SetActive(true);
+                    if(nextTargetMeshCollider != null)
+                        nextTargetMeshCollider.enabled = true; // enable the next target collider
                     CloneAndRelease(this.transform.gameObject);
 
                     // this.transform.gameObject.SetActive(false);
@@ -622,7 +702,7 @@ public class TargetMessageReceive : MonoBehaviour
                 float center_point_speed = 5;
                 float side_point_speed = 3.5f;
 
-                print("I JUST HIT SOMETHING " + tagged);
+                // print("I JUST HIT SOMETHING " + tagged);
 
                 switch (transform.name)
                 {
@@ -719,7 +799,7 @@ public class TargetMessageReceive : MonoBehaviour
                         {
                             StaticVariableManager.greenCarSpeed = side_point_speed;
                         }
-                        //print("Test: Target hit..." + transform.name);
+                        //
                         break;
                 }
 
@@ -747,17 +827,12 @@ public class TargetMessageReceive : MonoBehaviour
             {
                 objectLive--;
                 string targetName = this.transform.name.Substring(2);
-
-                
-
                 Regex regex = new Regex(@"\d+");
                 Match match = regex.Match(targetName);
                 string progressValue = match.Value;
 
-                print("Target hit: " + targetName);
-                print("Progress Value is:" + progressValue);
-
                 SequenceManager.updateProgressValue(progressValue);
+                SequenceManager.updateSequencePoints(this.gameObject);
             }
             if (activeScene.ToLower().Contains("colorsequence"))
             {
@@ -765,12 +840,12 @@ public class TargetMessageReceive : MonoBehaviour
 
                 if(this.transform.name.ToLower().Contains(StaticVariableManager.currentTargetColor))
                 {
-                    StaticVariableManager.correctTargetsHits++;
+                    StaticVariableManager.lane1CorrectTargetsHits++;
                     //print("Correct hits: " + StaticVariableManager.correctColorHits);
                 }
                 else
                 {
-                    StaticVariableManager.wrongTargetsHits++;
+                    StaticVariableManager.lane1IncorrectTargetsHits++;
                     //print("Wrong hits: " + StaticVariableManager.wrongColorHits);
                 }
 
@@ -824,15 +899,38 @@ public class TargetMessageReceive : MonoBehaviour
 
 
             }
-            if(activeScene.ToLower().Contains("dueling"))
+            if (activeScene.ToLower().Contains("dueling"))
             {
                 player.GetComponent<ReplayCounter>().SetCurrReplayTarget("next", next_Target, this.gameObject); // Set current target to the currently activated target.
 
                 //platHitSound.Play();
                 next_Target.SetActive(true);
                 currect_Target.SetActive(false);
+
+                if(activeScene.ToLower().Contains("2lane"))
+                {
+                    if (this.transform.name.Contains("1.Target"))
+                    {
+                        StaticVariableManager.duelingTreeS1Points+= 2;
+                        StaticVariableManager.duelingTreeS2Points-= 2;
+                    }
+                    else if (this.transform.name.Contains("2.Target"))
+                    {
+                        StaticVariableManager.duelingTreeS2Points+= 2;
+                        StaticVariableManager.duelingTreeS1Points-= 2;
+                    }
+                }
+
+                if(StaticVariableManager.duelingTreeS1Points >= StaticVariableManager.numDuelingTreeTargets * 2||
+                    StaticVariableManager.duelingTreeS2Points >= StaticVariableManager.numDuelingTreeTargets * 2)
+                {
+                    StaticVariableManager.duelingTreeComplete = true;
+                    // print("dueling tree complete: " + StaticVariableManager.duelingTreeS1Points);
+                    // print("dueling tree complete: " + StaticVariableManager.duelingTreeS2Points);
+                }
+
             }
-            if(activeScene == "BasicResetable")
+            if (activeScene == "BasicResetable")
             {
                 platHitSound.Play();
                 isRandomState = targetController.GetComponent<TargetController>().isRandomState;
@@ -870,7 +968,7 @@ public class TargetMessageReceive : MonoBehaviour
                 Destroy(this.gameObject);
 
             }
-            if(activeScene.ToLower().Contains("basiccyclic"))
+            if (activeScene.ToLower().Contains("basiccyclic"))
             {
                 objectLive--;
                 isTargetTextActive = true;
@@ -981,13 +1079,13 @@ public class TargetMessageReceive : MonoBehaviour
                 //print("RE: Hit " + this.gameObject.name + ".");
                 //print("RE: Current is: " + StaticVariableManager.currentLane1Color.ToLower());
                 //print("RE: Next is: " + StaticVariableManager.nextLane1Color.ToLower());
-                if (objectLive <= 0f && tagged.ToLower().Contains("1"))
+                if (objectLive <= 0f && tagged.ToLower().Contains("baloon"))
                 {
                     Destroy(this.gameObject);
                 }
                 if (objectLive <= 0f && tagged.ToLower().Contains("2"))
                 {
-                    Destroy(this.gameObject);
+                    // Destroy(this.gameObject);
                 }
 
             }
@@ -1045,6 +1143,86 @@ public class TargetMessageReceive : MonoBehaviour
             {
                 StaticVariableManager.plateDestroyed = true;
                 Destroy(this.gameObject);
+            }
+            if (activeScene.ToLower().Contains("ippscextended"))
+            {
+                objectLive--;
+
+                if (objectLive <= 0f)
+                {
+                    player.GetComponent<ReplayCounter>().SetCurrReplayTarget(("next"), next_Target, this.gameObject); // Set current target to the currently activated target.
+                    this.transform.gameObject.GetComponent<MeshCollider>().enabled = false;
+
+                    next_Target.SetActive(true);
+                    CloneAndRelease(this.transform.gameObject);
+                }
+            }
+            else if (activeScene.Contains("VideoTraining"))
+            {
+                //print("Enabling");
+
+                if(this.transform.name.Contains("Threat"))
+                {
+                    this.GetComponent<MeshRenderer>().enabled = true;
+                    if (pair != null) pair.GetComponent<MeshRenderer>().enabled = true;
+
+                    GameObject videoManager = GameObject.FindGameObjectWithTag("VideoManager");
+                    TransitionVideoTracker TVT; //= videoManager.GetComponent<TransitionVideoTracker>();
+
+                    if (videoManager != null)
+                    {
+                        TVT = videoManager.GetComponent<TransitionVideoTracker>();
+                        if (TVT != null) TVT.ApplyVideoTransition();
+                    }
+                        
+                    
+
+                }
+            }
+            else if(activeScene.Contains("VideoTransition"))
+            {
+
+                if (this.transform.name.ToLower().Contains("head") ) // Only run for end videos
+                {
+                    // print("Head shot!!");
+                    StaticVariableManager.isHeadShot = true;
+                    /*if(TransitionVideoTracker.hardTargetVideos.Contains(StaticVariableManager.currentSetVideo))
+                        TransitionVideoTracker.currentVideoIndex++; // Skip the second attack*/
+                }
+
+                if (this.transform.name.Contains("Threat") )
+                {
+                    // print(this.transform.name);
+                    // If none threat is shot on the last video, Set NTS
+                    if (this.transform.name.Contains("None Threat"))
+                    {
+                        StaticVariableManager.isLastVideoNTS = true;
+                    }
+                    else
+                    {
+                        StaticVariableManager.isLastVideoNTS = false;
+                    }
+
+                    this.GetComponent<MeshRenderer>().enabled = true;
+                    if (pair != null) pair.GetComponent<MeshRenderer>().enabled = true;
+
+                    GameObject videoManager = GameObject.FindGameObjectWithTag("VideoManager");
+                    TransitionVideoTracker TVT; //= videoManager.GetComponent<TransitionVideoTracker>();
+
+                    if (videoManager != null)
+                    {
+                        TVT = videoManager.GetComponent<TransitionVideoTracker>();
+                        if (TVT != null)
+                        {
+                            TVT.ApplyVideoTransition(); 
+                        }
+                    }
+
+                }
+                else { }
+
+
+                StaticVariableManager.isHeadShot = false;
             }
             // ManageReactionTime(tagged);
         }
@@ -1128,8 +1306,6 @@ public class TargetMessageReceive : MonoBehaviour
     }
 
 
-
-
     private void ManageReactionTime(string target_name)
     {
         //Evaluate Current Lane
@@ -1182,52 +1358,17 @@ public class TargetMessageReceive : MonoBehaviour
         platHitSound = gameObject.AddComponent<AudioSource>();
         platHitSound.clip = platHitAudio;
     }
-    private void DestroyMesh()
+    private void ActivateTarget()
     {
-        var originalMesh = GetComponent<MeshFilter>().mesh;
-        originalMesh.RecalculateBounds();
-        var parts = new List<PartMesh>();
-        var subParts = new List<PartMesh>();
-
-        var mainPart = new PartMesh()
+        if(activeScene.ToLower().Contains("duelingtree") && StaticVariableManager.isStopTraining)
         {
-            UV = originalMesh.uv,
-            Vertices = originalMesh.vertices,
-            Normals = originalMesh.normals,
-            Triangles = new int[originalMesh.subMeshCount][],
-            Bounds = originalMesh.bounds
-        };
-        for (int i = 0; i < originalMesh.subMeshCount; i++)
-            mainPart.Triangles[i] = originalMesh.GetTriangles(i);
-
-        parts.Add(mainPart);
-
-        for (var c = 0; c < CutCascades; c++)
-        {
-            for (var i = 0; i < parts.Count; i++)
+            print("point reached...");
+            if(isTargetActivated == false)
             {
-                var bounds = parts[i].Bounds;
-                bounds.Expand(0.5f);
-
-                var plane = new Plane(UnityEngine.Random.onUnitSphere, new Vector3(UnityEngine.Random.Range(bounds.min.x, bounds.max.x),
-                                                                                   UnityEngine.Random.Range(bounds.min.y, bounds.max.y),
-                                                                                   UnityEngine.Random.Range(bounds.min.z, bounds.max.z)));
-
-
-                subParts.Add(GenerateMesh(parts[i], plane, true));
-                subParts.Add(GenerateMesh(parts[i], plane, false));
+                this.gameObject.SetActive(true);
+                isTargetActivated = true;
             }
-            parts = new List<PartMesh>(subParts);
-            subParts.Clear();
         }
-
-        for (var i = 0; i < parts.Count; i++)
-        {
-            parts[i].MakeGameobject(this);
-            parts[i].GameObject.GetComponent<Rigidbody>().AddForceAtPosition(parts[i].Bounds.center * ExplodeForce, transform.position);
-        }
-
-        Destroy(gameObject);
     }
     private PartMesh GenerateMesh(PartMesh original, Plane plane, bool left)
     {

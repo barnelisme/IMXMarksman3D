@@ -15,7 +15,7 @@ public class BackgroundImageManager : MonoBehaviour
 
     void Start()
     {
-        imageLocation = Path.Combine(FileManager.gamepath, "Background Images");
+        imageLocation = Path.Combine(FileManager.gamePath, "Background Images");
         activeScene = SceneManager.GetActiveScene().name;
 
         if(!Directory.Exists(imageLocation))
@@ -64,6 +64,28 @@ public class BackgroundImageManager : MonoBehaviour
             else
             {
                 currImageIndex = 3;
+            }
+        }
+        else if (CheckSystemUser() == "Aim And Shoot")
+        {
+            if (activeScene.ToLower().Contains("login"))
+            {
+                currImageIndex = 4;
+            }
+            else
+            {
+                currImageIndex = 4;
+            }
+        }
+        else if (CheckSystemUser() == "Presentation")
+        {
+            if (activeScene.ToLower().Contains("login"))
+            {
+                currImageIndex = 5;
+            }
+            else
+            {
+                currImageIndex = 5;
             }
         }
 

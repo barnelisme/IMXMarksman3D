@@ -35,18 +35,19 @@ public class RisingPlatesDisabler : MonoBehaviour
         {
             if(platesDisabled == false)
             {
-                if(activeScene.ToLower().Contains("ipecboard"))
+                if(activeScene.ToLower().Contains("ipecboard") || activeScene.ToLower().Contains("duelingtree"))
                 {
                     ActivatePlates();
                 }
                 else
                 {
-                    DeactivatePlates();
+                    // DeactivatePlates();
                 }
 
                 platesDisabled = true;
+                StaticVariableManager.lanePlatesDisabled = true;
 
-                if(activeScene.ToLower().Contains("risingplate"))
+                /*if(activeScene.ToLower().Contains("risingplate"))
                 {
                     int totalNumPlates = TestConditionsManager.numLaneTargets * TestConditionsManager.numLanes;
                     StaticVariableManager.lanePlatesDisabledCount++;
@@ -60,7 +61,7 @@ public class RisingPlatesDisabler : MonoBehaviour
                 else
                 {
                     StaticVariableManager.lanePlatesDisabled = true;
-                }
+                }*/
 
             }
         }

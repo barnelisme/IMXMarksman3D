@@ -208,7 +208,7 @@ public class LoadTargets : MonoBehaviour
                 //distanceText.text = "Distance: " + (distance).ToString();
 
 
-                if (Keyboard.current.upArrowKey.isPressed)
+                /*if (Keyboard.current.upArrowKey.isPressed)
                 {
                     Thread.Sleep(100);
                     if (distance == 5)
@@ -245,7 +245,7 @@ public class LoadTargets : MonoBehaviour
                         transform.position = new Vector3(transform.position.x, transform.position.y, transform.position.z - 30);
                     }
 
-                }
+                }*/
 
             }
             if (SceneManager.GetActiveScene().name.ToLower().Contains("bottle"))

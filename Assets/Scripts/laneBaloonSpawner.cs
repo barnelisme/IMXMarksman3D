@@ -5,6 +5,22 @@ using UnityEngine.SceneManagement;
 
 public class laneBaloonSpawner : MonoBehaviour
 {
+    [System.Serializable]
+    public class LaneData
+    {
+        public string nextColorName = "";
+        public string currentColorName = "";
+        public int holderSwitch = 0;
+        public int colorSwitchFlag = 0;
+        public bool nextColorSet = false;
+        public int currentColor = 1;
+        public int nextColor = 1;
+        public float switchTimer;
+        public float switchTimerSetVal = 0.25f;
+        public float switchDelay;
+        public float switchDelaySetVal = 0.2f;
+        public float timeToRespawnTimer;
+    }
 
     public GameObject[] spawnLocations;
     public GameObject[] whatToSpawnPrefab;
@@ -16,44 +32,18 @@ public class laneBaloonSpawner : MonoBehaviour
     string activeScene = "";
     int prefebIndex = 0, cloneIndex = 0;
     int spawn_location_index = 0;
-    int spawn_Preferb_index1 = 0;
-    int spawn_Preferb_index2 = 0;
-    int spawn_Preferb_Center = 0;
     int totBaloons = 0;
     int numBaloonsToSpawn = 0;
 
-    //Spawn TIMERS Variables
-    float timeToRespawn;
-    float timeToRespawn2;
+    // Unified collections for lanes
+    private Dictionary<int, LaneData> lanes = new Dictionary<int, LaneData>();
+    private int currentInstanceLaneNumber = 1; // Determines which lane this specific script instance handles
+
+    // Central timer for the center spawner behavior (originally tied to 1lane logic)
     float timeToRespawnCenter;
+    int spawn_Preferb_Center = 0;
+
     float setTimeToRespawn = 2f;
-
-    //Lane 1 Color Indicator Varibles
-    string nextLane1ColorName = "";
-    string currentLane1ColorName = "";
-    int lane1HolderSwitch = 0;
-    int lane1ColorSwitchFlag = 0;
-    bool nextLane1ColorSet = false;
-    int currentLane1Color = 1;
-    int nextLane1Color = 1;
-    float lane1SwitchTimer;
-    float lane1SwitchTimerSetVal = .5f;
-    float lane1SwitchDelay;
-    float lane1SwitchDelaySetVal = .2f;
-
-    //Lane 2 Color Indicator Varibles
-    string nextLane2ColorName = "";
-    string currentLane2ColorName = "";
-    int lane2HolderSwitch = 0;
-    int lane2ColorSwitchFlag = 0;
-    bool nextLane2ColorSet = false;
-    int currentLane2Color = 1;
-    int nextLane2Color = 1;
-    float lane2SwitchTimer;
-    float lane2SwitchTimerSetVal = .5f;
-    float lane2SwitchDelay;
-    float lane2SwitchDelaySetVal = .2f;
-
     bool isRightIndicator = false;
     bool isLeftIndicator = false;
     bool trainingStarted = false;
@@ -62,747 +52,401 @@ public class laneBaloonSpawner : MonoBehaviour
     void Start()
     {
         isLeftIndicator = true;
-        //spawnLocations = GameObject.FindGameObjectsWithTag("baloonSpawnPoint");
         activeScene = SceneManager.GetActiveScene().name;
         setTimeToRespawn = StaticVariableManager.intensity;
-        timeToRespawn = 0;
-        timeToRespawn2 = 0;
         timeToRespawnCenter = 0;
 
         StaticVariableManager.lane1StrikeOut = false;
         StaticVariableManager.lane2StrikeOut = false;
         StaticVariableManager.lane3StrikeOut = false;
 
-        //Lane 1 init
-        lane1SwitchTimer = lane1SwitchTimerSetVal;
-        lane1SwitchDelay = 0;
-        lane1SwitchTimerSetVal = StaticVariableManager.switchTimer;
+        // Detect which lane instance this script is attached to dynamically based on hierarchy naming
+        string objectName = this.transform.name.ToLower();
+        if (objectName.Contains("lane 1")) currentInstanceLaneNumber = 1;
+        else if (objectName.Contains("lane 2")) currentInstanceLaneNumber = 2;
+        else if (objectName.Contains("lane 3")) currentInstanceLaneNumber = 3;
+        else currentInstanceLaneNumber = 1; // Default fallback
 
-        //Lane 2 init
-        lane2SwitchTimer = lane2SwitchTimerSetVal;
-        lane2SwitchDelay = 0;
-        lane2SwitchTimerSetVal = StaticVariableManager.switchTimer;
-        setLane1NextColor();
-        setLane2NextColor();
-        nextLane1ColorSet = true;
-        nextLane2ColorSet = true;
+        // Initialize tracking data for lanes matching original initial delay cycles
+        InitializeLane(1, 0.25f);
+        InitializeLane(2, 0.5f);
+        InitializeLane(3, 0.5f);
     }
 
-    // Update is called once per frame
+    private void InitializeLane(int laneNum, float defaultTimerSet)
+    {
+        LaneData data = new LaneData();
+        data.switchTimerSetVal = defaultTimerSet;
+        data.switchTimer = data.switchTimerSetVal;
+        data.switchDelay = 0f;
+
+        lanes[laneNum] = data;
+        SetLaneNextColor(laneNum);
+        data.nextColorSet = true;
+
+        // Re-sync standard config reference values after initial structural set
+        data.switchTimerSetVal = StaticVariableManager.switchTimer;
+    }
+
     void Update()
     {
+        bool isTrainingPaused = StaticVariableManager.isTrainingPause;
 
-        if(activeScene.ToLower().Contains("1lane"))
+        if (activeScene.ToLower().Contains("1lane"))
         {
-            if (StaticVariableManager.isTrainingPause == false)
+            if (!isTrainingPaused)
             {
-                if (StaticVariableManager.lane1StrikeOut == false && Shooting.lane1TargetsComplete == false)
-                {
-                    if (countDownStart.start_training)
-                    {
-                        manage1LaneColorIndicator();
-                        manage1LaneColorHolder();
-                        //trainingStarted = true;
-                    }
-                    else
-                    {
-                        switchOff1LaneIndicator();
-                    }
-                }
-            }
-            else
-            {
-                foreach (GameObject obj in leftColorIndicators)
-                {
-                    obj.SetActive(false);
-                }
-                foreach (GameObject obj in rightColorIndicators)
-                {
-                    obj.SetActive(false);
-                }
-            }
-
-
-            if (trainingStarted)
-            {
-                if (countDownStart.start_training)
-                {
-                    manage1LaneTimers();
-                }
-            }
-            else
-            {
-                manage1LaneTimers();
-            }
-
-        }
-        else if(activeScene.ToLower().Contains("2lane"))
-        {
-            if(StaticVariableManager.isTrainingPause == false)
-            {
-                if (this.transform.name.ToLower().Contains("lane 1") && !StaticVariableManager.lane1StrikeOut && !Shooting.lane1TargetsComplete)
+                if (!StaticVariableManager.lane1StrikeOut && !Shooting.lane1TargetsComplete)
                 {
                     if (countDownStart.start_training)
                     {
                         isLeftIndicator = true;
-                        manage1LaneColorIndicator();
-                        //manage1LaneColorHolder();
-                        //trainingStarted = true;
+                        isRightIndicator = false;
+                        ManageLaneColorIndicator(1);
+                        Manage1LaneColorHolder();
                     }
                     else
                     {
-                        switchOff1LaneIndicator();
+                        SwitchOffLaneIndicator(1);
                     }
                 }
-                else if (this.transform.name.ToLower().Contains("lane 2") && !StaticVariableManager.lane2StrikeOut && !Shooting.lane2TargetsComplete)
+            }
+            else
+            {
+                ClearAllIndicators();
+            }
+
+            // Manage Timers for Single Lane mode
+            if (trainingStarted && !countDownStart.start_training)
+            {
+                // Idle context from original script structure
+            }
+            else
+            {
+                Manage1LaneModeTimers();
+            }
+        }
+        else if (activeScene.ToLower().Contains("2lane") || activeScene.ToLower().Contains("3lane"))
+        {
+            // Execute logic matching the active lane assigned to this instance
+            if (!isTrainingPaused)
+            {
+                bool strikeOut = GetLaneStrikeOut(currentInstanceLaneNumber);
+                bool targetsComplete = GetLaneTargetsComplete(currentInstanceLaneNumber);
+
+                if (!strikeOut && !targetsComplete)
                 {
                     if (countDownStart.start_training)
                     {
-                        isRightIndicator = true;
-                        manage2LaneColorIndicator();
-                        //manage2LaneColorHolder();
-                        //trainingStarted = true;
+                        // Dynamic indicator group assignments matching original target maps
+                        if (currentInstanceLaneNumber == 1)
+                        {
+                            isLeftIndicator = true;
+                            isRightIndicator = false;
+                        }
+                        else if (currentInstanceLaneNumber == 2 || currentInstanceLaneNumber == 3)
+                        {
+                            isLeftIndicator = false;
+                            isRightIndicator = true;
+                        }
+
+                        ManageLaneColorIndicator(currentInstanceLaneNumber);
                     }
                     else
                     {
-                        switchOff2LaneIndicator();
+                        SwitchOffLaneIndicator(currentInstanceLaneNumber);
                     }
                 }
             }
 
-            if (StaticVariableManager.lane1StrikeOut == true || Shooting.lane1TargetsComplete || StaticVariableManager.isTrainingPause == true)
+            // Deactivate UI elements dynamically if strikes/completions/pauses occur
+            if (StaticVariableManager.lane1StrikeOut || Shooting.lane1TargetsComplete || isTrainingPaused)
             {
-                foreach (GameObject obj in leftColorIndicators)
-                {
-                    obj.SetActive(false);
-                }
+                ToggleIndicatorGroup(leftColorIndicators, false);
             }
-            if (StaticVariableManager.lane2StrikeOut == true || Shooting.lane2TargetsComplete || StaticVariableManager.isTrainingPause == true)
+            if (StaticVariableManager.lane2StrikeOut || Shooting.lane2TargetsComplete || StaticVariableManager.lane3StrikeOut || Shooting.lane3TargetsComplete || isTrainingPaused)
             {
-                foreach (GameObject obj in rightColorIndicators)
-                {
-                    obj.SetActive(false);
-                }
+                ToggleIndicatorGroup(rightColorIndicators, false);
             }
 
-
-            if (trainingStarted)
-            {
-                if (countDownStart.start_training)
-                {
-                    manage2LaneTimers();
-                }
-            }
-            else
-            {
-                manage2LaneTimers();
-            }
-
+            // Timer and Spawning progression updates
+            ManageMultiLaneTimers(currentInstanceLaneNumber);
         }
 
-
-        //Update
-        updateSpawningData();
+        UpdateSpawningConfigData();
     }
 
-    private void updateLane1GlobalVaribales()
+    private void UpdateLaneGlobalVariables(int laneNumber, LaneData data)
     {
-        if (nextLane1ColorSet == false)
+        if (data.nextColorSet == false)
         {
-            StaticVariableManager.currentLane1Color = currentLane1ColorName;
-            StaticVariableManager.nextLane1Color = nextLane1ColorName;
+            if (laneNumber == 1)
+            {
+                StaticVariableManager.currentLane1Color = data.currentColorName;
+                StaticVariableManager.nextLane1Color = data.nextColorName;
+            }
+            else if (laneNumber == 2)
+            {
+                StaticVariableManager.currentLane2Color = data.currentColorName;
+                StaticVariableManager.nextLane2Color = data.nextColorName;
+            }
+            else if (laneNumber == 3)
+            {
+                StaticVariableManager.currentLane3Color = data.currentColorName;
+                StaticVariableManager.nextLane3Color = data.nextColorName;
+            }
         }
-
-    }
-    private void updateLane2GlobalVaribales()
-    {
-        if (nextLane2ColorSet == false)
-        {
-            StaticVariableManager.currentLane2Color = currentLane2ColorName;
-            StaticVariableManager.nextLane2Color = nextLane2ColorName;
-        }
-
     }
 
-    private void manage1LaneColorHolder()
+    private void Manage1LaneColorHolder()
     {
-        if (lane1SwitchTimer <= 0f)
+        LaneData data = lanes[1];
+        if (data.switchTimer <= 0f)
         {
-            lane1HolderSwitch = Random.Range(1, 4);
-            switch(lane1HolderSwitch)
+            data.holderSwitch = Random.Range(1, 5);
+            switch (data.holderSwitch)
             {
                 case 1:
-                    isLeftIndicator = true;
-                    isRightIndicator = false;
-                    break;
-                case 2:
-                    isLeftIndicator = false;
-                    isRightIndicator = true;
-                    break;
                 case 3:
                     isLeftIndicator = true;
                     isRightIndicator = false;
                     break;
+                case 2:
                 case 4:
                     isLeftIndicator = false;
                     isRightIndicator = true;
                     break;
-
             }
         }
     }
 
-    private void manage1LaneColorIndicator()
+    private void ManageLaneColorIndicator(int laneNumber)
     {
-        
-        if(lane1SwitchTimer <= 0f)
+        if (!lanes.ContainsKey(laneNumber)) return;
+        LaneData data = lanes[laneNumber];
+
+        if (data.switchTimer <= 0f)
         {
-            switchOff1LaneIndicator();
-            if(lane1SwitchDelay <= 0f)
+            SwitchOffLaneIndicator(laneNumber);
+            if (data.switchDelay <= 0f)
             {
-                changeIndicatorColor();
-                lane1SwitchTimer = lane1SwitchTimerSetVal;
-                lane1SwitchDelay = lane1SwitchDelaySetVal;
-                currentLane1Color = lane1ColorSwitchFlag;
-                nextLane1ColorSet = false;
+                ChangeIndicatorColor(laneNumber);
+                data.switchTimer = data.switchTimerSetVal;
+                data.switchDelay = data.switchDelaySetVal;
+                data.currentColor = data.colorSwitchFlag;
+                data.nextColorSet = false;
             }
             else
             {
-                //print("RE: delay" + switchDelay);
-                lane1SwitchDelay -= Time.deltaTime * 1;
+                data.switchDelay -= Time.deltaTime;
             }
         }
         else
         {
-            if(nextLane1ColorSet == false)
+            if (!data.nextColorSet)
             {
-                setLane1NextColor();
-                nextLane1ColorSet = true;
+                SetLaneNextColor(laneNumber);
+                data.nextColorSet = true;
             }
-
-            lane1SwitchTimer -= Time.deltaTime * 1;
-        }
-    }
-    private void manage2LaneColorIndicator()
-    {
-
-        if (lane2SwitchTimer <= 0f)
-        {
-            switchOff1LaneIndicator();
-            if (lane2SwitchDelay <= 0f)
-            {
-                changeIndicatorColor();
-                lane2SwitchTimer = lane2SwitchTimerSetVal;
-                lane2SwitchDelay = lane2SwitchDelaySetVal;
-                currentLane2Color = lane2ColorSwitchFlag;
-                nextLane2ColorSet = false;
-            }
-            else
-            {
-                //print("RE: delay" + switchDelay);
-                lane2SwitchDelay -= Time.deltaTime * 1;
-            }
-        }
-        else
-        {
-            if (nextLane2ColorSet == false)
-            {
-                setLane2NextColor();
-                nextLane2ColorSet = true;
-            }
-
-            lane2SwitchTimer -= Time.deltaTime * 1;
+            data.switchTimer -= Time.deltaTime;
         }
     }
 
-    private void setLane1NextColor()
+    private void SetLaneNextColor(int laneNumber)
     {
-        lane1ColorSwitchFlag = Random.Range(1, whatToSpawnPrefab.Length);
-        if (lane1ColorSwitchFlag == nextLane1Color)
+        LaneData data = lanes[laneNumber];
+        data.colorSwitchFlag = Random.Range(1, whatToSpawnPrefab.Length);
+
+        if (data.colorSwitchFlag == data.nextColor)
         {
-            if (lane1ColorSwitchFlag < whatToSpawnPrefab.Length)
-            {
-                lane1ColorSwitchFlag++;
-            }
-            else
-            {
-                lane1ColorSwitchFlag = 1;
-            }
-            nextLane1Color = lane1ColorSwitchFlag;
+            if (data.colorSwitchFlag < whatToSpawnPrefab.Length) data.colorSwitchFlag++;
+            else data.colorSwitchFlag = 1;
         }
-        else
-        {
-            nextLane1Color = lane1ColorSwitchFlag;
-        }
+        data.nextColor = data.colorSwitchFlag;
 
-        switch(nextLane1Color - 1)
-        {
-            case 0:
-                nextLane1ColorName = "Black";
-                break;
-            case 1:
-                nextLane1ColorName = "Blue";
-                break;
-            case 2:
-                nextLane1ColorName = "Brown";
-                break;
-            case 3:
-                nextLane1ColorName = "Green";
-                break;
-            case 4:
-                nextLane1ColorName = "Red";
-                break;
+        string[] colorNames = { "Black", "Blue", "Brown", "Green", "Red" };
 
-        }
-        switch (currentLane1Color - 1)
-        {
-            case 0:
-                currentLane1ColorName = "Black";
-                break;
-            case 1:
-                currentLane1ColorName = "Blue";
-                break;
-            case 2:
-                currentLane1ColorName = "Brown";
-                break;
-            case 3:
-                currentLane1ColorName = "Green";
-                break;
-            case 4:
-                currentLane1ColorName = "Red";
-                break;
+        int nextIdx = data.nextColor - 1;
+        if (nextIdx >= 0 && nextIdx < colorNames.Length) data.nextColorName = colorNames[nextIdx];
 
-        }
+        int currentIdx = data.currentColor - 1;
+        if (currentIdx >= 0 && currentIdx < colorNames.Length) data.currentColorName = colorNames[currentIdx];
 
-        updateLane1GlobalVaribales();
-    }
-    private void setLane2NextColor()
-    {
-        lane2ColorSwitchFlag = Random.Range(1, whatToSpawnPrefab.Length);
-        if (lane2ColorSwitchFlag == nextLane2Color)
-        {
-            if (lane2ColorSwitchFlag < whatToSpawnPrefab.Length)
-            {
-                lane2ColorSwitchFlag++;
-            }
-            else
-            {
-                lane2ColorSwitchFlag = 1;
-            }
-            nextLane2Color = lane2ColorSwitchFlag;
-        }
-        else
-        {
-            nextLane2Color = lane2ColorSwitchFlag;
-        }
-
-
-
-        switch (nextLane2Color - 1)
-        {
-            case 0:
-                nextLane2ColorName = "Black";
-                break;
-            case 1:
-                nextLane2ColorName = "Blue";
-                break;
-            case 2:
-                nextLane2ColorName = "Brown";
-                break;
-            case 3:
-                nextLane2ColorName = "Green";
-                break;
-            case 4:
-                nextLane2ColorName = "Red";
-                break;
-
-        }
-        switch (currentLane2Color - 1)
-        {
-            case 0:
-                currentLane2ColorName = "Black";
-                break;
-            case 1:
-                currentLane2ColorName = "Blue";
-                break;
-            case 2:
-                currentLane2ColorName = "Brown";
-                break;
-            case 3:
-                currentLane2ColorName = "Green";
-                break;
-            case 4:
-                currentLane2ColorName = "Red";
-                break;
-
-        }
-
-        updateLane2GlobalVaribales();
+        UpdateLaneGlobalVariables(laneNumber, data);
     }
 
-    private void switchOff1LaneIndicator()
+    private void SwitchOffLaneIndicator(int laneNumber)
     {
-        if (isLeftIndicator)
-        {
-            foreach (GameObject obj in leftColorIndicators)
-            {
-                obj.SetActive(false);
-            }
-        }
-        if (isRightIndicator)
-        {
-            foreach (GameObject obj in rightColorIndicators)
-            {
-                obj.SetActive(false);
-            }
-        }
+        if (isLeftIndicator) ToggleIndicatorGroup(leftColorIndicators, false);
+        if (isRightIndicator) ToggleIndicatorGroup(rightColorIndicators, false);
         StaticVariableManager.nextColorSet = false;
     }
-    private void switchOff2LaneIndicator()
-    {
-        if (isLeftIndicator)
-        {
-            foreach (GameObject obj in leftColorIndicators)
-            {
-                obj.SetActive(false);
-            }
-        }
-        if (isRightIndicator)
-        {
-            foreach (GameObject obj in rightColorIndicators)
-            {
-                obj.SetActive(false);
-            }
-        }
-        StaticVariableManager.nextColorSet = false;
-    }
-    private void changeIndicatorColor()
-    {
 
-        if(this.transform.name.ToLower().Contains("lane 1"))
-        {
-            if (isLeftIndicator)
-            {
-                int counter = 1;
-                foreach (GameObject obj in leftColorIndicators)
-                {
-                    if (counter == lane1ColorSwitchFlag)
-                    {
-                        obj.SetActive(true);
-                    }
-                    else
-                    {
-                        //obj.SetActive(false);
-                    }
-                    counter++;
-                }
-            }
-            if (isRightIndicator)
-            {
-                int counter = 1;
-                foreach (GameObject obj in rightColorIndicators)
-                {
-                    if (counter == lane1ColorSwitchFlag)
-                    {
-                        obj.SetActive(true);
-                    }
-                    else
-                    {
-                        //obj.SetActive(false);
-                    }
-                    counter++;
-                }
-            }
-        }
-        if (this.transform.name.ToLower().Contains("lane 2"))
-        {
-            if (isLeftIndicator)
-            {
-                int counter = 1;
-                foreach (GameObject obj in leftColorIndicators)
-                {
-                    if (counter == lane1ColorSwitchFlag)
-                    {
-                        obj.SetActive(true);
-                    }
-                    else
-                    {
-                        //obj.SetActive(false);
-                    }
-                    counter++;
-                }
-            }
-            if (isRightIndicator)
-            {
-                int counter = 1;
-                foreach (GameObject obj in rightColorIndicators)
-                {
-                    if (counter == lane2ColorSwitchFlag)
-                    {
-                        obj.SetActive(true);
-                    }
-                    else
-                    {
-                        //obj.SetActive(false);
-                    }
-                    counter++;
-                }
-            }
-        }
+    private void ChangeIndicatorColor(int laneNumber)
+    {
+        LaneData data = lanes[laneNumber];
+
+        if (isLeftIndicator) SetActiveIndicatorByFlag(leftColorIndicators, data.colorSwitchFlag);
+        if (isRightIndicator) SetActiveIndicatorByFlag(rightColorIndicators, data.colorSwitchFlag);
+
         StaticVariableManager.nextColorSet = true;
     }
 
-    private void manage1LaneTimers()
+    private void SetActiveIndicatorByFlag(GameObject[] indicators, int flagValue)
     {
-        int randomInc = 0;
-        int randomIndex = 0;
-
-        //spawner 1
-        if (timeToRespawn <= 0f)
+        int counter = 1;
+        foreach (GameObject obj in indicators)
         {
-
-            randomIndex = Random.Range(0, whatToSpawnPrefab.Length + 8);
-            if(randomIndex < whatToSpawnPrefab.Length)
+            if (obj != null)
             {
-                spawn_Preferb_index1 = randomIndex;
+                obj.SetActive(counter == flagValue);
             }
-            else
-            {
-                spawn_Preferb_index1 = nextLane1Color - 1;
-            }
-            spawnBaloon_1();
+            counter++;
+        }
+    }
 
-            randomInc = Random.Range(1, 3);
-            switch (randomInc)
-            {
-                case 1:
-                    timeToRespawn = setTimeToRespawn + 0.5f;
-                    break;
-                case 2:
-                    timeToRespawn = setTimeToRespawn + 0.75f;
-                    break;
-                case 3:
-                    timeToRespawn = setTimeToRespawn + 0.9f;
-                    break;
-                case 4:
-                    timeToRespawn = setTimeToRespawn + 1.2f;
-                    break;
+    private void Manage1LaneModeTimers()
+    {
+        UpdateRespawnBaseValue();
+        float[] additions = { 1f, 1.5f, 1.6f, 1.8f };
 
-            }
+        // Process Lane 1 Spawner
+        LaneData lane1 = lanes[1];
+        if (lane1.timeToRespawnTimer <= 0f)
+        {
+            int randomIndex = Random.Range(0, whatToSpawnPrefab.Length + 8);
+            int spawnIndex = (randomIndex < whatToSpawnPrefab.Length) ? randomIndex : (lane1.nextColor - 1);
 
+            SpawnBalloonDynamic(spawnIndex, 0, 2);
+            lane1.timeToRespawnTimer = setTimeToRespawn + additions[Random.Range(0, additions.Length)];
         }
         else
         {
-            timeToRespawn -= Time.deltaTime * 1;
+            lane1.timeToRespawnTimer -= Time.deltaTime;
         }
 
-        //spawner 2
-        if (timeToRespawn2 <= 0f)
+        // Process Lane 2 Spawner
+        LaneData lane2 = lanes[2];
+        if (lane2.timeToRespawnTimer <= 0f)
         {
-            randomIndex = Random.Range(0, whatToSpawnPrefab.Length + 8);
-            if (randomIndex < whatToSpawnPrefab.Length)
-            {
-                spawn_Preferb_index2 = randomIndex;
-            }
-            else
-            {
-                spawn_Preferb_index2 = nextLane1Color - 1;
-            }
-            spawnBaloon_2();
+            int randomIndex = Random.Range(0, whatToSpawnPrefab.Length + 8);
+            int spawnIndex = (randomIndex < whatToSpawnPrefab.Length) ? randomIndex : (lane1.nextColor - 1);
 
-            randomInc = Random.Range(1, 4);
-            switch (randomInc)
-            {
-                case 1:
-                    timeToRespawn2 = setTimeToRespawn + 0.4f;
-                    break;
-                case 2:
-                    timeToRespawn2 = setTimeToRespawn + 0.6f;
-                    break;
-                case 3:
-                    timeToRespawn2 = setTimeToRespawn + 0.8f;
-                    break;
-                case 4:
-                    timeToRespawn2 = setTimeToRespawn + 1.4f;
-                    break;
-
-            }
+            SpawnBalloonDynamic(spawnIndex, 1, 3);
+            lane2.timeToRespawnTimer = setTimeToRespawn + additions[Random.Range(0, additions.Length)];
         }
         else
         {
-            timeToRespawn2 -= Time.deltaTime * 1;
+            lane2.timeToRespawnTimer -= Time.deltaTime;
         }
 
-        //spawner center
+        // Process Spawner Center
         if (timeToRespawnCenter <= 0f)
         {
-            randomIndex = Random.Range(0, whatToSpawnPrefab.Length + 8);
-            if (randomIndex < whatToSpawnPrefab.Length)
-            {
-                spawn_Preferb_Center = randomIndex;
-            }
-            else
-            {
-                spawn_Preferb_Center = nextLane1Color - 1;
-            }
-            spawnCenterBaloon();
+            int randomIndex = Random.Range(0, whatToSpawnPrefab.Length + 8);
+            spawn_Preferb_Center = (randomIndex < whatToSpawnPrefab.Length) ? randomIndex : (lane1.nextColor - 1);
 
-            randomInc = Random.Range(1, 4);
-            switch (randomInc)
-            {
-                case 1:
-                    timeToRespawnCenter = setTimeToRespawn + 0.4f;
-                    break;
-                case 2:
-                    timeToRespawnCenter = setTimeToRespawn + 0.6f;
-                    break;
-                case 3:
-                    timeToRespawnCenter = setTimeToRespawn + 0.8f;
-                    break;
-                case 4:
-                    timeToRespawnCenter = setTimeToRespawn + 1.4f;
-                    break;
-
-            }
+            SpawnBalloonDynamic(spawn_Preferb_Center, 4, 5);
+            timeToRespawnCenter = setTimeToRespawn + additions[Random.Range(0, additions.Length)];
         }
         else
         {
-            timeToRespawnCenter -= Time.deltaTime * 1;
+            timeToRespawnCenter -= Time.deltaTime;
         }
     }
-    private void manage2LaneTimers()
+
+    private void ManageMultiLaneTimers(int laneNumber)
     {
+        UpdateRespawnBaseValue();
+        if (!lanes.ContainsKey(laneNumber)) return;
 
-        int randomInc = 0;
-        int randomIndex = 0;
+        bool strikeOut = GetLaneStrikeOut(laneNumber);
+        if (strikeOut) return;
 
-        if(this.transform.name.ToLower().Contains("lane 1") && StaticVariableManager.lane1StrikeOut == false)
+        LaneData data = lanes[laneNumber];
+        float[] additions = { 1f, 1.5f, 1.6f, 1.8f };
+
+        if (data.timeToRespawnTimer <= 0f)
         {
-            //spawner 1
-            if (timeToRespawn <= 0f)
-            {
+            int randomIndex = Random.Range(0, whatToSpawnPrefab.Length + 11);
+            int spawnPrefabIndex = (randomIndex < whatToSpawnPrefab.Length) ? randomIndex : (data.nextColor - 1);
 
-                randomIndex = Random.Range(0, whatToSpawnPrefab.Length + 11);
-                if (randomIndex < whatToSpawnPrefab.Length)
-                {
-                    spawn_Preferb_index1 = randomIndex;
-                }
-                else
-                {
-                    spawn_Preferb_index1 = nextLane1Color - 1;
-                }
-                spawnBaloon_1();
+            int totalLanesInScene = activeScene.ToLower().Contains("3lane") ? 3 : 2;
 
-                randomInc = Random.Range(1, 3);
-                switch (randomInc)
-                {
-                    case 1:
-                        timeToRespawn = setTimeToRespawn + 0.5f;
-                        break;
-                    case 2:
-                        timeToRespawn = setTimeToRespawn + 0.75f;
-                        break;
-                    case 3:
-                        timeToRespawn = setTimeToRespawn + 0.9f;
-                        break;
-                    case 4:
-                        timeToRespawn = setTimeToRespawn + 1.2f;
-                        break;
+            int upLocationIdx = laneNumber - 1;
+            int downLocationIdx = (laneNumber - 1) + totalLanesInScene;
 
-                }
-
-            }
-            else
-            {
-                timeToRespawn -= Time.deltaTime * 1;
-            }
+            SpawnBalloonDynamic(spawnPrefabIndex, upLocationIdx, downLocationIdx);
+            data.timeToRespawnTimer = setTimeToRespawn + additions[Random.Range(0, mathMin(additions.Length, 3))];
         }
-
-        if (this.transform.name.ToLower().Contains("lane 2") && StaticVariableManager.lane2StrikeOut == false)
+        else
         {
-            //spawner 2
-            if (timeToRespawn2 <= 0f)
-            {
-                randomIndex = Random.Range(0, whatToSpawnPrefab.Length + 11);
-                if (randomIndex < whatToSpawnPrefab.Length)
-                {
-                    spawn_Preferb_index2 = randomIndex;
-                }
-                else
-                {
-                    spawn_Preferb_index2 = nextLane2Color - 1;
-                }
-                spawnBaloon_2();
-
-                randomInc = Random.Range(1, 4);
-                switch (randomInc)
-                {
-                    case 1:
-                        timeToRespawn2 = setTimeToRespawn + 0.4f;
-                        break;
-                    case 2:
-                        timeToRespawn2 = setTimeToRespawn + 0.6f;
-                        break;
-                    case 3:
-                        timeToRespawn2 = setTimeToRespawn + 0.8f;
-                        break;
-                    case 4:
-                        timeToRespawn2 = setTimeToRespawn + 1.4f;
-                        break;
-
-                }
-            }
-            else
-            {
-                timeToRespawn2 -= Time.deltaTime * 1;
-            }
+            data.timeToRespawnTimer -= Time.deltaTime;
         }
-
     }
 
-    private void updateSpawningData()
+    private void SpawnBalloonDynamic(int prefabIndex, int upwardSpawnLocIdx, int downwardSpawnLocIdx)
+    {
+        if (prefabIndex < 0 || prefabIndex >= whatToSpawnPrefab.Length) return;
+
+        string dir = TestConditionsManager.baloonDirection.ToLower();
+        int targetSpawnIdx = -1;
+
+        if (dir.Contains("upwards")) targetSpawnIdx = upwardSpawnLocIdx;
+        else if (dir.Contains("downwards")) targetSpawnIdx = downwardSpawnLocIdx;
+
+        if (targetSpawnIdx != -1 && targetSpawnIdx < spawnLocations.Length && spawnLocations[targetSpawnIdx] != null)
+        {
+            whatToSpawnClone[prefabIndex] = Instantiate(whatToSpawnPrefab[prefabIndex], spawnLocations[targetSpawnIdx].transform.position, Quaternion.identity) as GameObject;
+        }
+    }
+
+    private void UpdateRespawnBaseValue()
+    {
+        float speed = StaticVariableManager.verticalSpeed;
+        if (speed <= 1) setTimeToRespawn = 3.5f;
+        else if (speed > 1 && speed < 2) setTimeToRespawn = 2f;
+        else if (speed >= 2) setTimeToRespawn = 0.8f;
+    }
+
+    private void UpdateSpawningConfigData()
     {
         setTimeToRespawn = StaticVariableManager.intensity;
-        lane1SwitchTimerSetVal = StaticVariableManager.switchTimer;
-        lane2SwitchTimerSetVal = StaticVariableManager.switchTimer;
+        foreach (var laneKey in lanes.Keys)
+        {
+            lanes[laneKey].switchTimerSetVal = StaticVariableManager.switchTimer;
+        }
     }
 
-    private void spawnBaloon_1()
+    private void ToggleIndicatorGroup(GameObject[] indicators, bool state)
     {
-        if(TestConditionsManager.baloonDirection.ToLower().Contains("upwards"))
+        foreach (GameObject obj in indicators)
         {
-
-            whatToSpawnClone[spawn_Preferb_index1] = Instantiate(whatToSpawnPrefab[spawn_Preferb_index1], spawnLocations[0].transform.position, Quaternion.Euler(0, 0, 0)) as GameObject;
+            if (obj != null) obj.SetActive(state);
         }
-        if(TestConditionsManager.baloonDirection.ToLower().Contains("downwards"))
-        {
-
-            whatToSpawnClone[spawn_Preferb_index1] = Instantiate(whatToSpawnPrefab[spawn_Preferb_index1], spawnLocations[2].transform.position, Quaternion.Euler(0, 0, 0)) as GameObject;
-        }
-
     }
 
-    private void spawnBaloon_2()
+    private void ClearAllIndicators()
     {
-        if (TestConditionsManager.baloonDirection.ToLower().Contains("upwards"))
-        {
-            whatToSpawnClone[spawn_Preferb_index2] = Instantiate(whatToSpawnPrefab[spawn_Preferb_index2], spawnLocations[1].transform.position, Quaternion.Euler(0, 0, 0)) as GameObject;
-        }
-        if(TestConditionsManager.baloonDirection.ToLower().Contains("downwards"))
-        {
-            whatToSpawnClone[spawn_Preferb_index2] = Instantiate(whatToSpawnPrefab[spawn_Preferb_index2], spawnLocations[3].transform.position, Quaternion.Euler(0, 0, 0)) as GameObject;
-        }
+        ToggleIndicatorGroup(leftColorIndicators, false);
+        ToggleIndicatorGroup(rightColorIndicators, false);
     }
 
-    private void spawnCenterBaloon()
+    private bool GetLaneStrikeOut(int laneNum)
     {
-        if (TestConditionsManager.baloonDirection.ToLower().Contains("upwards"))
-        {
-            whatToSpawnClone[spawn_Preferb_Center] = Instantiate(whatToSpawnPrefab[spawn_Preferb_Center], spawnLocations[4].transform.position, Quaternion.Euler(0, 0, 0)) as GameObject;
-        }
-        if (TestConditionsManager.baloonDirection.ToLower().Contains("downwards"))
-        {
-            whatToSpawnClone[spawn_Preferb_Center] = Instantiate(whatToSpawnPrefab[spawn_Preferb_Center], spawnLocations[5].transform.position, Quaternion.Euler(0, 0, 0)) as GameObject;
-        }
+        if (laneNum == 1) return StaticVariableManager.lane1StrikeOut;
+        if (laneNum == 2) return StaticVariableManager.lane2StrikeOut;
+        if (laneNum == 3) return StaticVariableManager.lane3StrikeOut;
+        return false;
     }
+
+    private bool GetLaneTargetsComplete(int laneNum)
+    {
+        if (laneNum == 1) return Shooting.lane1TargetsComplete;
+        if (laneNum == 2) return Shooting.lane2TargetsComplete;
+        if (laneNum == 3) return Shooting.lane3TargetsComplete;
+        return false;
+    }
+
+    private int mathMin(int a, int b) { return (a < b) ? a : b; }
 }

@@ -12,7 +12,7 @@ public class TargetScaleUIManager : MonoBehaviour
     public Button controlButton; // Assign the button in the Inspector
     public GameObject buttonHolder;
     private Color greenColor = Color.green;
-    private Color redColor = Color.black;
+    private Color blackColor = Color.black;
     private bool activeStatus = true;
     private string activeScene = "";
     private Image buttonImage;
@@ -22,8 +22,8 @@ public class TargetScaleUIManager : MonoBehaviour
         activeScene = SceneManager.GetActiveScene().name;
         buttonImage = controlButton.GetComponent<Image>();
 
-        if (activeScene.ToLower().Contains("risingplate") || activeScene.ToLower().Contains("cyclic") 
-            || activeScene.ToLower().Contains("sequence") || activeScene.ToLower().Contains("ipec") 
+        if (activeScene.ToLower().Contains("risingplate") || activeScene.ToLower().Contains("cyclic")
+            || activeScene.ToLower().Contains("sequence") || activeScene.ToLower().Contains("ipec")
             || activeScene.ToLower().Contains("distancesimulator") || activeScene.ToLower().Contains("hiddentarget")
             || activeScene.ToLower().Contains("diceflipping") || activeScene.ToLower().Contains("fallingplat")
             || activeScene.ToLower().Contains("duelingtree"))
@@ -31,38 +31,40 @@ public class TargetScaleUIManager : MonoBehaviour
             //print("Switching On");
             //controlButton.gameObject.SetActive(true);
             buttonHolder.SetActive(true);
-            buttonImage.color = redColor;
+            buttonImage.color = blackColor;
             activeStatus = false;
+
             foreach (GameObject target in targets)
             {
-                target.GetComponent<movePlayer>().enabled = false;
+                movePlayer mp = target.GetComponent<movePlayer>();
+                if (mp != null) mp.enabled = false;
             }
         }
-        controlButton.onClick.AddListener(ChangeButtonColor);
+        // controlButton.onClick.AddListener(ChangeButtonColor);
     }
 
     private void Update()
     {
-        if(StaticVariableManager.isStopTraining == true)
+        if (StaticVariableManager.isStopTraining == true)
         {
             transform.gameObject.SetActive(false);
         }
     }
 
-    void ChangeButtonColor()
+    public void ChangeMoveSetting()
     {
-        
+        print("Changing...");
         switch (activeStatus)
         {
             case true:
                 //print("Deactivating...");
                 activeStatus = false;
-                buttonImage.color = redColor;
-                foreach(GameObject target in targets)
+                buttonImage.color = blackColor;
+                foreach (GameObject target in targets)
                 {
                     target.GetComponent<movePlayer>().enabled = false;
                 }
-                
+
                 break;
             case false:
                 //print("Activating...");
@@ -84,7 +86,7 @@ public class TargetScaleUIManager : MonoBehaviour
         //StaticVariableManager.activateLane2ScaleUp = true;
         //StaticVariableManager.activateLane3ScaleUp = true;
 
-        foreach(GameObject target in targets)
+        foreach (GameObject target in targets)
         {
             //target.GetComponent<TargetScaleManager>().DecreaseDistance();
             target.GetComponent<TargetScaleManager_V2>().DecreaseDistance();

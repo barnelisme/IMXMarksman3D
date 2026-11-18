@@ -3,12 +3,21 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class SliderController : MonoBehaviour
 {
     public TextMeshProUGUI standByTimeTxt;
     public TextMeshProUGUI shootTimeTxt;
     public TextMeshProUGUI tableSpeedTxt;
+
+    public GameObject controlManager;
+    private string activeScene;
+
+    private void Start()
+    {
+        activeScene = SceneManager.GetActiveScene().name;
+    }
 
     public void update1LaneIntensity(float val)
     {
@@ -95,20 +104,23 @@ public class SliderController : MonoBehaviour
     }
     public void updateVerticalSpeed(float val)
     {
-        print("RE: Vertical speed is " + val);
-        StaticVariableManager.verticalSpeed = val;
+        StaticVariableManager.verticalSpeed = val - 0.2f;
+        print("RE: Vertical speed is " + StaticVariableManager.verticalSpeed);
     }
     public void updateHorizontalLine(float val)
     {
         print("RE: Horizontal line is " + val);
         
-        if(val == 6)
+        if(activeScene.ToLower().Contains("1lane") || activeScene.ToLower().Contains("2lane"))
         {
-            StaticVariableManager.horizontalDistance = 5.5f;
-        }
-        else
-        {
-            StaticVariableManager.horizontalDistance = val;
+            if(val == 6)
+            {
+                StaticVariableManager.horizontalDistance = 5.5f;
+            }
+            else
+            {
+                StaticVariableManager.horizontalDistance = val;
+            }
         }
     }
 
@@ -209,5 +221,31 @@ public class SliderController : MonoBehaviour
         }
 
         shootTimeTxt.text = "Limit Time: " + StaticVariableManager.limitTime.ToString("0"); 
+    }
+
+    public void updateLaunchForce(float val)
+    {
+        StaticVariableManager.launchForce = val;
+        // standByTimeTxt.text = val.ToString("0");
+        SliderStartController startController = controlManager.GetComponent<SliderStartController>();
+        if(startController != null) startController.launchForceTxt.text = val.ToString();
+    }
+
+    public void updateUpwardsBias(float val)
+    {
+        StaticVariableManager.upwardsBias = val;
+        // standByTimeTxt.text = val.ToString("0");
+
+        SliderStartController startController = controlManager.GetComponent<SliderStartController>();
+        if (startController != null) startController.upwardsBiasTxt.text = val.ToString("0.0");
+    }
+
+    public void updateDelayAfterHit(float val)
+    {
+        StaticVariableManager.delayAfterHit = val;
+        // standByTimeTxt.text = val.ToString("0");
+
+        SliderStartController startController = controlManager.GetComponent<SliderStartController>();
+        if (startController != null) startController.delayAfterShotTxt.text = val.ToString();
     }
 }

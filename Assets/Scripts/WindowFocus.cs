@@ -44,6 +44,6 @@ public class ForceWindowFocus : MonoBehaviour
 
         SetForegroundWindow(handle);
 
-        UnityEngine.Debug.Log("Trying to bring Unity to front...");
+        // UnityEngine.Debug.Log("Trying to bring Unity to front...");
     }
 }

@@ -144,35 +144,4 @@ public class RaycastDetect : MonoBehaviour
 
     }
 
-    //private void RayCastCivilians()
-    //{
-    //    RaycastHit hit;
-    //    Ray downray = new Ray(transform.position, Vector3.forward);
-
-    //    if (Physics.Raycast(transform.position, transform.TransformDirection(Vector3.forward), out hit, Mathf.Infinity, layerMask2))
-    //    {
-
-    //        if (hit.distance < 15)
-    //        {
-    //            //Debug.Log("Too CLOSE!!");
-    //            //print(hit.distance);
-    //            Debug.DrawRay(transform.position, transform.TransformDirection(Vector3.forward) * hit.distance, Color.red);
-    //            isCivilianClose = true;
-    //        }
-    //        else
-    //        {
-    //            Debug.DrawRay(transform.position, transform.TransformDirection(Vector3.forward) * hit.distance, Color.yellow);
-    //            //Debug.Log("Hit");
-    //            isCivilianClose = false;
-    //        }
-
-    //    }
-    //    else if(!(Physics.Raycast(transform.position, transform.TransformDirection(Vector3.forward), out hit, Mathf.Infinity, layerMask2)) && !(Physics.Raycast(transform.position, transform.TransformDirection(Vector3.forward), out hit, Mathf.Infinity, layerMask)))
-    //    {
-    //        Debug.DrawRay(transform.position, transform.TransformDirection(Vector3.forward) * 10, Color.white);
-    //        //Debug.Log("Not Hit");
-    //        isCivilianClose = false;
-    //    }
-    //}
-
 }

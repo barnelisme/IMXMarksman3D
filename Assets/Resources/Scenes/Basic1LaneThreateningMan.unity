@@ -386,7 +386,6 @@ GameObject:
   - component: {fileID: 34445429}
   - component: {fileID: 34445432}
   - component: {fileID: 34445433}
-  - component: {fileID: 34445434}
   - component: {fileID: 34445435}
   - component: {fileID: 34445436}
   m_Layer: 0
@@ -524,20 +523,6 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!114 &34445434
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 34445427}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6f2d305b9ded799449b6cfc8e3e353a6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  adminDistanceDisplay: {fileID: 1983846351}
-  shooterDistanceDisplay: {fileID: 0}
 --- !u!114 &34445435
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2893,7 +2878,6 @@ GameObject:
   - component: {fileID: 1143839899}
   - component: {fileID: 1143839902}
   - component: {fileID: 1143839903}
-  - component: {fileID: 1143839904}
   - component: {fileID: 1143839905}
   - component: {fileID: 1143839906}
   m_Layer: 0
@@ -3031,20 +3015,6 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!114 &1143839904
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1143839897}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6f2d305b9ded799449b6cfc8e3e353a6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  adminDistanceDisplay: {fileID: 1983846351}
-  shooterDistanceDisplay: {fileID: 0}
 --- !u!114 &1143839905
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6323,7 +6293,6 @@ GameObject:
   - component: {fileID: 2140162774}
   - component: {fileID: 2140162777}
   - component: {fileID: 2140162778}
-  - component: {fileID: 2140162779}
   - component: {fileID: 2140162780}
   - component: {fileID: 2140162781}
   m_Layer: 0
@@ -6461,20 +6430,6 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!114 &2140162779
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2140162772}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6f2d305b9ded799449b6cfc8e3e353a6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  adminDistanceDisplay: {fileID: 1983846351}
-  shooterDistanceDisplay: {fileID: 0}
 --- !u!114 &2140162780
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6516,6 +6471,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetText: {fileID: 2056768236}
   targetController: {fileID: 0}
+  pepperBase: {fileID: 0}
 --- !u!114 &848525033146712914
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6530,6 +6486,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetText: {fileID: 2056768236}
   targetController: {fileID: 0}
+  pepperBase: {fileID: 0}
 --- !u!114 &848525034694718063
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6544,6 +6501,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetText: {fileID: 2056768236}
   targetController: {fileID: 0}
+  pepperBase: {fileID: 0}
 --- !u!114 &3205792712136643113
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6558,6 +6516,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetText: {fileID: 2056768236}
   targetController: {fileID: 0}
+  pepperBase: {fileID: 0}
 --- !u!114 &3205792713142707630
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6572,6 +6531,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetText: {fileID: 2056768236}
   targetController: {fileID: 0}
+  pepperBase: {fileID: 0}
 --- !u!114 &3205792713513518722
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6586,6 +6546,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetText: {fileID: 2056768236}
   targetController: {fileID: 0}
+  pepperBase: {fileID: 0}
 --- !u!1001 &4463796229073289923
 PrefabInstance:
   m_ObjectHideFlags: 0

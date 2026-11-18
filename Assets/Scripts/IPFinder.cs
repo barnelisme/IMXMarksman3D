@@ -41,7 +41,7 @@ public class IPFinder : MonoBehaviour
         //LoadIP();
         CreateFile();
         GetMACAddress();
-        FindLocalIP();  // Function for finding the Current IPv4 Address
+        UDPSetup.FindLocalIP();  // Function for finding the Current IPv4 Address
 
         //GenerateUniqueID();
         
@@ -103,10 +103,6 @@ public class IPFinder : MonoBehaviour
         // print("Mac Address list: " + loginMacAddress);
 
     }
-    string ReplaceCharacter(string originalString, char charToReplace, char replacementChar)
-    {
-        return originalString.Replace(charToReplace, replacementChar);
-    }
     public void LoadIP()
     {
         result = false;
@@ -115,29 +111,7 @@ public class IPFinder : MonoBehaviour
         len = externalIP.Length;
         AllignIp();
     }
-    private void FindLocalIP()
-    {
-        IPHostEntry host;                           //create Host
-        host = Dns.GetHostEntry(Dns.GetHostName()); //Get current DNS Server
 
-        foreach(IPAddress ip in host.AddressList)   //Read all IP's in the Current DNS and Load the IPv4
-        {
-            if(ipFound == false)
-            {
-                if (ip.AddressFamily.ToString() == "InterNetwork")
-                {
-                    LocalIP = ip.ToString();
-                    ManipulateIP(LocalIP);                     //Function for correcting the IP for UDP broadcasting
-                    //print("RE: The Final IP is: " + FinalM_LocalIP);
-                    //WriteFile(FinalM_LocalIP);
-                    FileManager.SaveSetting("UDP IP", FinalM_LocalIP);
-
-                    ipFound = true;
-                }
-            }
-        }
-
-    }
     public void AllignIp()
     {
 
@@ -189,37 +163,11 @@ public class IPFinder : MonoBehaviour
         severMan.GetComponent<login_Manager>().loginPressed = false;
         LoadIP();
     }
-    private void ManipulateIP(string ip)
-    {
-        //LocalIP
-        
-        int x = 3;
-        while(x >= 1)
-        {
-            FinalM_LocalIP += ip.Substring(0, ip.IndexOf('.') + 1); // Load Current value before pound '.' to the new IP variable
-            ip = ip.Remove(0, ip.IndexOf('.') + 1);            //Delete Current Value before pount '.'
-             
-            if(x == 1)
-            {
-                FinalM_LocalIP += "255";
-            }
-            x--;
-        }
-    }
     public void CreateFile()
     {
         //FileManager.CreateFile(UDP_IP_SavePath);
     }
 
-    private void WriteFile(string val)
-    {
-        //print("Encrypting....");
-        Encryption encrypt = new Encryption();
-        string base64 = encrypt.AESEncryption(val);//encrypt username and password
-        //print("IP File Encrypted:" + base64);
-        //FileManager.CreateFile(UDP_IP_SavePath);
-        //FileManager.WriteDataToFile(UDP_IP_SavePath, base64);
-    }
 
 
     // Unique identifier generators

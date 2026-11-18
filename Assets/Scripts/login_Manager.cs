@@ -31,12 +31,14 @@ public class login_Manager : MonoBehaviour
     float UDPSetTime = 0.5f;
     public bool sendUDP = false;
     bool sendConfigUDP = false;
+    private bool isLoggedIn = false;
+    private bool offlineEmailFound = false;
 
     private string login_endpoint;
     public InputField email;
     public InputField password;
     public Text errorMessage;
-    static public string EmailText = "admin";
+    static public string EmailText = "admin"; // Empty
     static public string passwordText = "";
     static public bool isSuperAdmin = false;
     bool standard_admin_login_attempted = false;
@@ -45,6 +47,8 @@ public class login_Manager : MonoBehaviour
     public bool loginPressed = false;
     bool hasAlreadyLogged = false;
     public static string loginData;
+    private string[] splittedLoginData;
+    private int loginCounter = 0;
     public static float globalTimerSet = 50400;       //Reset variables
     public static float global_active_timer = 50400;  //14 Hours in seconds //50400  //300 = 5 Minutes
     public static float globalCAmeraTimerSet = 3600;  //Reset variables
@@ -80,7 +84,7 @@ public class login_Manager : MonoBehaviour
         sendConfigUDP = true ;
         sendUDP = true;
         CreateFile();
-        ReadFile();
+        ReadFileSettings();
         init();
         //openPyFile();
         //openExeFile();
@@ -279,7 +283,7 @@ public class login_Manager : MonoBehaviour
     {
         udpClientS = new UdpClient();
 
-        ReadFile();
+        ReadFileSettings();
         
         IP = UDP_ClientIP_Address;
         Sportnum = 55552;
@@ -303,7 +307,7 @@ public class login_Manager : MonoBehaviour
 
         //FileManager.WriteDataToFile(Offline_LoginFile_Savepath, "no set");
     }
-    private void ReadFile()
+    private void ReadFileSettings()
     {
         //UDP_ClientIP_Address = reader.ReadLine();
         try
@@ -312,7 +316,7 @@ public class login_Manager : MonoBehaviour
         }
         catch (Exception e)
         {
-            print("Error retrieving zero file:" + e);
+            print("Error retrieving data from file:" + e);
             throw new Exception("First login");
         }
 
@@ -322,9 +326,15 @@ public class login_Manager : MonoBehaviour
     [Obsolete]
     IEnumerator Login()
     {
-        //For The CODE that Runs Mac Address Inspection before login, Check after the Class Endline Below. 
-        ///////////////////////////////////////////////////////////////////////
-        //RUN LOGIN WITHOU MACADDRESS INSPECTION///////////////////////////////
+        EmailText = email.text;
+        passwordText = password.text;
+        isSuperAdmin = false;
+
+        ManageSuperAdminLogin();
+
+        // if(!isSuperAdmin && StaticVariableManager.isSystemUnlocked) RunOfflineLogin(); // Run if it's not super admin login
+        if (isLoggedIn || isSuperAdmin) yield return null; // Break if offline login went through
+
         WWWForm form = new WWWForm();
         AssignFormData(form);
         WWW www = new WWW(Url + login_endpoint, form);
@@ -332,27 +342,20 @@ public class login_Manager : MonoBehaviour
 
         try
         {
-            EmailText = email.text;
-            passwordText = password.text;
 
             if (isAuthorised && StaticVariableManager.isSystemUnlocked) //check authorisation
             {
-                ManageSuperAdminLogin();
                 if (!isSuperAdmin) ManageStandardAdminLogin(www);  //Not super admin.
             }
             else
             {
-                crm_response.text = "<b>Access Denied.</b>\n" +
-                    "\n" +
-                    "Please connect to the internet for your login authorisation, or request authorisation from " +
-                    "the developer. \n";
-                crm_panel.SetActive(true);
+                AccessDeniedCRMFallback();
             }
 
         }
         catch (Exception e)
         {
-            print("A serious error just happened, probably first login!!" + e);
+            print("A serious error just happened, probably first login!!" + e.Source);
         }
     }
 
@@ -365,6 +368,16 @@ public class login_Manager : MonoBehaviour
         if (EmailText == "mecaeladefault1@gmail.com" || EmailText == "normandefault1@gmail.com" || EmailText == "michelenell00@gmail.com") 
         {
             FileManager.SaveSetting("System User", "The Shooting Range");
+        }
+        else if(EmailText == "jan@aimandfire.co.za" || EmailText == "marinus@aimandfire.co.za")
+        {
+            // 
+            FileManager.SaveSetting("System User", "Aim And Shoot");
+        }
+        else if (EmailText == "bullseyebay@example.com")
+        {
+            // 
+            FileManager.SaveSetting("System User", "Presentation");
         }
 
     }
@@ -429,7 +442,7 @@ public class login_Manager : MonoBehaviour
         }
 
         // Login
-        if (isSuperAdmin) SceneManager.LoadScene("MainMenu");
+        if (isSuperAdmin) OpenMenu();
     }
 
     [Obsolete] //IMPORTANT, DO NOT REMOVE
@@ -438,13 +451,12 @@ public class login_Manager : MonoBehaviour
         Scoring.writeLog("Sending login to :" + Url + login_endpoint);
         Scoring.writeLog("Response:" + www.text);
         print("RRE: Login Response:" + www.text);
+        
 
         checkLoginDate();
         if (email.text == "")
         {
-            crm_response.text = "<b>Input space empty.</b> \n \n" +
-                "Please enter login details.";
-            crm_panel.SetActive(true);
+            EmptySpaceCRMFallback(); // If email or password space is empty
         }
         else //Input place holders not empty
         {
@@ -454,14 +466,27 @@ public class login_Manager : MonoBehaviour
             }
             else
             {
-                if (www.text.Contains("success"))
+                splittedLoginData = www.text.Trim().Replace(" ", "").Split(','); // Unpack the login response
+
+                bool isCredentialsValid = splittedLoginData.Length > 0 && splittedLoginData[0] == "success";
+                bool isSubscriptionActive = splittedLoginData.Length > 0 && (splittedLoginData[2].ToLower() == "active" || splittedLoginData[2].ToLower() == "*");
+
+
+                if ( isCredentialsValid && isSubscriptionActive) // www.text.Contains("success")
                 {
+                    // print("Count Setting: " + splittedLoginData[1]);
+                    FileManager.SaveSetting("Login Check Number", splittedLoginData[1]); // Save current check setting
                     SaveLoginInfo();
                     CheckSystemUser();
-                    // print("Online Login");
-                    SceneManager.LoadScene("MainMenu");
+
+                    OpenMenu();
                 }
-                else //offline login
+                else if(!isSubscriptionActive )
+                {
+                    string message = "Your subscription is currently inactive. Please check your billing details.";
+                    DisplayCRM(message); // Display message
+                }
+                else // offline login 
                 {
                     RunOfflineLogin();
                 }
@@ -471,6 +496,52 @@ public class login_Manager : MonoBehaviour
 
     }
 
+    private void OfflineCRMFallback()
+    {
+        if (offlineEmailFound == false)
+        {
+            crm_response.text = "<b>Email not registered or incorrect.</b> \n" +
+                    "\n" +
+                    "Please check your details, your Internet connection and try again, or request " +
+                    "authorisation from the developer. \n";
+            crm_panel.SetActive(true);
+        }
+    }
+
+    private void EmptySpaceCRMFallback()
+    {
+        crm_response.text = "<b>Input space empty.</b> \n \n" +
+                "Please enter login details.";
+        crm_panel.SetActive(true);
+    }
+
+    private void AccessDeniedCRMFallback()
+    {
+        crm_response.text = "<b>Access Denied.</b>\n" +
+            "\n" +
+            "Please connect to the internet for your login authorisation, or request authorisation from " +
+            "the developer. \n";
+        crm_panel.SetActive(true);
+    }
+
+    private void IncorrectInputsCRMFallBack()
+    {
+        crm_response.text = "<b>Incorrect Email or Password.</b> \n" + "Please insert correct login details.";
+        crm_panel.SetActive(true);
+    }
+
+    private void ConnectionErrorCRMFallBack()
+    {
+        crm_response.text = "- error connecting to the internet.";
+        crm_panel.SetActive(true);
+    }
+
+    private void DisplayCRM(string message)
+    {
+        crm_response.text = message;
+        crm_panel.SetActive(true);
+    }
+
     [Obsolete] //IMPORTANT, DO NOT REMOVE
     void RunOfflineLogin()
     {
@@ -478,14 +549,19 @@ public class login_Manager : MonoBehaviour
         try
         {
             string[] offlineData = GetOfflineLoginData();
-            bool emailFound = false;
+
+            if (email.text == "")
+            {
+                EmptySpaceCRMFallback(); // If email or password space is empty
+                return;
+            }
 
             foreach (string credential_line in offlineData) // run through stored offline data line by line
             {
                 if (credential_line.Contains(email.text)) // check if line contains email
                 {
                     string[] credentials = credential_line.Split(":");
-                    emailFound = true;
+                    offlineEmailFound = true;
 
                     // Index 0 - Stored email
                     // Index 1 - Stored corresponding password
@@ -493,35 +569,48 @@ public class login_Manager : MonoBehaviour
                     if (email.text == credentials[0] && password.text == credentials[1])
                     {
                         //SceneManager.LoadScene("calibration");
-                        SceneManager.LoadScene("MainMenu");
+                        OpenMenu();
+                        isLoggedIn = true;
                         // print("Offline Login");
                     }
                     else if ((password.text != credentials[1]) || (email.text != credentials[0]))
                     {
-                        crm_response.text = "<b>Incorrect Email or Password.</b> \n" + "Please insert correct login details.";
-                        crm_panel.SetActive(true);
+                        IncorrectInputsCRMFallBack(); // If email or password is incorrect
                     }
                 }
 
             }
 
-            if (emailFound == false)
-            {
-                crm_response.text = "<b>Email not registered or incorrect.</b> \n" +
-                        "\n" +
-                        "Please check your details, your Internet connection and try again, or request " +
-                        "authorisation from the developer. \n";
-                crm_panel.SetActive(true);
-            }
-
         }
         catch (Exception e)
         {
-            crm_response.text = "- error connecting to the internet.";
-            crm_panel.SetActive(true);
-            //SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+            ConnectionErrorCRMFallBack(); // If there is an execution error from offline code
         }
 
+        OfflineCRMFallback(); // If offline login is not succesful
+
+    }
+
+    private void OpenMenu()
+    {
+        bool isLoginOpen = CheckLoginStatus(); // Check login status
+
+        if(this.GetComponent<DropDown>().IsAdmin(email.text))
+        {
+            print("Subscription check skipped.");
+            SceneManager.LoadScene("MainMenu");
+        }
+        else if (!isLoginOpen)
+        {
+            print("Login: " + loginCounter);
+            return;
+        }
+        else
+        {
+            print("Login: " + loginCounter);
+            // Load Menu scenario
+            SceneManager.LoadScene("MainMenu");
+        }
     }
 
     private string getRegisterdID()
@@ -568,6 +657,7 @@ public class login_Manager : MonoBehaviour
         try
         {
             SaveCredentials();
+            FileManager.SaveSetting("Login Counter", "0"); // Reset login Counter
             writeLastLoginDate();
             resetAccessNumber();
         }
@@ -593,8 +683,9 @@ public class login_Manager : MonoBehaviour
 
 
         loginDate = FileManager.ReadSetting("Log Date");
+        // print("Login date: " + loginDate);
 
-        if(loginDate != "0" && loginDate != null)
+        if (loginDate != "0" && loginDate != null)
         {
             loginDateArray = loginDate.Split('/'); //Split online login date
             currentDateArray = currentDate.Split('/'); //split current date
@@ -612,7 +703,9 @@ public class login_Manager : MonoBehaviour
             if (loginDay != currentDay) //if next day
             {
                 accessNumber = chechActiveDays();  //Check access number
-                if (accessNumber >= num_authorised_days)
+
+
+                if (accessNumber >= num_authorised_days )
                 {
                     isAuthorised = false;
                 }
@@ -652,6 +745,41 @@ public class login_Manager : MonoBehaviour
 
         return accessNumber;
     }
+
+    public bool CheckLoginStatus()
+    {
+        bool loginStatus = false;
+        loginCounter = int.Parse(FileManager.ReadSetting("Login Counter")); // Get current count
+        string message = "Unable to connect to remote server, please connect to the internet.";
+
+        if (int.Parse(FileManager.ReadSetting("Login Check Number")) == 0) // If login counter is not setup
+        {
+            // loginStatus = true;
+            if(isSuperAdmin)
+            {
+                loginStatus = true;
+            }
+            else
+            {
+                DisplayCRM(message); // Display message
+            }
+        }
+        else if (loginCounter < int.Parse(FileManager.ReadSetting("Login Check Number")))
+        {
+            loginCounter+= 1; // Increment the login counter
+            FileManager.SaveSetting("Login Counter", loginCounter.ToString()); // Update login counter in the settings
+
+            loginStatus = true;
+        }
+        else
+        {
+            // Display login countout response
+            DisplayCRM(message); // Display message
+        }
+
+        return loginStatus;
+    }
+
     private void writeLastLoginDate()
     {
         FileManager.SaveSetting("Log Date", currentDate.ToString());

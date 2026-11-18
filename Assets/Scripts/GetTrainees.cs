@@ -134,11 +134,11 @@ public class GetTrainees : MonoBehaviour
         string data;
 
         form.AddField("email", login_Manager.EmailText);
-        //print("RRE: login email is " + login_Manager.EmailText);
         WWW www = new WWW(Url+ get_trainees_endpoint, form);
         yield return www;
         data = www.text;
-        //print("RE: The Trainees Data is: " + data);
+
+        // print("RE: The Trainees Data is: " + data);
         //print("RE: Receiving data from: " + Url + get_trainees_endpoint);
 
         if (data.ToLower().Contains(";"))
@@ -169,7 +169,6 @@ public class GetTrainees : MonoBehaviour
             {
                 //print(traineesNames[i]);
                 trainingNamesList.Add(traineesNames[i]);
-
             }
         }
         StaticVariableManager.set_trainees = true;

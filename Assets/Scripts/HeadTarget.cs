@@ -24,6 +24,9 @@ public class HeadTarget : MonoBehaviour
     //Animal Target Shoot
     public GameObject targetController;
 
+    // Pepper Popper shoot
+    public GameObject pepperBase;
+
     void Start()
     {
         activeScene = SceneManager.GetActiveScene().name;
@@ -94,22 +97,31 @@ public class HeadTarget : MonoBehaviour
 
         //Debug.Log("I was hit:" + transform.name + " apply Damage sent:" + tagged);
 
-        if (this.transform.tag == tagged)
+        if (this.transform.name == tagged)
         {
-            //isTargetTextActive = true;
-            //Shooting.numBlockesHit++;
-            //targetText.text = "HEAD SHOT";
             if (this.transform.name.ToLower().Contains("cover") && !activeScene.ToLower().Contains("5pointbullseye"))
             {
                isChangeColor = true;
             }
+            else if(activeScene.ToLower().Contains("5pointbullseye"))
+            {
+                StaticVariableManager.pointHitName = tagged;
+                StaticVariableManager.resetTargets = true;
+
+                StaticVariableManager.target1Active = true;
+                StaticVariableManager.target2Active = true;
+                StaticVariableManager.target3Active = true;
+            }    
             //print("Head is DEADLY SHOT!!!!!!!!");
-            StaticVariableManager.resetTargets = true;
 
             if (activeScene.ToLower().Contains("animaltarget"))
             {
                 string points = this.transform.name.Split(" ")[1];
                 AnimalTargetPointManager.ManagePoints(points, "head");
+            }
+            else if(activeScene.ToLower().Contains("pepperpopper"))
+            {
+                pepperBase.GetComponent<RotateTarget>().Rotate();
             }
 
         }

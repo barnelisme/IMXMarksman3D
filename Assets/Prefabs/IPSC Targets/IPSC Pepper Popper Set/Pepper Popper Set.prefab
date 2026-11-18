@@ -1,0 +1,290 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &9041221161428624275
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1158888421385094109}
+  - component: {fileID: 580566035654893996}
+  m_Layer: 0
+  m_Name: Pepper Popper Set
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1158888421385094109
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9041221161428624275}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 5.4223776, y: 1.9069561, z: -1.0346361}
+  m_LocalScale: {x: 0.75, y: 0.75, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 3740577775250826303}
+  - {fileID: 9318665607537223}
+  - {fileID: 7809833476979820032}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &580566035654893996
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9041221161428624275}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6688ae18070e3824ab2f4a60de176afb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  platesSet:
+  - {fileID: 1579791573077199589}
+  - {fileID: 2748503079836355741}
+  - {fileID: 5361435921561544922}
+--- !u!1001 &2578050898487990053
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1158888421385094109}
+    m_Modifications:
+    - target: {fileID: 5739003785629847845, guid: 859a383b2ea488f47b361f6177931799, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.78
+      objectReference: {fileID: 0}
+    - target: {fileID: 5739003785629847845, guid: 859a383b2ea488f47b361f6177931799, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.72
+      objectReference: {fileID: 0}
+    - target: {fileID: 5739003785629847845, guid: 859a383b2ea488f47b361f6177931799, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 2.59
+      objectReference: {fileID: 0}
+    - target: {fileID: 5739003785629847845, guid: 859a383b2ea488f47b361f6177931799, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -1.2169561
+      objectReference: {fileID: 0}
+    - target: {fileID: 5739003785629847845, guid: 859a383b2ea488f47b361f6177931799, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.14463675
+      objectReference: {fileID: 0}
+    - target: {fileID: 5739003785629847845, guid: 859a383b2ea488f47b361f6177931799, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5739003785629847845, guid: 859a383b2ea488f47b361f6177931799, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5739003785629847845, guid: 859a383b2ea488f47b361f6177931799, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5739003785629847845, guid: 859a383b2ea488f47b361f6177931799, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5739003785629847845, guid: 859a383b2ea488f47b361f6177931799, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5739003785629847845, guid: 859a383b2ea488f47b361f6177931799, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5739003785629847845, guid: 859a383b2ea488f47b361f6177931799, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7611283698669928447, guid: 859a383b2ea488f47b361f6177931799, type: 3}
+      propertyPath: m_Name
+      value: IPSC Pepper Popper 2
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 859a383b2ea488f47b361f6177931799, type: 3}
+--- !u!1 &5361435921561544922 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7611283698669928447, guid: 859a383b2ea488f47b361f6177931799, type: 3}
+  m_PrefabInstance: {fileID: 2578050898487990053}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &7809833476979820032 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5739003785629847845, guid: 859a383b2ea488f47b361f6177931799, type: 3}
+  m_PrefabInstance: {fileID: 2578050898487990053}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &5729725309382013794
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1158888421385094109}
+    m_Modifications:
+    - target: {fileID: 5739003785629847845, guid: ec7ab282bf5e9894d9a9eeb5fd147c07, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.95
+      objectReference: {fileID: 0}
+    - target: {fileID: 5739003785629847845, guid: ec7ab282bf5e9894d9a9eeb5fd147c07, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.94
+      objectReference: {fileID: 0}
+    - target: {fileID: 5739003785629847845, guid: ec7ab282bf5e9894d9a9eeb5fd147c07, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.45461655
+      objectReference: {fileID: 0}
+    - target: {fileID: 5739003785629847845, guid: ec7ab282bf5e9894d9a9eeb5fd147c07, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.7669561
+      objectReference: {fileID: 0}
+    - target: {fileID: 5739003785629847845, guid: ec7ab282bf5e9894d9a9eeb5fd147c07, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.14463675
+      objectReference: {fileID: 0}
+    - target: {fileID: 5739003785629847845, guid: ec7ab282bf5e9894d9a9eeb5fd147c07, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5739003785629847845, guid: ec7ab282bf5e9894d9a9eeb5fd147c07, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5739003785629847845, guid: ec7ab282bf5e9894d9a9eeb5fd147c07, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5739003785629847845, guid: ec7ab282bf5e9894d9a9eeb5fd147c07, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5739003785629847845, guid: ec7ab282bf5e9894d9a9eeb5fd147c07, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5739003785629847845, guid: ec7ab282bf5e9894d9a9eeb5fd147c07, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5739003785629847845, guid: ec7ab282bf5e9894d9a9eeb5fd147c07, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7611283698669928447, guid: ec7ab282bf5e9894d9a9eeb5fd147c07, type: 3}
+      propertyPath: m_Name
+      value: IPSC Pepper Popper 3
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: ec7ab282bf5e9894d9a9eeb5fd147c07, type: 3}
+--- !u!4 &9318665607537223 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5739003785629847845, guid: ec7ab282bf5e9894d9a9eeb5fd147c07, type: 3}
+  m_PrefabInstance: {fileID: 5729725309382013794}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &2748503079836355741 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7611283698669928447, guid: ec7ab282bf5e9894d9a9eeb5fd147c07, type: 3}
+  m_PrefabInstance: {fileID: 5729725309382013794}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &8956597678173402394
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1158888421385094109}
+    m_Modifications:
+    - target: {fileID: 153956031539481010, guid: d0cf1e72f759b6249a7095bc50279d8e, type: 3}
+      propertyPath: m_VersionIndex
+      value: 59
+      objectReference: {fileID: 0}
+    - target: {fileID: 3019448494433459951, guid: d0cf1e72f759b6249a7095bc50279d8e, type: 3}
+      propertyPath: m_VersionIndex
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 3411020218209158841, guid: d0cf1e72f759b6249a7095bc50279d8e, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.487
+      objectReference: {fileID: 0}
+    - target: {fileID: 3411020218209158841, guid: d0cf1e72f759b6249a7095bc50279d8e, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 213
+      objectReference: {fileID: 0}
+    - target: {fileID: 5739003785629847845, guid: d0cf1e72f759b6249a7095bc50279d8e, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -3.7
+      objectReference: {fileID: 0}
+    - target: {fileID: 5739003785629847845, guid: d0cf1e72f759b6249a7095bc50279d8e, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.039989352
+      objectReference: {fileID: 0}
+    - target: {fileID: 5739003785629847845, guid: d0cf1e72f759b6249a7095bc50279d8e, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.14463675
+      objectReference: {fileID: 0}
+    - target: {fileID: 5739003785629847845, guid: d0cf1e72f759b6249a7095bc50279d8e, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5739003785629847845, guid: d0cf1e72f759b6249a7095bc50279d8e, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5739003785629847845, guid: d0cf1e72f759b6249a7095bc50279d8e, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5739003785629847845, guid: d0cf1e72f759b6249a7095bc50279d8e, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5739003785629847845, guid: d0cf1e72f759b6249a7095bc50279d8e, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5739003785629847845, guid: d0cf1e72f759b6249a7095bc50279d8e, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5739003785629847845, guid: d0cf1e72f759b6249a7095bc50279d8e, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7611283698669928447, guid: d0cf1e72f759b6249a7095bc50279d8e, type: 3}
+      propertyPath: m_Name
+      value: IPSC Pepper Popper 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8101946973306741862, guid: d0cf1e72f759b6249a7095bc50279d8e, type: 3}
+      propertyPath: m_VersionIndex
+      value: 29
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: d0cf1e72f759b6249a7095bc50279d8e, type: 3}
+--- !u!1 &1579791573077199589 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7611283698669928447, guid: d0cf1e72f759b6249a7095bc50279d8e, type: 3}
+  m_PrefabInstance: {fileID: 8956597678173402394}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &3740577775250826303 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5739003785629847845, guid: d0cf1e72f759b6249a7095bc50279d8e, type: 3}
+  m_PrefabInstance: {fileID: 8956597678173402394}
+  m_PrefabAsset: {fileID: 0}

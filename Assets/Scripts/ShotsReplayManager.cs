@@ -8,7 +8,7 @@ public class ShotsReplayManager : MonoBehaviour
 {
     string activeScene = "";
     private int lane_1_impact_index = 0, lane_2_impact_index = 0, lane_3_impact_index = 0;
-    public bool isShotsReplayOpen = false;
+    public static bool isShotsReplayOpen = false;
     private int current_replay_lane = 1;
     private bool allShotsDisplayed = false;
     private bool disable_target_hit = false;
@@ -72,18 +72,23 @@ public class ShotsReplayManager : MonoBehaviour
     public TextMeshProUGUI replay_lane3_total_time;
     public TextMeshProUGUI replay_lane3_percentage;
 
+    [Header("Scenario Variables")]
+    // Target Recognition
+    public GameObject TRTScoreBoard;
+
     // Start is called before the first frame update
     void Start()
     {
         activeScene = SceneManager.GetActiveScene().name;
         RisingPlatesManager = GameObject.FindGameObjectsWithTag("RisingPlatesHandler");
+        isShotsReplayOpen = false;
 
         //DropDown.scene_type.ToLower().Contains("static")
-        if (shotsReplayButton != null && (DropDown.scene_type == "static" || DropDown.scene_type == "static response"))
+        if (shotsReplayButton != null && (DropDown.scene_type == "static" || DropDown.scene_type == "static response")) // || DropDown.scene_type == "moving"
         {
             shotsReplayButton.SetActive(true);
         }
-        else if(activeScene.ToLower().Contains("hiddentarget"))
+        else if (activeScene.ToLower().Contains("hiddentarget"))
         {
             shotsReplayButton.SetActive(true);
         }
@@ -93,32 +98,29 @@ public class ShotsReplayManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
-        if((DropDown.scene_type == "static" || DropDown.scene_type == "static response"))
+
+        if ((DropDown.scene_type == "static" || DropDown.scene_type == "static response") || activeScene.ToLower().Contains("hiddentarget"))
         {
 
-            if(StaticVariableManager.isStopTraining && replayTargetsAllSet == false)
+            if (StaticVariableManager.isStopTraining && StaticVariableManager.isScoreDataSet && replayTargetsAllSet == false)
             {
                 //Open all lanes...
                 if (activeScene.ToLower().Contains("plat"))
                 {
-                    if (StaticVariableManager.lanePlatesDisabled)
-                    {
+                    // if (StaticVariableManager.lanePlatesDisabled)
                         ManageSRScoringReplay();
-                        replayTargetsAllSet = true;
-                    }
                 }
                 else
                 {
                     ManageSRScoringReplay();
-                    replayTargetsAllSet = true;
+
                 }
             }
 
         }
         else if (DropDown.scene_type == "moving")
         {
-            if(StaticVariableManager.isStopTraining && replayTargetsAllSet == false)
+            if (StaticVariableManager.isStopTraining && StaticVariableManager.isScoreDataSet && replayTargetsAllSet == false)
             {
                 ManageMovingScoringReplay();
 
@@ -132,7 +134,8 @@ public class ShotsReplayManager : MonoBehaviour
     {
         Init();
         showLaneShots();
-       
+        StaticVariableManager.isScoreLanesReady = true;
+        replayTargetsAllSet = true;
     }
 
     public void ManageMovingScoringReplay()
@@ -230,27 +233,30 @@ public class ShotsReplayManager : MonoBehaviour
         switch (lane)
         {
             case "1":
+                if (replay_score_1 == null) return; // Do not run the code bellow if the replay board is not set
                 this.GetComponent<ReplayCounter>().SetupScoreReplay(lane, signalOrigin);
 
-                // replay_score_1.SetActive(true);
+                replay_score_1.SetActive(true);
                 showScore(replay_lane1_shots_fired, replay_lane1_shots_missed, replay_lane1_total_time, replay_lane1_percentage,
                     numLane1ShotsFired, numLane1ShotsMissed, lane1ActiveTimeCounter, lane1TrainingPercentage);
                 SendPrintSignal(replay_camera_1, 1); // Capture Image
                 break;
 
             case "2":
+                if (replay_score_2 == null) return; // Do not run the code bellow if the replay board is not set
                 this.GetComponent<ReplayCounter>().SetupScoreReplay(lane, signalOrigin);
 
-                // replay_score_2.SetActive(true);
+                replay_score_2.SetActive(true);
                 showScore(replay_lane2_shots_fired, replay_lane2_shots_missed, replay_lane2_total_time, replay_lane2_percentage,
                     numLane2ShotsFired, numLane2ShotsMissed, lane2ActiveTimeCounter, lane2TrainingPercentage);
                 SendPrintSignal(replay_camera_2, 2); // Capture Image
                 break;
 
             case "3":
+                if (replay_score_3 == null) return; // Do not run the code bellow if the replay board is not set
                 this.GetComponent<ReplayCounter>().SetupScoreReplay(lane, signalOrigin);
 
-                // replay_score_3.SetActive(true);
+                replay_score_3.SetActive(true);
                 showScore(replay_lane3_shots_fired, replay_lane3_shots_missed, replay_lane3_total_time, replay_lane3_percentage,
                     numLane3ShotsFired, numLane3ShotsMissed, lane3ActiveTimeCounter, lane3TrainingPercentage);
                 SendPrintSignal(replay_camera_3, 3); // Capture Image
@@ -304,11 +310,12 @@ public class ShotsReplayManager : MonoBehaviour
         lane_3_impact_index = 0;
         Init();
 
-        if (isShotsReplayOpen)
+        if (isShotsReplayOpen) // Closing Replay
         {
             shotsReplayPanel.SetActive(false);
             adminScorePanel.SetActive(true);
             shooterScorePanel.SetActive(true);
+            if (TRTScoreBoard != null) TRTScoreBoard.SetActive(true);
 
             if (activeScene.ToLower().Contains("distancesimulator"))
             {
@@ -325,12 +332,13 @@ public class ShotsReplayManager : MonoBehaviour
 
             isShotsReplayOpen = false;
         }
-        else //not open
+        else //Opening Replay
         {
             shooterScorePanel.SetActive(false);
             adminScorePanel.SetActive(false);
             splitTimePanel.SetActive(false);
             shotsReplayPanel.SetActive(true);
+            if (TRTScoreBoard != null) TRTScoreBoard.SetActive(false);
 
             DisableScoreBoards();
             this.GetComponent<ReplayCounter>().ResetReplay();
@@ -465,7 +473,7 @@ public class ShotsReplayManager : MonoBehaviour
             move_to_prev_target = true;
             //secondary_prev_point = false;
         }
-        else if(bullet.transform.name.ToLower().Contains("prev_revert_point.sec") && action == "prev")
+        else if (bullet.transform.name.ToLower().Contains("prev_revert_point.sec") && action == "prev")
         {
             move_to_prev_target = true;
             //secondary_prev_point = true;
@@ -528,7 +536,7 @@ public class ShotsReplayManager : MonoBehaviour
         }
 
     }
-    
+
 
     public void HandleScorePrinting()
     {
@@ -563,15 +571,33 @@ public class ShotsReplayManager : MonoBehaviour
         if (activeScene.ToLower().Contains("2lane"))
         {
             crop_percentage = 0.5f;
-            switch (camera_number)
-            {
-                case 1:
-                    camera.GetComponent<CameraCapture>().CaptureAndSaveImage(camera_number, "left", crop_percentage);
-                    break;
 
-                case 2:
-                    camera.GetComponent<CameraCapture>().CaptureAndSaveImage(camera_number, "right", crop_percentage);
-                    break;
+            if (activeScene.Contains("DuelingTree"))
+            {
+                print("Saving");
+                switch (camera_number)
+                {
+                    case 1:
+                        camera.GetComponent<CameraCapture>().CaptureAndSaveImage(camera_number, "center", crop_percentage);
+                        break;
+
+                    case 2:
+                        camera.GetComponent<CameraCapture>().CaptureAndSaveImage(camera_number, "center", crop_percentage);
+                        break;
+                }
+            }
+            else
+            {
+                switch (camera_number)
+                {
+                    case 1:
+                        camera.GetComponent<CameraCapture>().CaptureAndSaveImage(camera_number, "left", crop_percentage);
+                        break;
+
+                    case 2:
+                        camera.GetComponent<CameraCapture>().CaptureAndSaveImage(camera_number, "right", crop_percentage);
+                        break;
+                }
             }
         }
         if (activeScene.ToLower().Contains("3lane"))

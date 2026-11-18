@@ -29,21 +29,38 @@ public class CalibrationUdpSend : MonoBehaviour
     //IP Address Variables
     string LocalIP = " ";
     string FinalM_LocalIP = "";
-
+    string activeScene = "";
 
     void Start()
     {
+        activeScene = SceneManager.GetActiveScene().name;
+        //udpClient = new UdpClient(portnum);
         //init();
         //sendEndless("Stop");
         CreateFile();
         ReadFile();
         FindLocalIP();
         // sendUDP = true;
-        sendEndless("Calibrate");
+        if(activeScene == "calibration")
+        {
+            sendEndless("Calibrate");
+        }
+        else if(activeScene == "Calib_Acc_Page")
+        {
+            sendEndless("Get Cam IP");
+            sendEndless("IMX Calibration Set");
+        }
+
     }
 
     private void Update()
     {
+
+        if(activeScene == "Calib_Acc_Page")
+        {
+            // GetUDPSignal();
+        }
+
         //sendEndless("Calibration");
         if (sendUDP)
         {
@@ -59,6 +76,29 @@ public class CalibrationUdpSend : MonoBehaviour
             UDPSendTimer = UDPSetTime;
         }
     }
+    
+    private void GetUDPSignal()
+    {
+        try
+        {
+            IPEndPoint remoteEP = null;
+
+            if (udpClient.Available > 0)
+            {
+                byte[] data = udpClient.Receive(ref remoteEP);
+                string message = Encoding.ASCII.GetString(data);
+                print(message + " from " + remoteEP.Address.ToString());
+
+            }
+        }
+        catch (Exception e)
+        {
+            Scoring.logs += "\n" + e.Message + ":" + e.StackTrace;
+            Debug.Log("Exception:" + e.StackTrace + " " + e.Message);
+        }
+
+    }
+
     void init()
     {
         udpClient = new UdpClient(portnum);
@@ -84,7 +124,7 @@ public class CalibrationUdpSend : MonoBehaviour
             print("error in connection");
         }
     }
-    private void sendEndless(string testStr)
+    public void sendEndless(string testStr)
     {
         udpClientS = new UdpClient();
         //IP = "192.168.8.255";
@@ -94,9 +134,15 @@ public class CalibrationUdpSend : MonoBehaviour
 
         // Daten mit der UTF8-Kodierung in das Bin�rformat kodieren.
         byte[] data = Encoding.UTF8.GetBytes(testStr);
-        print("sending " + testStr + " to " + remoteEndPoint);
+        // print("sending " + testStr + " to " + remoteEndPoint);
         // Den message zum Remote-Client senden.
-        udpClientS.Send(data, data.Length, remoteEndPoint);
+
+        int numberOfPackets = 5;
+
+        for (int i = 0; i < numberOfPackets; i++)
+        {
+            udpClientS.Send(data, data.Length, remoteEndPoint);
+        }
     }
 
     public void CreateFile()

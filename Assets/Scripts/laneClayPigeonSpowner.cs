@@ -8,6 +8,7 @@ public class laneClayPigeonSpowner : MonoBehaviour
     public GameObject[] spawnLocations;
     public GameObject whatToSpawnPrefab;
     public GameObject whatToSpawnClone;
+    public GameObject targetReference;
 
     private int spawn_location_index = 0;
     private int secondarySpawns = 2;
@@ -94,7 +95,69 @@ public class laneClayPigeonSpowner : MonoBehaviour
 
     private void spawnPlate()
     {
-        whatToSpawnClone = Instantiate(whatToSpawnPrefab, spawnLocations[spawn_location_index].transform.position, Quaternion.Euler(0, 0, 0)) as GameObject;
+        if (targetReference != null && whatToSpawnPrefab != null)
+        {
+            int count = 0;
+            /*int numLanes = GetNumberOfLanes();
+
+            while (count < numLanes)
+            {
+                // Temporarily off
+            }*/
+
+            spawn_location_index = count;
+
+            // Spawn at the spawn location [cite: 185]
+            whatToSpawnClone = Instantiate(
+                whatToSpawnPrefab,
+                spawnLocations[spawn_location_index].transform.position,
+                Quaternion.identity
+            );
+
+            // Temporarily parent to reference to match scale [cite: 186]
+            Transform originalParent = whatToSpawnClone.transform.parent; // [cite: 186]
+            whatToSpawnClone.transform.SetParent(targetReference.transform, worldPositionStays: true); // [cite: 186]
+
+            // Copy reference's local scale exactly [cite: 187]
+            whatToSpawnClone.transform.localScale = Vector3.one; // [cite: 187]
+
+            // Reparent to reference's parent to keep hierarchy consistent [cite: 188]
+            whatToSpawnClone.transform.SetParent(targetReference.transform.parent, worldPositionStays: true); // [cite: 188]
+
+            // --- Dynamic Naming Logic ---
+            string baseName = whatToSpawnClone.name;
+            string lanePrefix = "";
+
+            // Check the lane dynamically 
+            if (spawnLocations[spawn_location_index].transform.name.Contains("Lane 1")) // 
+            {
+                lanePrefix = "1";
+            }
+            else if (spawnLocations[spawn_location_index].transform.name.Contains("Lane 2")) // 
+            {
+                lanePrefix = "2";
+            }
+            else if (spawnLocations[spawn_location_index].transform.name.Contains("Lane 3")) // 
+            {
+                lanePrefix = "3";
+            }
+
+            // If a valid lane prefix was found and the base name isn't empty, swap the first character dynamically
+            if (!string.IsNullOrEmpty(lanePrefix) && !string.IsNullOrEmpty(baseName))
+            {
+                whatToSpawnClone.name = lanePrefix + baseName.Substring(1);
+            }
+        }
+    }
+
+    private int GetNumberOfLanes()
+    {
+        if (activeScene.ToLower().Contains("1lane")) return 1;
+        if (activeScene.ToLower().Contains("2lane")) return 2;
+        if (activeScene.ToLower().Contains("3lane")) return 3;
+        if (activeScene.ToLower().Contains("4lane")) return 4;
+
+        return 1;
     }
 
 }

@@ -167,13 +167,13 @@ public class ExpressionSceneManager : MonoBehaviour
                     GenerateColorGroup();
                     ManageExpression();
                 }
-                StaticVariableManager.correctTargetsHits++;
+                StaticVariableManager.lane1CorrectTargetsHits++;
                 print("Correct Hit!!");
             }
             else
             {
                 //Incorrect Hit
-                StaticVariableManager.wrongTargetsHits++;
+                StaticVariableManager.lane1IncorrectTargetsHits++;
                 print("Incorrect Hit!!");
             }
         }
@@ -685,8 +685,8 @@ public class ExpressionSceneManager : MonoBehaviour
         StaticVariableManager.isColorDisplayed = false;
         StaticVariableManager.currentTargetColor = "";
         StaticVariableManager.sequenceCreated = false;
-        StaticVariableManager.correctTargetsHits = 0;
-        StaticVariableManager.wrongTargetsHits = 0;
+        StaticVariableManager.lane1CorrectTargetsHits = 0;
+        StaticVariableManager.lane1IncorrectTargetsHits = 0;
         StaticVariableManager.colorDisplayTimer = 5;
     }
 

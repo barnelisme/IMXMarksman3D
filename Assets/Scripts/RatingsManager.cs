@@ -301,6 +301,14 @@ public class RatingsManager : MonoBehaviour
             rating.enabled = true;
             trainingTypeTxt.enabled = true;
         }
+        else if (name.Contains("Target Recognition") || name.Contains("Decision Point"))
+        {
+            rating.GetComponent<Image>().color = Color.red;
+            trainingTypeTxt.text = "D/T/A";
+
+            rating.enabled = true;
+            trainingTypeTxt.enabled = true;
+        }
 
         //Moving
         else if (name.ToLower().Contains("balloon"))

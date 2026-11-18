@@ -12,9 +12,13 @@ public class ControlButtonsManager : MonoBehaviour
     [SerializeField] private GameObject player;
     [SerializeField] private GameObject resetPanel;
     [SerializeField] private GameObject resetButton;
+    [SerializeField] private GameObject gunShotSwitchImage;
+    [SerializeField] private GameObject gunShotSwitch;
+    [SerializeField] private GameObject smokeImpactSwitchImage;
+    [SerializeField] private GameObject smokeImpactSwitch;
     private Image panelImage;
     private Color currentColor;
-    float resetTimer , setResetTime = 2, newAlpha = 0.5f;
+    float resetTimer , setResetTime = 10, newAlpha = 0.5f;
     private bool pointsReset = true, incrementAlpha = true, decrementAlpha = false, closingReset = false;
     private float crementSpeed = 0.355f;
     private string activeScene = "";
@@ -30,10 +34,6 @@ public class ControlButtonsManager : MonoBehaviour
     {
         activeScene = SceneManager.GetActiveScene().name;
         player = GameObject.FindGameObjectWithTag("Player");
-        if (resetButton == null)
-        {
-            resetButton = GameObject.FindGameObjectWithTag("ResetButton");
-        }
 
         StaticVariableManager.isEnded = false;
         //resetButton.SetActive(false); // disable after assigning
@@ -48,10 +48,15 @@ public class ControlButtonsManager : MonoBehaviour
 
         //Setup reset panel
         setUpResetPanel();
+        // pause_continue_txt.text = "Pause";
         //
+
+        string smokeImpactSetting = FileManager.ReadSetting("SmokeImpactSetting");
+        string gunSetting = FileManager.ReadSetting("GunShotSetting");
 
         if (Scoring.ammo_setting.ToLower().Contains("live"))
         {
+            Scoring.shooting_PaperRoll_Setting = "static";
             if (Scoring.shooting_PaperRoll_Setting.ToLower().Contains("static"))
             {
                 resetButton.SetActive(true);
@@ -60,8 +65,59 @@ public class ControlButtonsManager : MonoBehaviour
             {
                 resetButton.SetActive(false);
             }
+
+            SetupSmokeImpact(smokeImpactSetting); // Setup smoke impact switch
+        }
+        else if(Scoring.ammo_setting.ToLower().Contains("laser"))
+        {
+            resetButton.SetActive(false);
+
+            SetupGunSoundSetting(gunSetting); // Setup gun sound setting switch
+            SetupSmokeImpact(smokeImpactSetting); // Setup smoke impact switch
         }
 
+    }
+
+    private void SetupGunSoundSetting(string setting)
+    {
+        // Setup gun shot settings
+        switch (setting)
+        {
+            case "True":
+                StaticVariableManager.gunShotSetting = true;
+                gunShotSwitchImage.GetComponent<Image>().color = Color.green;
+                break;
+            case "False":
+                StaticVariableManager.gunShotSetting = false;
+                gunShotSwitchImage.GetComponent<Image>().color = Color.grey;
+                break;
+
+        }
+
+
+        // Enable switch
+        gunShotSwitch.SetActive(true);
+    }
+
+    private void SetupSmokeImpact(string setting)
+    {
+        // Setup smoke impact settings
+        // print("Setting is: " + setting);
+        switch (setting)
+        {
+            case "True":
+                StaticVariableManager.smokeImpactSetting = true;
+                smokeImpactSwitchImage.GetComponent<Image>().color = Color.green;
+                break;
+            case "False":
+                StaticVariableManager.smokeImpactSetting = false;
+                smokeImpactSwitchImage.GetComponent<Image>().color = Color.grey;
+                break;
+
+        }
+
+        // Enable switch
+        smokeImpactSwitch.SetActive(true);
     }
 
     private void setUpResetPanel()
@@ -149,25 +205,45 @@ public class ControlButtonsManager : MonoBehaviour
 
     public void sendUDPResetSignal()
     {
+        if (StaticVariableManager.isResetingPoints) return; // Do not run if Resetting
+
         Time.timeScale = 1f;
         player.GetComponent<Shooting>().sendEndless("Reset");
         resetPanel.SetActive(true);
         pointsReset = false;
         StaticVariableManager.isResetingPoints = true;
         setUpResetPanel();
+        StaticVariableManager.recentPoints.Clear();
         //resetPanel.GetComponent<Texture2D>()
     }
 
     public void loadMainMenu()
     {
         Time.timeScale = 1f;
+        StaticVariableManager.isResetingPoints = false;
+
         if (activeScene.ToLower().Contains("calibration"))
         {
             SceneManager.LoadScene("MainMenu");
         }
-        else if(activeScene.ToLower().Contains("indoor_range") || DropDown.scene_type == "3D")
+        else if(activeScene.ToLower().Contains("hunting"))
+        {
+            if(activeScene.ToLower().Contains("birdhunting"))
+            {
+                SceneManager.LoadScene("TestConditionSetting");
+            }
+            else
+            {
+                SceneManager.LoadScene("HuntingConditionSetting");
+            }
+        }
+        else if (DropDown.scene_type == "3D")
         {
             SceneManager.LoadScene("SceneManager");
+        }
+        else if (activeScene.Contains("FallingPlatTest"))
+        {
+            SceneManager.LoadScene("Calib_Acc_Page");
         }
         else
         {
@@ -178,6 +254,8 @@ public class ControlButtonsManager : MonoBehaviour
 
     public void StartScenario()
     {
+        if (StaticVariableManager.isResetingPoints) return; // Do not run if Resetting
+
         if (StaticVariableManager.startCountDown || StaticVariableManager.isStopTraining)
         {
             Time.timeScale = 1f;
@@ -187,11 +265,18 @@ public class ControlButtonsManager : MonoBehaviour
         else
         {
             StaticVariableManager.startCountDown = true;
+
+            if(DropDown.scene_type == "3D")
+            {
+                GameObject player = GameObject.FindGameObjectWithTag("Player");
+                // player.GetComponent<FirstPersonController>().LockMouse();
+            }
         }
     }
 
     public void HandlePauseContinue()
     {
+        if (StaticVariableManager.isResetingPoints) return; // Do not run if Resetting
         //print("Resetting...");
         if (isTrainingPaused == false)
         {
@@ -202,16 +287,61 @@ public class ControlButtonsManager : MonoBehaviour
         }
         else
         {
-            pause_continue_txt.text = "End";
+            pause_continue_txt.text = "Pause";
             Time.timeScale = 1f;
             StaticVariableManager.isEnded = false;
             isTrainingPaused = false;
         }
     }
 
+    public void HandleGunShotSetting()
+    {
+        //print("Resetting...");
+        if (StaticVariableManager.gunShotSetting == false)
+        {
+            StaticVariableManager.gunShotSetting = true;
+            // Set gun shot color to green
+            Color newColor = Color.green;
+            gunShotSwitchImage.GetComponent<Image>().color = newColor;
+            FileManager.SaveSetting("GunShotSetting", StaticVariableManager.gunShotSetting.ToString());
+        }
+        else
+        {
+            StaticVariableManager.gunShotSetting = false;
+            // Set gun shot color to black
+            Color newColor = Color.grey;
+            gunShotSwitchImage.GetComponent<Image>().color = newColor;
+            FileManager.SaveSetting("GunShotSetting", StaticVariableManager.gunShotSetting.ToString());
+        }
+    }
+
+    public void HandleSmokeImpactSetting()
+    {
+        //print("Resetting...");
+        if (StaticVariableManager.smokeImpactSetting == false)
+        {
+            StaticVariableManager.smokeImpactSetting = true;
+            // Set gun shot color to green
+            Color newColor = Color.green;
+            smokeImpactSwitchImage.GetComponent<Image>().color = newColor;
+            FileManager.SaveSetting("SmokeImpactSetting", StaticVariableManager.smokeImpactSetting.ToString());
+        }
+        else
+        {
+            StaticVariableManager.smokeImpactSetting = false;
+            // Set gun shot color to black
+            Color newColor = Color.grey;
+            smokeImpactSwitchImage.GetComponent<Image>().color = newColor;
+            FileManager.SaveSetting("SmokeImpactSetting", StaticVariableManager.smokeImpactSetting.ToString());
+        }
+
+        // print("Setting is: " + StaticVariableManager.smokeImpactSetting.ToString());
+    }
+
     public void HandleScoreButton()
     {
         //GameObject controlManager = GameObject.FindGameObjectWithTag("Player");
+        if (StaticVariableManager.isResetingPoints) return; // Do not run if Resetting
 
         if (StaticVariableManager.isStopTraining == false)
         {
@@ -247,8 +377,11 @@ public class ControlButtonsManager : MonoBehaviour
                     player.GetComponent<Shooting>().splitTimePanel.SetActive(false);
                     player.GetComponent<Shooting>().isSplitTimeOpen = false;  // was static on shotting
 
-                    if(player.GetComponent<ShotsReplayManager>() != null)
-                        player.GetComponent<ShotsReplayManager>().ManageSRScoringReplay();
+                    if(ShotsReplayManager.isShotsReplayOpen)
+                    {
+                        player.GetComponent<ShotsReplayManager>().handleShotsReplayButton();
+                    }
+
 
                     isScoreBoardShown = false;
                 }
@@ -257,10 +390,6 @@ public class ControlButtonsManager : MonoBehaviour
                     //Enable scores
                     player.GetComponent<Shooting>().adminScorePanel.SetActive(true);
                     player.GetComponent<Shooting>().shooterScorePanel.SetActive(true);
-                    //player.GetComponent<Shooting>().splitTimePanel.SetActive(true);
-
-                    /*if(player.GetComponent<ShotsReplayManager>() != null) 
-                        player.GetComponent<ShotsReplayManager>().DisableReplayScore();*/
 
 
                     isScoreBoardShown = true;

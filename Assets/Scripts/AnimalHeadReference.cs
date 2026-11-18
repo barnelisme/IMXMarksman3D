@@ -37,7 +37,7 @@ public class AnimalHeadReference : MonoBehaviour
 
         if (!globalVariableUpdated)
         {
-            if (tagged.ToLower().Contains(TestConditionsManager.animalName.ToLower()))
+            if (mainBody.transform.name.ToLower().Contains(TestConditionsManager.animalName.ToLower()))
             {
                 StaticVariableManager.totalTargetAnimalsKilled += 1;
             }
@@ -51,17 +51,42 @@ public class AnimalHeadReference : MonoBehaviour
             print("Head shots is : " + StaticVariableManager.totalHeadShots);
         }
 
-        mainBody.GetComponent<AnimalController>().isKilled = true;
+        // print("Animal shot...!");
+        
+        // ⭐ FIXED: Check collider exists before disabling
+        CapsuleCollider headCollider = this.GetComponent<CapsuleCollider>();
+        if (headCollider != null)
+        {
+            headCollider.enabled = false;
+        }
+        
+        // ⭐ FIXED: Check collider exists before disabling
+        CapsuleCollider bodyCollider = mainBody.GetComponent<CapsuleCollider>();
+        if (bodyCollider != null)
+        {
+            bodyCollider.enabled = false;
+        }
+
+        mainBody.GetComponent<HuntAnimalController>().ApplyDamage(mainBody.transform.name);
         targetDestroyed = true;
 
         if(activeScene.ToLower().Contains("outdoor"))
         {
-            this.transform.gameObject.GetComponent<BoxCollider>().enabled = false;
-            this.transform.gameObject.GetComponent<CapsuleCollider>().enabled = false;
+            // ⭐ FIXED: Check collider exists before disabling
+            CapsuleCollider outdoorCollider = this.transform.gameObject.GetComponent<CapsuleCollider>();
+            if (outdoorCollider != null)
+            {
+                outdoorCollider.enabled = false;
+            }
         }
         else if(activeScene.ToLower().Contains("ground"))
         {
-            this.transform.gameObject.GetComponent<CapsuleCollider>().enabled = false;
+            // ⭐ FIXED: Check collider exists before disabling
+            CapsuleCollider groundCollider = this.transform.gameObject.GetComponent<CapsuleCollider>();
+            if (groundCollider != null)
+            {
+                groundCollider.enabled = false;
+            }
         }
 
     }

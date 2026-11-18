@@ -1,17 +1,18 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.SceneManagement;
-using TMPro;
-using System;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO;
-using System.Linq;
-using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using TMPro;
+using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.SceneManagement;
 
 [System.Serializable]
 public class ScenarioData
@@ -29,6 +30,8 @@ public class DropDown : MonoBehaviour
     public TMP_Dropdown handler_moving_targets;
     public TMP_Dropdown handler_3D;
     public GameObject infoUiPanel;
+    public GameObject IPSCSceneButton;
+    public GameObject VideoScenarioSceneButton;
     bool handle1_Updated;
     bool handle2_Updated;
 
@@ -39,11 +42,12 @@ public class DropDown : MonoBehaviour
     static List<string> moving_target_scenarios = new List<string>();
     static List<string> animated_3D_scenarios = new List<string>();
     static List<string> TrainingItems = new List<string>();
-    string[] sceneNames;
+    string [] sceneNames;
     public static int sceneValSelected = 0;
     public static string softwareSceneName = "";
     public static string ompSceneName = "Basic Target";
     public static string scene_type = "static"; // Default setting
+    public static bool isScenarioListSet = false;
 
     string sceneNames_SavePath = "Assets/Resources/scenesNames.txt";
     string onlineSceneBackupFile = "scDat01.txt";
@@ -55,6 +59,8 @@ public class DropDown : MonoBehaviour
     int num3DAnimatedScenes = 0;
     string activeScene = "";
     static string online_scene_data = "";
+    private List<string> allowed_admins_list = new List<string> { "admin", "cib.kam@zonezapp.com", "nheuer25@gmail.com" };
+    private bool isAllowedAdScenes = false;
 
     public void Start()
     {
@@ -69,21 +75,41 @@ public class DropDown : MonoBehaviour
         }
         else
         {
-           
-
-            if (activeScene.ToLower().Contains("mainmenu") || activeScene.ToLower().Contains("login"))
+            if (activeScene.ToLower().Contains("login"))
             {
-                
+                StaticVariableManager.online_scene_data = "";
+                isScenarioListSet = false;
+            }
+            else if(activeScene.ToLower().Contains("mainmenu"))
+            {
+                isScenarioListSet = false;
                 StartCoroutine(getScenes());
             }
-            else if(activeScene.ToLower().Contains("scenemanager"))
+            else if (activeScene.ToLower().Contains("scenemanager")) // if(activeScene.ToLower().Contains("scenemanager"))
             {
+                ManageAddAdminScenes();
                 ManageScenarios(StaticVariableManager.online_scene_data);
             }
-
         }
-
         //ReadFile();
+    }
+
+    private void ManageAddAdminScenes()
+    {
+        isAllowedAdScenes = allowed_admins_list.Contains(login_Manager.EmailText.ToLower());
+
+        if (isAllowedAdScenes) // Check if the current admin is 
+        {
+            IPSCSceneButton.SetActive(true);
+            VideoScenarioSceneButton.SetActive(true);
+        }
+    }
+
+    public bool IsAdmin(string email)
+    {
+        if(allowed_admins_list.Contains(email.ToLower())) return true;
+
+        return false;
     }
 
     IEnumerator getScenes()
@@ -119,7 +145,7 @@ public class DropDown : MonoBehaviour
             }
             catch (Exception e)
             {
-                Debug.LogError("Exception during request setup: " + e.Message);
+                // Debug.LogError("Exception during request setup: " + e.Message);
                 // yield break;  // Exit early if setup failed
             }
 
@@ -131,26 +157,58 @@ public class DropDown : MonoBehaviour
                 // StaticVariableManager.online_scene_data = www.text;
                 // Debug.Log("The Scene Data: " + www.text);
                 containsData = Regex.IsMatch(www.text, @"[a-zA-Z]");
+
+                if(containsData)
+                    print("Online Scenario List: " + www.text);
             }
         }
 
+        // Detect errors in the response
+        bool isError = false;
+        
+        if(www != null)
+            isError = www.text.ToLower().Contains("invalid email address") || www.text.ToLower().Contains("error");
 
-        if (containsData && (!www.text.ToLower().Contains("invalid email address") && !www.text.ToLower().Contains("error")))
+        if (containsData && !isError) // If response contains valid data and no error
         {
-            StaticVariableManager.online_scene_data = www.text;
+            string onlineResponse = www.text;
+            onlineResponse = FixSceneNames(onlineResponse);
 
-            StaticVariableManager.online_scene_data = FixSceneNames(StaticVariableManager.online_scene_data);
-            FileManager.WriteDataToFile(onlineSceneBackupFile, StaticVariableManager.online_scene_data);
-            // print("Online scene info set.");
+            if (onlineResponse == "No scenarios")
+            {
+                StaticVariableManager.online_scene_data = FileManager.ReadFromFile(onlineSceneBackupFile);
+                // Save data
+                SaveScenarios();
+            }
+            else
+            {
+                StaticVariableManager.online_scene_data = onlineResponse;
+                SaveScenarios();
+                // print("Online scene info set.");
+            }
+
         }
         else
         {
             StaticVariableManager.online_scene_data = FileManager.ReadFromFile(onlineSceneBackupFile);
-            // StaticVariableManager.online_scene_data = FixSceneNames(StaticVariableManager.online_scene_data);
+            if (StaticVariableManager.online_scene_data != "") 
+                SaveScenarios();
             // print("Offline scene info set.");
         }
 
         if (www != null) www.Dispose();
+        isScenarioListSet = true;
+    }
+
+    private void SaveScenarios()
+    {
+        // Incript back
+        if (StaticVariableManager.online_scene_data != "" && login_Manager.EmailText == "admin")
+            FileManager.WriteDataToFile(onlineSceneBackupFile, StaticVariableManager.online_scene_data);
+        else if (StaticVariableManager.online_scene_data != "")
+            FileManager.incriptToFile(onlineSceneBackupFile, StaticVariableManager.online_scene_data);
+
+        // print("Saved Data: \n" + StaticVariableManager.online_scene_data);
     }
 
     public IEnumerator CheckInternetConnection(System.Action<bool> callback)
@@ -175,12 +233,30 @@ public class DropDown : MonoBehaviour
         string safetyChar = "*";
         // Headers to skip (protect them)
         Dictionary<string, string> headersToProtect = new Dictionary<string, string>
+    {
+        { "allowed_static_scenarios", $"allowed{safetyChar}static{safetyChar}scenarios" },
+        { "allowed_moving_targets_scenarios", $"allowed{safetyChar}moving{safetyChar}targets{safetyChar}scenarios" },
+        { "allowed_static_response_scenarios", $"allowed{safetyChar}static{safetyChar}response{safetyChar}scenarios" },
+        { "allowed_animated3d_scenarios", $"allowed{safetyChar}animated3d{safetyChar}scenarios" }
+    };
+
+        bool atLeastOneHeaderFound = false;
+
+        // Check if at least one required header exists in json
+        foreach (var header in headersToProtect.Keys)
         {
-            { "allowed_static_scenarios", $"allowed{safetyChar}static{safetyChar}scenarios" },
-            { "allowed_animated3d_scenarios", $"allowed{safetyChar}animated3d{safetyChar}scenarios" },
-            { "allowed_moving_targets_scenarios", $"allowed{safetyChar}moving{safetyChar}targets{safetyChar}scenarios" },
-            { "allowed_static_response_scenarios", $"allowed{safetyChar}static{safetyChar}response{safetyChar}scenarios" }
-        };
+            if (json.Contains(header))
+            {
+                // print(header);
+                atLeastOneHeaderFound = true;
+                break; // We found one, no need to keep checking the rest
+            }
+        }
+
+        if (!atLeastOneHeaderFound)
+        {
+            return "No scenarios";
+        }
 
         // Replace protected headers with placeholders
         foreach (var kvp in headersToProtect)
@@ -202,68 +278,88 @@ public class DropDown : MonoBehaviour
 
 
 
+
     private void ManageScenarios(string data)
     {
-
         try
         {
-            if(!data.ToLower().Contains("invalid email address") && !data.ToLower().Contains("error") && data != "")
+            if (!data.ToLower().Contains("invalid email address") && !data.ToLower().Contains("error") && data != "")
             {
                 ScenarioData Response_data = JsonConvert.DeserializeObject<ScenarioData>(data);
                 ScenarioData myLists = new ScenarioData();
 
-                handler_3D.options.Clear();
-                handler_3D.options.Add(new TMP_Dropdown.OptionData() { text = "Animated 3D" });
-                handler_static.options.Clear();
+                //Reset the value to 0 and clear the options
+                ResetDropDowns();
+
                 handler_static.options.Add(new TMP_Dropdown.OptionData() { text = "Static" });
-                handler_static_response.options.Clear();
                 handler_static_response.options.Add(new TMP_Dropdown.OptionData() { text = "Static Response" });
-                handler_moving_targets.options.Clear();
                 handler_moving_targets.options.Add(new TMP_Dropdown.OptionData() { text = "Moving Targets" });
+                handler_3D.options.Add(new TMP_Dropdown.OptionData() { text = "Animated 3D" });
 
-
+                // Static scenario processing
                 if (Response_data.allowed_static_scenarios != null)
                 {
-                    foreach (string scenario in Response_data.allowed_static_scenarios)
-                    {
+                    foreach (string scenario in Response_data.allowed_static_scenarios) 
                         AddStaticScene(scenario);
-                    }
                 }
-
+                // Static Response scenario processing
                 if (Response_data.allowed_static_response_scenarios != null)
                 {
-                    foreach (string scenario in Response_data.allowed_static_response_scenarios)
-                    {
+                    foreach (string scenario in Response_data.allowed_static_response_scenarios) 
                         AddStaticResponseScene(scenario);
-                    }
                 }
-
+                // Moving targets scenario response
                 if (Response_data.allowed_moving_targets_scenarios != null)
                 {
-                    foreach (string scenario in Response_data.allowed_moving_targets_scenarios)
-                    {
+                    foreach (string scenario in Response_data.allowed_moving_targets_scenarios) 
                         AddMovingTargetScene(scenario);
-                    }
                 }
-
+                // 3D Scenario processing
                 if (Response_data.allowed_animated3d_scenarios != null)
                 {
-                    foreach (string scenario in Response_data.allowed_animated3d_scenarios)
-                    {
+                    foreach (string scenario in Response_data.allowed_animated3d_scenarios) 
                         AddAnimated3DScene(scenario);
-                    }
                 }
 
+                // Fallback Logic
                 if (handler_3D.options.Count <= 1) handler_3D.options.Add(new TMP_Dropdown.OptionData() { text = "No scenarios." });
                 if (handler_static.options.Count <= 1) handler_static.options.Add(new TMP_Dropdown.OptionData() { text = "No scenarios." });
                 if (handler_static_response.options.Count <= 1) handler_static_response.options.Add(new TMP_Dropdown.OptionData() { text = "No scenarios." });
                 if (handler_moving_targets.options.Count <= 1) handler_moving_targets.options.Add(new TMP_Dropdown.OptionData() { text = "No scenarios." });
+
+                // Force Unity to update the visual UI with the brand new data structures
+                handler_static.RefreshShownValue();
+                handler_static_response.RefreshShownValue();
+                handler_moving_targets.RefreshShownValue();
+                handler_3D.RefreshShownValue();
             }
         }
         catch (Exception e)
         {
             print(e.StackTrace);
         }
+    }
+
+    private void ResetDropDowns()
+    {
+        // Reset drop downs
+        handler_static.value = 0;
+        handler_static.options.Clear();
+
+        handler_static_response.value = 0;
+        handler_static_response.options.Clear();
+
+        handler_moving_targets.value = 0;
+        handler_moving_targets.options.Clear();
+
+        handler_3D.value = 0;
+        handler_3D.options.Clear();
+
+        // Reset scenario variables
+        static_scenarios.Clear();
+        static_response_scenarios.Clear();
+        moving_target_scenarios.Clear();
+        animated_3D_scenarios.Clear();
     }
 
     public void populateDropDown()
@@ -531,10 +627,12 @@ public class DropDown : MonoBehaviour
 
         if(name.ToLower().Contains("hunting"))
         {
-            handler_3D.options.Add(new TMP_Dropdown.OptionData() { text = num3DAnimatedScenes + ". Ground Hunting" });
-            handler_3D.options.Add(new TMP_Dropdown.OptionData() { text = num3DAnimatedScenes + ". Outdoor Hunting" });
-            animated_3D_scenarios.Add("Ground Hunting");
-            animated_3D_scenarios.Add("Outdoor Hunting");
+            // handler_3D.options.Add(new TMP_Dropdown.OptionData() { text = num3DAnimatedScenes + ". Ground Hunting" });
+            // handler_3D.options.Add(new TMP_Dropdown.OptionData() { text = num3DAnimatedScenes + ". Outdoor Hunting" });
+            handler_3D.options.Add(new TMP_Dropdown.OptionData() { text = num3DAnimatedScenes + ". Wildlife Hunting" });
+            // animated_3D_scenarios.Add("Ground Hunting");
+            // animated_3D_scenarios.Add("Outdoor Hunting");
+            animated_3D_scenarios.Add("Wildlife Hunting");
         }
         else
         {
@@ -542,6 +640,8 @@ public class DropDown : MonoBehaviour
             animated_3D_scenarios.Add(name);
         }
     }
+
+
     public void HandleStaticInputData(int val)
     {
         //infoUiPanel.GetComponent<InfoManager>().closeInfo();
@@ -555,8 +655,8 @@ public class DropDown : MonoBehaviour
     {
         //infoUiPanel.GetComponent<InfoManager>().closeInfo();
         sceneValSelected = val - 1;
-        softwareSceneName = static_response_scenarios[val - 1];
-        //print("Selected Name is: " + softwareSceneName);
+        softwareSceneName = static_response_scenarios[sceneValSelected];
+        
 
         softwareSceneName = regenerateName(softwareSceneName, "static response");
         //print("Scene Selected is: " + softwareSceneName);
@@ -585,6 +685,7 @@ public class DropDown : MonoBehaviour
         LoadNextScenario();
     }
 
+
     private void LoadNextScenario()
     {
         if (softwareSceneName.ToLower().Contains("basic") || softwareSceneName.ToLower().Contains("lane")
@@ -601,12 +702,22 @@ public class DropDown : MonoBehaviour
         }
         else if (softwareSceneName.ToLower().Contains("hunting"))
         {
-            SceneManager.LoadScene("HuntingConditionSetting");
+            // SceneManager.LoadScene("HuntingConditionSetting");
+            SceneManager.LoadScene("TestConditionSetting");
         }
         else
         {
             SceneManager.LoadScene(softwareSceneName);
         }
+    }
+    public void OpenIPSCOptions()
+    {
+        softwareSceneName = "Basic1LaneIPSCExtended";
+        SceneManager.LoadScene("IPSCExtendedSceneOptions");
+    }
+    public void OpenVideoOptions()
+    {
+        SceneManager.LoadScene("VideoSceneOptions");
     }
 
     private string regenerateName(string name, string sceneType)
@@ -680,6 +791,10 @@ public class DropDown : MonoBehaviour
             {
                 name = "Basic1LaneAnimalTargetStatic";
             }
+            else if (name == "Ipsc Board")
+            {
+                name = "Basic1LaneIPSCBoardTargetStatic";
+            }
 
         }
         else if(sceneType == "3D")
@@ -712,7 +827,10 @@ public class DropDown : MonoBehaviour
             {
                 name = "CloseUpSuspectShoot";
             }
-
+            else if (name == "Suspect Shoot")
+            {
+                name = "CloseUpSuspectShoot";
+            }
         }
         else
         {
@@ -808,7 +926,15 @@ public class DropDown : MonoBehaviour
             {
                 name = "BasicClayPigeonPlat1LaneShoot";
             }
-            else if (name == "Rising Shape")
+            else if (name == "3D Clay Pigeon")
+            {
+                name = "Basic1Lane3DClayPigeon";
+            } // 3D Bird Hunting
+            else if (name == "3D Bird Hunting")
+            {
+                name = "Basic1LaneBirdHunting";
+            } // 
+            else if (name == "Rising Target")
             {
                 name = "BasicRisingShapePlat1LaneShoot";
             }
@@ -819,6 +945,22 @@ public class DropDown : MonoBehaviour
             else if (name == "Expression Shoot")
             {
                 name = "Basic1LaneColorExpressionShoot";
+            }
+            else if (name == "Ipsc Board")
+            {
+                name = "Basic1LaneIPSCBoardTarget";
+            }
+            else if (name == "Pepper Popper Plate")
+            {
+                name = "Basic1LanePepperPopperTarget";
+            }
+            else if (name == "Target Recognition")
+            {
+                name = "Basic1LaneTargetRecognition";
+            }
+            else if (name == "Decision Point")
+            {
+                name = "Basic1LaneDecisionPTShoot";
             }
         }
 

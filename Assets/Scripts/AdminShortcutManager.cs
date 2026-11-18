@@ -9,6 +9,7 @@ public class AdminShortcutManager : MonoBehaviour
     public GameObject shortcutButton;
     public GameObject sceneNamesOptions;
     public GameObject controlButtonsManager;
+    public GameObject bottom_line;
 
     //Control Variables
     private bool isLoadTestPressed = false;
@@ -18,9 +19,11 @@ public class AdminShortcutManager : MonoBehaviour
     private bool currResetStatus = false;
     private bool currTrainigStatus = false;
     private bool currCountDownStatus = false;
+    private bool isBottomLineDisabled = false;
 
     void Start()
     {
+        if (bottom_line != null) bottom_line.SetActive(true);
         buttonLabel.text = "Reset Paper";
         controlButtonsManager = GameObject.FindGameObjectWithTag("ControlButtonsManager");
         UpdateShortcutLaneText();
@@ -63,6 +66,7 @@ public class AdminShortcutManager : MonoBehaviour
             if(StaticVariableManager.startCountDown)
             {
                 shortcutButton.SetActive(false);
+                bottom_line.SetActive(false);
                 isStartPressed = true;
             }
         }
@@ -81,6 +85,7 @@ public class AdminShortcutManager : MonoBehaviour
             if(StaticVariableManager.isTrainingPause == true)
             {
                 shortcutButton.SetActive(true);
+                bottom_line.SetActive(true);
             }
 
             isButtonSet = true;

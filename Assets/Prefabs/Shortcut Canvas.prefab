@@ -53,6 +53,7 @@ MonoBehaviour:
   shortcutButton: {fileID: 6087832299501393860}
   sceneNamesOptions: {fileID: 9191855507049168224}
   controlButtonsManager: {fileID: 0}
+  bottom_line: {fileID: 8284619622292489393}
 --- !u!1 &1387444831866623343
 GameObject:
   m_ObjectHideFlags: 0
@@ -614,6 +615,11 @@ MonoBehaviour:
 --- !u!224 &8284619622097228069 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 85167018275409655, guid: aecf543c567085e418cafc76c0e8e881, type: 3}
+  m_PrefabInstance: {fileID: 8346985766755540946}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &8284619622292489393 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 85167018315946851, guid: aecf543c567085e418cafc76c0e8e881, type: 3}
   m_PrefabInstance: {fileID: 8346985766755540946}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &9191855507049168224 stripped

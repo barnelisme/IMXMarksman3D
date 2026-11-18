@@ -26,9 +26,21 @@ public class HiddenTargetMovement : MonoBehaviour
 
         //all_soldiers = GameObject.FindGameObjectsWithTag("soldier");
         targetSpawner = GameObject.FindGameObjectWithTag("targetSpawner");
-        shootPoints = targetSpawner.GetComponent<targetSpawner>().shootPoints;
-        safePoint = targetSpawner.GetComponent<targetSpawner>().safePoint;
-        assignShootIndex();
+
+        if(targetSpawner != null)
+        {
+            shootPoints = targetSpawner.GetComponent<targetSpawner>().shootPoints;
+            safePoint = targetSpawner.GetComponent<targetSpawner>().safePoint;
+            assignShootIndex();
+        }
+
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        if (targetSpawner != null) manageMovements(); 
+        
     }
 
     private void assignShootIndex()
@@ -41,18 +53,11 @@ public class HiddenTargetMovement : MonoBehaviour
         StaticVariableManager.currentIndex = shootIndex;
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        manageMovements(); 
-        
-    }
-
     private void manageMovements()
     {
         if(countDownStart.start_training && !StaticVariableManager.isTrainingPause)
         {
-            if (!isShootPointReached)
+            if (!isShootPointReached && shootPoints.Length > 0)
             {
                 if (Vector3.Distance(transform.position, shootPoints[shootIndex].transform.position) < threshold)
                 {

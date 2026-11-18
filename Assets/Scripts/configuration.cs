@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
@@ -19,8 +19,11 @@ public class configuration : MonoBehaviour
     void Start()
     {
         activeScene = SceneManager.GetActiveScene().name;
-        if (activeScene.ToLower().Contains("login"))
+        if (activeScene.ToLower().Contains("login") || activeScene.ToLower().Contains("mainmenu"))
+        {
             CheckAndCopyFilesBasedOnInstallation();
+            CreateSoftwareFolders();
+        }
             //CopyConfigurationFiles();
 
         LoadConfiguration();
@@ -36,9 +39,31 @@ public class configuration : MonoBehaviour
         }
     }
 
+    private void CreateSoftwareFolders()
+    {
+        // ----------------------------
+        // 1️⃣ External Documents Folder
+        // ----------------------------
+        string documentsFolder = System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments);
+
+        string externalImageLocation = Path.Combine(
+            documentsFolder,
+            "IMX",
+            "BackgroundImages"
+        );
+
+        if (!Directory.Exists(externalImageLocation))
+        {
+            Directory.CreateDirectory(externalImageLocation);
+            // Debug.Log("Created external image folder: " + externalImageLocation);
+        }
+    }
+
     void CheckAndCopyFilesBasedOnInstallation()
     {
         string installationFilePath = Path.Combine(sourceFolderPath, "Settings.txt");
+
+        // print("Copying files...");
 
         // Step 1: Read the contents of the installation.txt file
         if (File.Exists(installationFilePath))
@@ -190,23 +215,23 @@ public class configuration : MonoBehaviour
 
     private void LoadConfigData()
     {
-        configurations[configurations.Length - 1] = "server_url=https://www.imx-omp.com";    //https://www.imx-omp.com //http://127.0.0.1:80 //Add Data
+        configurations[configurations.Length - 1] = "server_url=https://www.hubscorex.com";    //https://www.imx-omp.com //http://127.0.0.1:80 //Add Data
         Array.Resize(ref configurations, configurations.Length + 1);                                                       //Add Memory Space
         configurations[configurations.Length - 1] = "stress_vest_url=192.168.0.255";                 //Add Data
         Array.Resize(ref configurations, configurations.Length + 1);                                                       //Add Memory Space
-        configurations[configurations.Length - 1] = "login_endpoint=/imx/login/login.php";             //Add Data
+        configurations[configurations.Length - 1] = "login_endpoint=/imx-sim-api/login/login.php";             //Add Data
         Array.Resize(ref configurations, configurations.Length + 1);                                                       //Add Memory Space
-        configurations[configurations.Length - 1] = "scoring_endpoint=/imx/trainees/setTrainees.php";     //Add Data
+        configurations[configurations.Length - 1] = "scoring_endpoint=/imx-sim-api/trainees/setTrainees.php";     //Add Data
         Array.Resize(ref configurations, configurations.Length + 1);                                                       //Add Memory Space
-        configurations[configurations.Length - 1] = "get_trainees_endpoint=/imx/trainees/getTrainees.php";    //Add Data
+        configurations[configurations.Length - 1] = "get_trainees_endpoint=/imx-sim-api/trainees/getTrainees.php";    //Add Data
         Array.Resize(ref configurations, configurations.Length + 1);                                                       //Add Memory Space
-        configurations[configurations.Length - 1] = "range_scoring_endpoint=/imx/trainees/setTrainees.php";  //Add Data
+        configurations[configurations.Length - 1] = "range_scoring_endpoint=/imx-sim-api/trainees/setTrainees.php";  //Add Data
         Array.Resize(ref configurations, configurations.Length + 1);                                                       //Add Memory Space
-        configurations[configurations.Length - 1] = "lane_image_endpoint=/imx/trainees/setImageRes.php";  //Add Data
+        configurations[configurations.Length - 1] = "lane_image_endpoint=/imx-sim-api/trainees/setImageRes.php";  //Add Data
         Array.Resize(ref configurations, configurations.Length + 1);                                                       //Add Memory Space
-        configurations[configurations.Length - 1] = "get_allowed_scenes_endpoint=/imx/scenarios/allowed_scenarios.php";//Add Data
+        configurations[configurations.Length - 1] = "get_allowed_scenes_endpoint=/imx-sim-api/scenarios/allowed_scenarios.php";//Add Data
         Array.Resize(ref configurations, configurations.Length + 1);                                                       //Add Memory Space
-        configurations[configurations.Length - 1] = "get_update_endpoint=/imx/comms/get_comms.php";    //Add Data
+        configurations[configurations.Length - 1] = "get_update_endpoint=/imx-sim-api/comms/get_comms.php";    //Add Data
     }
     private void LoadConfiguration()
     {

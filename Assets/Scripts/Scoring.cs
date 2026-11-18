@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.Networking;
@@ -11,6 +11,8 @@ using UnityEngine.SceneManagement;
 using System.Linq;
 using System.IO.Compression;
 using System.Text;
+
+
 
 public class Scoring : MonoBehaviour
 {
@@ -74,27 +76,32 @@ public class Scoring : MonoBehaviour
 
 
     static public string gun = "handgun",trainee_id=" ", trainee_name = " ", exercise_name = " ", instructor = " ", time = " ", number_of_civilian_hit = " ", number_of_enemy_hit = " ", precision_percentage = " ", number_of_rounds_used = " ";
-    static public string ammo_setting = "Live", totNumLanes = "1"; //"Infrared Laser"
+    static public string ammo_setting = "infrared laser", totNumLanes = "1"; //"Infrared Laser"
     static public List<string> basic_lane_trainee_names, basic_scene_score, basic_scene_percentage, basic_scene_targets_hit, basic_scene_shots_missed, 
         basic_lane_split_times, basic_lane_training_times, basic_lane_response_times;
     static public string simulation_type = "training"; //Range = training
     static public string shooting_PaperRoll_Setting = "static"; //Range = training
+
+
+    private BackupManager backupManager;
+
 
     // Start is called before the first frame update
     void Start()
     {
         /*AddComponent(this.GetComponent<FirstPersonController>());
         AddComponentMenu(this.GetComponent<ReceiveUdp>());*/
-
-
+        backupManager = new BackupManager();
+        backupManager.CheckBackupFolder();
+        // backupManager.StartBackupManager();
 
         activeScene = SceneManager.GetActiveScene().name;
         elapsedTime = 0f;
         elapsedTimes = new List<float>();
         averageShotTime = 0f;
 
-        
 
+        StaticVariableManager.OMPScoreSent = false;
         ScoreFilesManager();
 
         elapsedTimePerLane.Clear();
@@ -122,16 +129,10 @@ public class Scoring : MonoBehaviour
 
     private void Update()
     {
+
         if (StaticVariableManager.isScoreLanesReady && StaticVariableManager.OMPScoreSent == false)
         {
-            try
-            {
-                StartCoroutine(SendWrappedDataToServer());
-            }
-            catch
-            {
-
-            }
+            StartCoroutine(SendWrappedDataToServer());
 
             StaticVariableManager.OMPScoreSent = true;
         }
@@ -142,7 +143,7 @@ public class Scoring : MonoBehaviour
         elapsedTimePerLane.Clear();
         SpreadingPerLane.Clear();
         SpreadingPerLaneY.Clear();
-        displayText = "";
+        // displayText = "";
         for (int i = 0; i < 3; i++)
         {
             scoreSheet[i] = 0;
@@ -163,12 +164,12 @@ public class Scoring : MonoBehaviour
                 if (SceneManager.GetActiveScene().name != "moving_targets_indoor_range")
                 {
                     Lane1 = GameObject.Find("Lane_" + (i + 1)).GetComponent<TextMesh>();
-                    Lane1.text = "Lane " + (i + 1);
+                    if(Lane1 != null) Lane1.text = "Lane " + (i + 1);
                 }
             }
             catch(Exception e)
             {
-                Debug.Log("Error when reseting range for text display:" + e.Message);
+                // Debug.Log("Error when reseting range for text display:" + e.Message);
             }
         }
         Scoring.elapsedTime = 0;
@@ -227,28 +228,6 @@ public class Scoring : MonoBehaviour
         System.IO.File.WriteAllText(@scoringPath, trainee_id + "," + trainee_name + "," + exercise_name + "," + instructor + "," + time + "," + number_of_civilian_hit + "," + number_of_enemy_hit + "," + precision_percentage + "," + number_of_rounds_used + Environment.NewLine);
 
     }
-    public void SaveScore(string tarinee_ID, string trainee_Name, string exercise_Name, string Instructor, string Time, string number_of_civilian_Hit, string number_of_enemy_Hit, string precision_Percentage, string number_of_rounds_Used)
-    {
-        trainee_id = tarinee_ID;
-        trainee_name = trainee_Name;
-        exercise_name = SceneManager.GetActiveScene().name;
-        //gun = Quit.typeOfGun.text;
-        instructor = Instructor;
-        time = Time;
-        number_of_civilian_hit = number_of_civilian_Hit;
-        number_of_enemy_hit = number_of_enemy_Hit;
-        precision_percentage = precision_Percentage;
-        number_of_rounds_used= number_of_rounds_Used;
-        Debug.Log("Initialising send process...");
-        //SendData senddata = new SendData();
-        //senddata.setData();
-
-        StartCoroutine(sendData());// tarinee_id, trainee_name, exercise_name, instructor, time, number_of_civilian_hit, number_of_enemy_hit, precision_percentage, number_of_rounds_used))
-        
-        //Save to csv file!
-        System.IO.File.AppendAllText(@scoringPath, trainee_id + "," + trainee_name + "," + exercise_name + "," + instructor + "," + time + "," + number_of_civilian_hit + "," + number_of_enemy_hit + "," + precision_percentage + "," + number_of_rounds_used + Environment.NewLine);
-
-    }
 
     public void SaveTrainingScore(string tarinee_ID, string trainee_Name, string exercise_Name, string Instructor, string Time, List<string> score, List<string> percentages, string numLanes, List<string> sceneTargetsHit, List<string> sceneShotsMissed, List<string> laneTraineeNames, List<string> laneSplitTimes, List<string> laneTrainingTime, List<string> laneResponseTimes)
     {
@@ -291,22 +270,10 @@ public class Scoring : MonoBehaviour
 
     }
 
-    public void Grouping(int highestX, int highestY)
-    {
-        
-    }
     public void GetPoints(List<Vector2> bulletPoints, int lane, string targetName)
     {
         Scoring.writeLog("GetPoints Lane[" + lane + "]" + " targetName:" + targetName);
         AimingBreathingCalculation(bulletPoints, bulletPoints.Count, lane, targetName);
-    }
-    public void Verticality(List<System.Drawing.Point> bulletPoints)
-    {
-
-    }
-    public void Horizontality(List<System.Drawing.Point> bulletPoints)
-    {
-
     }
     void AimingBreathingCalculation(List<Vector2> positionXY, int counterSize, int LaneNumber, string targetName)
     {
@@ -478,11 +445,11 @@ public class Scoring : MonoBehaviour
 
             if (scoreSheet[LaneNumber] > 0)
             {
-                displayText = "Shots:" + counterSize.ToString() + "\nScore:" + scoreSheet[LaneNumber] + "/" + (5 * counterSize) + "\nGrouping:" + groupingScore + "\n Horizontal:" + aimingScore + "\n Vertical:" + breathingScore + "\n Avg Time:" + (Math.Round(averageShotTimes[LaneNumber], 3));// + "\nHor:" + Math.Round(averageAiming[LaneNumber], 3) + "\nVert:" + Math.Round(averageVert[LaneNumber], 3);
+                displayText = "Shots:" + counterSize.ToString() + "\nScore:" + scoreSheet[LaneNumber] + "/" + (5 * counterSize) + "\nGrouping:" + groupingScore + "\nHorizontal:" + aimingScore + "\nVertical:" + breathingScore + "\nAvg Time:" + (Math.Round(averageShotTimes[LaneNumber], 3));// + "\nHor:" + Math.Round(averageAiming[LaneNumber], 3) + "\nVert:" + Math.Round(averageVert[LaneNumber], 3);
             }
             else
             {
-                displayText = "Shots:" + counterSize.ToString() + "\nGrouping:" + groupingScore + "\n Horizontal:" + aimingScore + "\n Vertical:" + breathingScore + "\n Avg Time:" + (Math.Round(averageShotTimes[LaneNumber], 3));// + "\nHor:" + Math.Round(averageAiming[LaneNumber], 3) + "\nVert:" + Math.Round(averageVert[LaneNumber], 3);
+                displayText = "Shots:" + counterSize.ToString() + "\nGrouping:" + groupingScore + "\nHorizontal:" + aimingScore + "\nVertical:" + breathingScore;// + "\nHor:" + Math.Round(averageAiming[LaneNumber], 3) + "\nVert:" + Math.Round(averageVert[LaneNumber], 3); // + "\nAvg Time:" + (Math.Round(averageShotTimes[LaneNumber], 3))
             }
             suggestionTexts.text = suggestX[LaneNumber] + "\n" + suggestY[LaneNumber];
 
@@ -692,52 +659,11 @@ public class Scoring : MonoBehaviour
                 suggestY[laneNumber] = "\n--Grip\n--Breathing";
             }
 
-                /*if (Math.Round(averageVert[laneNumber], 3) <= minGrouping)
-                {
-                    //suggestY = "Good Grouping";
-                }
-                else if (Math.Round(averageVert[laneNumber], 3) > minGrouping && Math.Round(averageVert[laneNumber], 2) <= medGrouping)
-                {
-                    suggestY[laneNumber] += "\n--FollowThrough";
-                }
-                else if (Math.Round(averageVert[laneNumber], 3) > medGrouping && Math.Round(averageVert[laneNumber], 2) < maxGrouping)
-                {
-                    suggestY[laneNumber] += "\n-- Stance";
-                }
-                else
-                {
-                    suggestY[laneNumber] += "\n-- posture";
-                }*/
             }
     }
-    IEnumerator sendData()
-    {
-        Url = configuration.ConfigAllUrls["server_url"];
-        scoring_endpoint = configuration.ConfigAllEndpoints["scoring_endpoint"];
-        WWWForm form;
-        form = new WWWForm();
 
-        print("Trainee ID is: " + trainee_id + ".");
-        print("Trainee name is: " + trainee_name + ".");
 
-        print("SEnding data to " + Url + scoring_endpoint);
-        form.AddField("tarinee_id", trainee_id); //trainee_id
-        form.AddField("trainee_name", trainee_name);
-        form.AddField("exercise_name", exercise_name);
-        form.AddField("instructor", instructor);
-        form.AddField("date", time);
-        form.AddField("number_of_civilians_hit", number_of_civilian_hit);
-        form.AddField("number_of_enemy_hit", number_of_enemy_hit);
-        form.AddField("precision_percentage", precision_percentage);
-        form.AddField("number_of_rounds_used", number_of_rounds_used);
-
-        WWW www = new WWW(Url+ scoring_endpoint, form);
-        yield return www;
-        print("from Beny " + www.text);
-        www.Dispose();
-    }
-
-    IEnumerator SendWrappedDataToServer()
+    private IEnumerator SendWrappedDataToServer()
     {
 
         Url = configuration.ConfigAllUrls["server_url"];
@@ -779,9 +705,9 @@ public class Scoring : MonoBehaviour
         string lane_3_user_under_email = "";
         string lane_3_training_time = "";
 
-        string lane1_image_path = FileManager.gamepath + "Score Images/Trainee_1.png"; // Adjust path as needed
-        string lane2_image_path = FileManager.gamepath + "Score Images/Trainee_2.png";
-        string lane3_image_path = FileManager.gamepath + "Score Images/Trainee_3.png";
+        string lane1_image_path = FileManager.gamePath + "Score Images/Trainee_1.png"; // Adjust path as needed
+        string lane2_image_path = FileManager.gamePath + "Score Images/Trainee_2.png";
+        string lane3_image_path = FileManager.gamePath + "Score Images/Trainee_3.png";
 
         /////////////////////////////////////////////////////////////////////////////////////// 
 
@@ -795,14 +721,51 @@ public class Scoring : MonoBehaviour
         WWWForm lane2_image_form = new WWWForm();
         WWWForm lane3_image_form = new WWWForm();
 
+        string payload_header = ($"success*Data inserted*{totNumLanes}*{exercise_name}*{time}");
+        string lane_1_data = "";
+        string lane_2_data = "";
+        string lane_3_data = "";
+
+
+        bool isInternetAvailable = false;
+        bool isBackupEnabled = true;
+
+        yield return StartCoroutine(CheckInternetConnection((bool isConnected) =>
+        {
+            isInternetAvailable = isConnected;
+        }));
+
+        // print(login_Manager.EmailText);
+        if (login_Manager.EmailText == "Empty" || login_Manager.EmailText == "admin")
+        {
+            isBackupEnabled = false;
+        }
+
         //Send Lane Data
         switch (totNumLanes)
         {
             case "1":
-                //////////////////////////////////////////////////////////////////////////
-                ////////////////////////////Shooting score preparation////////////////////
+                byte[] imageBytes1_lane1 = File.ReadAllBytes(lane1_image_path);
+
+                ////////////////////////////Shooting score processing//////////////
                 lane_1_trainee_Data = basic_lane_trainee_names[0].Split(':');
                 lane_1_training_time = basic_lane_training_times[0].Replace(',', '.');
+
+
+                lane_1_data = ($"{basic_scene_percentage[0]}*{basic_scene_targets_hit[0]}*{basic_scene_shots_missed[0]}*" +
+                    $"{basic_lane_split_times[0]}*{basic_lane_response_times[0]}*{lane_1_training_time}");
+
+                if (!isBackupEnabled)
+                {
+                    break;
+                }
+                else if (lane_1_trainee_Data[0] == "" || isInternetAvailable == false)
+                {
+                    backupManager.BackupLane1OfflineData(login_Manager.EmailText, payload_header, lane_1_data, imageBytes1_lane1);
+                    break;
+                }
+
+                // print("Point reached...");
 
                 lane_1_trainee_id = lane_1_trainee_Data[0];
                 lane_1_trainee_name = lane_1_trainee_Data[1];
@@ -846,55 +809,50 @@ public class Scoring : MonoBehaviour
                     { "image_key", lane1_image_key}
                 };
 
-                // Add Lane1 Data
-                jsonData_1.Add("lane_1", lane1_data_1);
+                print("Training time " + lane_1_training_time);
 
+                // Process score data
+                jsonData_1.Add("lane_1", lane1_data_1); // Add Lane1 Data
                 string jsonString_1 = JsonConvert.SerializeObject(jsonData_1);
                 byte[] bodyRaw_1 = System.Text.Encoding.UTF8.GetBytes(jsonString_1);
-
                 string payLoad = System.Text.Encoding.UTF8.GetString(bodyRaw_1);
 
-                //print("JSON Payload: " + payLoad);
-
-                using (UnityWebRequest www = new UnityWebRequest(Url + range_scoring_endpoint, "POST"))
-                {
-                    www.uploadHandler = new UploadHandlerRaw(bodyRaw_1);
-                    www.downloadHandler = new DownloadHandlerBuffer();
-                    www.SetRequestHeader("Content-Type", "application/json");
-
-                    yield return www.SendWebRequest();
-
-                    if (www.result == UnityWebRequest.Result.Success)
-                    {
-                        Debug.Log("Data sent successfully: " + www.downloadHandler.text);
-                    }
-                    else
-                    {
-                        Debug.LogError("Error sending data for lane: " + www.error);
-                    }
-                }
-
-                ///////////////////////////////////////////////////////////////////////////////////////////
-                ////////////////////////////////////Image score processing/////////////////////////////////
-                // davidw@exanple.com_SHOOTER69125_John-Doe_lane2
-
-                byte[] imageBytes = File.ReadAllBytes(lane1_image_path);
-
-                lane1_image_form.AddBinaryData("image_blob", imageBytes, "image.png", "image/png");
+                ///////////////////////Process image data//////////////////////////
+                lane1_image_form.AddBinaryData("image_blob", imageBytes1_lane1, "image.png", "image/png");
                 lane1_image_form.AddField("image_key", lane1_image_key);
 
-                StartCoroutine(SendForm(lane1_image_form));
 
+                // 
+                StartCoroutine(SendScoreData(bodyRaw_1, Url + range_scoring_endpoint)); // Send score data HTTP request
+                StartCoroutine(SendImageForm(imageBytes1_lane1, lane1_image_key, Url + lane_image_endpoint)); // send image data form request
+
+                print("JSON Payload: " + payLoad);
                 break;
 
             case "2":
-                // Replace commas with dots in training time
-                //basic_lane_training_times[0] = basic_lane_training_times[0].Replace(',', '.');
+                byte[] imageBytes2_lane1 = File.ReadAllBytes(lane1_image_path);
+                byte[] imageBytes2_lane2 = File.ReadAllBytes(lane2_image_path);
 
+                ////////////////////////////Shooting score processing//////////////
                 lane_1_trainee_Data = basic_lane_trainee_names[0].Split(':');
                 lane_2_trainee_Data = basic_lane_trainee_names[1].Split(':');
                 lane_1_training_time = basic_lane_training_times[0].Replace(',', '.');
                 lane_2_training_time = basic_lane_training_times[1].Replace(',', '.');
+
+                // if (lane_1_trainee_Data[1] == null) break; // Lane 1 Break Point (Fail Safe)
+                // if (lane_2_trainee_Data[1] == null) break; // Lane 2 Break Point (Fail Safe)
+                lane_1_data = ($"{basic_scene_percentage[0]}*{basic_scene_targets_hit[0]}*" + 
+                    $"{basic_scene_shots_missed[0]}*{basic_lane_split_times[0]}*{basic_lane_response_times[0]}*{lane_1_training_time}");
+                lane_2_data = ($"{basic_scene_percentage[1]}*{basic_scene_targets_hit[1]}*" +
+                    $"{basic_scene_shots_missed[1]}*{basic_lane_split_times[1]}*{basic_lane_response_times[1]}*{lane_2_training_time}");
+
+                if (lane_1_trainee_Data[0] == "" || isInternetAvailable == false && (login_Manager.EmailText != "Empty" && login_Manager.EmailText != "admin"))
+                {
+                    backupManager.BackupLane2OfflineData(login_Manager.EmailText,payload_header, lane_1_data, lane_2_data, 
+                        imageBytes2_lane1, imageBytes2_lane2);
+                    break;
+                }
+
 
                 lane_1_trainee_id = lane_1_trainee_Data[0];
                 lane_1_trainee_name = lane_1_trainee_Data[1];
@@ -969,42 +927,13 @@ public class Scoring : MonoBehaviour
                     { "image_key", lane2_image_key}
                 };
 
-                // Add Lane 1 Data
-                jsonData_2.Add("lane_1", lane1_data_2);
-
-                // Add Lane 2 Data
-                jsonData_2.Add("lane_2", lane2_data_2);
-
+                // process score data
+                jsonData_2.Add("lane_1", lane1_data_2); // Add Lane 1 Data       
+                jsonData_2.Add("lane_2", lane2_data_2); // Add Lane 2 Data
                 string jsonString_2 = JsonConvert.SerializeObject(jsonData_2);
                 byte[] bodyRaw_2 = System.Text.Encoding.UTF8.GetBytes(jsonString_2);
-                print("JSON Payload: " + System.Text.Encoding.UTF8.GetString(bodyRaw_2));
 
-                // Send HTTP POST request with JSON
-                using (UnityWebRequest www = new UnityWebRequest(Url + range_scoring_endpoint, "POST"))
-                {
-                    www.uploadHandler = new UploadHandlerRaw(bodyRaw_2);
-                    www.downloadHandler = new DownloadHandlerBuffer();
-                    www.SetRequestHeader("Content-Type", "application/json");
-
-                    yield return www.SendWebRequest();
-
-                    if (www.result == UnityWebRequest.Result.Success)
-                    {
-                        Debug.Log("Data sent successfully: " + www.downloadHandler.text);
-                    }
-                    else
-                    {
-                        Debug.LogError("Error sending data for lane: " + www.error);
-                    }
-                }
-
-                ///////////////////////////////////////////////////////////////////////////////////////////
-                ////////////////////////////////////Image score processing/////////////////////////////////
-                // davidw@exanple.com_SHOOTER69125_John-Doe_lane2
-
-                byte[] imageBytes2_lane1 = File.ReadAllBytes(lane1_image_path);
-                byte[] imageBytes2_lane2 = File.ReadAllBytes(lane2_image_path);
-                
+                ///////////////////////Process image data//////////////////////////
 
                 lane1_image_form.AddBinaryData("image_blob", imageBytes2_lane1, "image.png", "image/png");
                 lane1_image_form.AddField("image_key", lane1_image_key);
@@ -1012,20 +941,43 @@ public class Scoring : MonoBehaviour
                 lane2_image_form.AddBinaryData("image_blob", imageBytes2_lane2, "image.png", "image/png");
                 lane2_image_form.AddField("image_key", lane2_image_key);
 
-                StartCoroutine(SendForm(lane1_image_form));
-                StartCoroutine(SendForm(lane2_image_form));
 
+                StartCoroutine(SendScoreData(bodyRaw_2, Url + range_scoring_endpoint)); // Send score data HTTP post
+                StartCoroutine(SendImageForm(imageBytes2_lane1, lane1_image_key, Url + lane_image_endpoint)); // Send image data post
+                StartCoroutine(SendImageForm(imageBytes2_lane2, lane2_image_key, Url + lane_image_endpoint)); // Send image data post
+
+                print("JSON Payload: " + System.Text.Encoding.UTF8.GetString(bodyRaw_2));
                 break;
             case "3":
-                // Replace commas with dots in training time
-                //basic_lane_training_times[0] = basic_lane_training_times[0].Replace(',', '.');
+                byte[] imageBytes3_lane1 = File.ReadAllBytes(lane1_image_path);
+                byte[] imageBytes3_lane2 = File.ReadAllBytes(lane2_image_path);
+                byte[] imageBytes3_lane3 = File.ReadAllBytes(lane3_image_path);
 
+                ////////////////////////////Shooting score processing//////////////
                 lane_1_trainee_Data = basic_lane_trainee_names[0].Split(':');
                 lane_2_trainee_Data = basic_lane_trainee_names[1].Split(':');
                 lane_3_trainee_Data = basic_lane_trainee_names[2].Split(':');
                 lane_1_training_time = basic_lane_training_times[0].Replace(',', '.');
                 lane_2_training_time = basic_lane_training_times[1].Replace(',', '.');
                 lane_3_training_time = basic_lane_training_times[2].Replace(',', '.');
+
+                // if (lane_1_trainee_Data[1] == null) break; // Lane 1 Break Point (Fail Safe)
+                // if (lane_2_trainee_Data[1] == null) break; // Lane 2 Break Point (Fail Safe)
+                // if (lane_3_trainee_Data[1] == null) break; // Lane 3 Break Point (Fail Safe)
+                lane_1_data = ($"{basic_scene_percentage[0]}*{basic_scene_targets_hit[0]}*" +
+                    $"{basic_scene_shots_missed[0]}*{basic_lane_split_times[0]}*{basic_lane_response_times[0]}*{lane_1_training_time}");
+                lane_2_data = ($"{basic_scene_percentage[1]}*{basic_scene_targets_hit[1]}*" +
+                    $"{basic_scene_shots_missed[1]}*{basic_lane_split_times[1]}*{basic_lane_response_times[1]}*{lane_2_training_time}");
+                lane_3_data = ($"{basic_scene_percentage[2]}*{basic_scene_targets_hit[2]}*" +
+                    $"{basic_scene_shots_missed[2]}*{basic_lane_split_times[2]}*{basic_lane_response_times[2]}*{lane_3_training_time}");
+
+                if (lane_1_trainee_Data[0] == "" || isInternetAvailable == false && (login_Manager.EmailText != "Empty" && login_Manager.EmailText != "admin"))
+                {
+                    backupManager.BackupLane3OfflineData(login_Manager.EmailText, payload_header, lane_1_data, lane_2_data, lane_3_data,
+                        imageBytes3_lane1, imageBytes3_lane2, imageBytes3_lane2);
+                    break;
+                }
+
 
                 lane_1_trainee_id = lane_1_trainee_Data[0];
                 lane_1_trainee_name = lane_1_trainee_Data[1];
@@ -1130,48 +1082,13 @@ public class Scoring : MonoBehaviour
                 };
 
                 // Add Lane 1 Data
-                jsonData_3.Add("lane_1", lane1_data_3);
-
-                // Add Lane 2 Data
-                jsonData_3.Add("lane_2", lane2_data_3);
-
-                // Add Lane 3 Data
-                jsonData_3.Add("lane_3", lane3_data_3);
-
+                jsonData_3.Add("lane_1", lane1_data_3); // Add Lane 1 Data
+                jsonData_3.Add("lane_2", lane2_data_3); // Add Lane 2 Data
+                jsonData_3.Add("lane_3", lane3_data_3); // Add Lane 3 Data
                 string jsonString_3 = JsonConvert.SerializeObject(jsonData_3);
                 byte[] bodyRaw_3 = System.Text.Encoding.UTF8.GetBytes(jsonString_3);
-                print("JSON Payload: " + System.Text.Encoding.UTF8.GetString(bodyRaw_3));
 
-
-
-                // Send HTTP POST request with JSON
-                using (UnityWebRequest www = new UnityWebRequest(Url + range_scoring_endpoint, "POST"))
-                {
-                    www.uploadHandler = new UploadHandlerRaw(bodyRaw_3);
-                    www.downloadHandler = new DownloadHandlerBuffer();
-                    www.SetRequestHeader("Content-Type", "application/json");
-
-                    yield return www.SendWebRequest();
-
-                    if (www.result == UnityWebRequest.Result.Success)
-                    {
-                        Debug.Log("Data sent successfully: " + www.downloadHandler.text);
-                    }
-                    else
-                    {
-                        Debug.LogError("Error sending data for lane: " + www.error);
-                    }
-                }
-
-                ///////////////////////////////////////////////////////////////////////////////////////////
-                ////////////////////////////////////Image score processing/////////////////////////////////
-                // davidw@exanple.com_SHOOTER69125_John-Doe_lane2
-
-                byte[] imageBytes3_lane1 = File.ReadAllBytes(lane1_image_path);
-                byte[] imageBytes3_lane2 = File.ReadAllBytes(lane2_image_path);
-                byte[] imageBytes3_lane3 = File.ReadAllBytes(lane3_image_path);
-
-
+                ///////////////////////Process image data//////////////////////////
                 lane1_image_form.AddBinaryData("image_blob", imageBytes3_lane1, "image1.png", "image/png");
                 lane1_image_form.AddField("image_key", lane1_image_key);
 
@@ -1181,28 +1098,49 @@ public class Scoring : MonoBehaviour
                 lane3_image_form.AddBinaryData("image_blob", imageBytes3_lane3, "image3.png", "image/png");
                 lane3_image_form.AddField("image_key", lane3_image_key);
 
-                print("Image key: " + lane1_image_key);
-                print("Image key: " + lane2_image_key);
-                print("Image key: " + lane3_image_key);
 
-                StartCoroutine(SendForm(lane1_image_form));
-                StartCoroutine(SendForm(lane2_image_form));
-                StartCoroutine(SendForm(lane3_image_form));
+                StartCoroutine(SendScoreData(bodyRaw_3, Url + range_scoring_endpoint)); // Send score data HTTP post
+                StartCoroutine(SendImageForm(imageBytes3_lane1, lane1_image_key, Url + lane_image_endpoint)); // Send image data post
+                StartCoroutine(SendImageForm(imageBytes3_lane2, lane2_image_key, Url + lane_image_endpoint)); // Send image data post
+                StartCoroutine(SendImageForm(imageBytes3_lane3, lane3_image_key, Url + lane_image_endpoint)); // Send image data post
 
+                print("JSON Payload: " + System.Text.Encoding.UTF8.GetString(bodyRaw_3));
                 break;
         }
 
     }
 
-    public IEnumerator SendForm(WWWForm form)
+    private IEnumerator SendScoreData(byte[] pay_load, string url_endpoint)
     {
+        using (UnityWebRequest www = new UnityWebRequest(url_endpoint, "POST"))
+        {
+            www.uploadHandler = new UploadHandlerRaw(pay_load);
+            www.downloadHandler = new DownloadHandlerBuffer();
+            www.SetRequestHeader("Content-Type", "application/json");
 
-        // Print raw form data (convert binary to readable format)
-        string payload = Encoding.UTF8.GetString(form.data);
-        // print("Payload Data: \n" + payload);
+            yield return www.SendWebRequest();
+
+            if (www.result == UnityWebRequest.Result.Success)
+            {
+                Debug.Log("Data sent successfully: " + www.downloadHandler.text);
+            }
+            else
+            {
+                Debug.LogError("Error sending data for lane: " + www.error);
+                if (backupManager != null)
+                    backupManager.SaveScoreBackupFile(pay_load, url_endpoint);
+            }
+        }
+    }
+
+    public IEnumerator SendImageForm(byte[] imageByte, string image_key, string url_endpoint)
+    {
+        WWWForm form = new WWWForm();
+        form.AddBinaryData("image_blob", imageByte, "image1.png", "image/png");
+        form.AddField("image_key", image_key);
 
         // Create the UnityWebRequest to send the POST request
-        using (UnityWebRequest www = UnityWebRequest.Post(Url + lane_image_endpoint, form))
+        using (UnityWebRequest www = UnityWebRequest.Post(url_endpoint, form))
         {
             // Send the request and wait for a response
             yield return www.SendWebRequest();
@@ -1217,1401 +1155,32 @@ public class Scoring : MonoBehaviour
             {
                 // If there was an error, print the error message
                 Debug.LogError("Request failed: " + www.error);
+
+                if (backupManager != null)
+                    backupManager.SaveImageBackupFile(imageByte, image_key, url_endpoint);
             }
-        }
 
-        
+        }   
     }
 
-    IEnumerator SendWrappedDataToServer_1()
+
+    public IEnumerator CheckInternetConnection(System.Action<bool> callback)
     {
-        Url = configuration.ConfigAllUrls["server_url"];
-        range_scoring_endpoint = configuration.ConfigAllEndpoints["range_scoring_endpoint"];
-        lane_image_endpoint = configuration.ConfigAllEndpoints["lane_image_endpoint"];
-
-        // Parse trainee data
-
-        string[] lane_1_trainee_Data;
-        string lane_1_trainee_id;
-        string lane_1_trainee_name;
-        string lane_1_user_under;
-        string lane_1_instructor_n;
-        string lane_1_gun_type;
-        string lane_1_trainee_email;
-        string lane_1_created_at;
-        string lane_1_user_under_email;
-        string lane_1_training_time;
-
-        string[] lane_2_trainee_Data;
-        string lane_2_trainee_id;
-        string lane_2_trainee_name;
-        string lane_2_user_under;
-        string lane_2_instructor_n;
-        string lane_2_gun_type;
-        string lane_2_trainee_email;
-        string lane_2_created_at;
-        string lane_2_user_under_email;
-        string lane_2_training_time;
-
-        string[] lane_3_trainee_Data;
-        string lane_3_trainee_id;
-        string lane_3_trainee_name;
-        string lane_3_user_under;
-        string lane_3_instructor_n;
-        string lane_3_gun_type;
-        string lane_3_trainee_email;
-        string lane_3_created_at;
-        string lane_3_user_under_email;
-        string lane_3_training_time;
-
-        string lane1_image_path = Application.dataPath + "/Resources/Score Images/Trainee_1.png"; // Adjust path as needed
-        string lane2_image_path = Application.dataPath + "/Resources/Score Images/Trainee_2.png";
-        string lane3_image_path = Application.dataPath + "/Resources/Score Images/Trainee_3.png";
-
-        //Send Lane Data
-        switch (totNumLanes)
+        using (UnityWebRequest request = UnityWebRequest.Head("https://www.google.com"))
         {
-            case "1":
-                // Replace commas with dots in training time
-                //basic_lane_training_times[0] = basic_lane_training_times[0].Replace(',', '.');
-
-                lane_1_trainee_Data = basic_lane_trainee_names[0].Split(':');
-                lane_1_training_time = basic_lane_training_times[0].Replace(',', '.');
-
-                lane_1_trainee_id = lane_1_trainee_Data[0];
-                lane_1_trainee_name = lane_1_trainee_Data[1];
-                lane_1_user_under = lane_1_trainee_Data[2];
-                lane_1_instructor_n = lane_1_trainee_Data[3];
-                lane_1_gun_type = lane_1_trainee_Data[4];
-                lane_1_trainee_email = lane_1_trainee_Data[5];
-                lane_1_created_at = lane_1_trainee_Data[6];
-                lane_1_user_under_email = lane_1_trainee_Data[7];
-
-                // Prepare JSON payload
-                Dictionary<string, object> jsonData_1 = new Dictionary<string, object>
-                {
-                    { "status", "success" },
-                    { "message", "Data inserted" },
-                    { "num_lanes", totNumLanes },
-                    { "scenario_type", exercise_name },
-                    { "time", time }
-                };
-
-                // Create dictionaries for each lane
-                Dictionary<string, string> lane1_data_1 = new Dictionary<string, string>
-                {
-                    { "trainee", lane_1_trainee_name },
-                    { "trainee_id", lane_1_trainee_id },
-                    { "trainee_percentage", basic_scene_percentage[0] },
-                    { "target_hits", basic_scene_targets_hit[0] },
-                    { "target_missed", basic_scene_shots_missed[0] },
-                    { "training_time", lane_1_training_time },
-                    { "user_under", lane_1_user_under },
-                    { "instructor", lane_1_instructor_n },
-                    { "weapon", lane_1_gun_type },
-                    { "split_time", basic_lane_split_times[0] },
-                    { "reaction_time", basic_lane_response_times[0] },
-                    { "user_under_email", lane_1_user_under_email },
-                    { "trainee_email", lane_1_trainee_email },
-                    { "created_at", lane_1_created_at }
-                };
-
-                // Add Lane1 Data
-                jsonData_1.Add("lane_1", lane1_data_1);
-
-                string jsonString_1 = JsonConvert.SerializeObject(jsonData_1);
-                byte[] bodyRaw_1 = System.Text.Encoding.UTF8.GetBytes(jsonString_1);
-
-                string payLoad = System.Text.Encoding.UTF8.GetString(bodyRaw_1);
-
-                print("JSON Payload: " + payLoad);
-
-
-                using (UnityWebRequest www = new UnityWebRequest(Url + range_scoring_endpoint, "POST"))
-                {
-                    www.uploadHandler = new UploadHandlerRaw(bodyRaw_1);
-                    www.downloadHandler = new DownloadHandlerBuffer();
-                    www.SetRequestHeader("Content-Type", "application/json");
-
-                    yield return www.SendWebRequest();
-
-                    if (www.result == UnityWebRequest.Result.Success)
-                    {
-                        Debug.Log("Data sent successfully: " + www.downloadHandler.text);
-                    }
-                    else
-                    {
-                        Debug.LogError("Error sending data for lane: " + www.error);
-                    }
-                }
-                break;
-
-            case "2":
-                // Replace commas with dots in training time
-                //basic_lane_training_times[0] = basic_lane_training_times[0].Replace(',', '.');
-                lane_1_trainee_Data = basic_lane_trainee_names[0].Split(':');
-                lane_2_trainee_Data = basic_lane_trainee_names[1].Split(':');
-                lane_1_training_time = basic_lane_training_times[0].Replace(',', '.');
-                lane_2_training_time = basic_lane_training_times[1].Replace(',', '.');
-
-                lane_1_trainee_id = lane_1_trainee_Data[0];
-                lane_1_trainee_name = lane_1_trainee_Data[1];
-                lane_1_user_under = lane_1_trainee_Data[2];
-                lane_1_instructor_n = lane_1_trainee_Data[3];
-                lane_1_gun_type = lane_1_trainee_Data[4];
-                lane_1_trainee_email = lane_1_trainee_Data[5];
-                lane_1_created_at = lane_1_trainee_Data[6];
-                lane_1_user_under_email = lane_1_trainee_Data[7];
-
-                lane_2_trainee_id = lane_2_trainee_Data[0];
-                lane_2_trainee_name = lane_2_trainee_Data[1];
-                lane_2_user_under = lane_2_trainee_Data[2];
-                lane_2_instructor_n = lane_2_trainee_Data[3];
-                lane_2_gun_type = lane_2_trainee_Data[4];
-                lane_2_trainee_email = lane_2_trainee_Data[5];
-                lane_2_created_at = lane_2_trainee_Data[6];
-                lane_2_user_under_email = lane_2_trainee_Data[7];
-
-                // Prepare JSON payload
-                Dictionary<string, object> jsonData_2 = new Dictionary<string, object>
-                {
-                    { "status", "success" },
-                    { "message", "Data inserted" },
-                    { "num_lanes", totNumLanes },
-                    { "scenario_type", exercise_name },
-                    { "time", time }
-                };
-
-                // Create dictionaries for each lane
-                Dictionary<string, string> lane1_data_2 = new Dictionary<string, string>
-                {
-                    { "trainee", lane_1_trainee_name },
-                    { "trainee_id", lane_1_trainee_id },
-                    { "trainee_percentage", basic_scene_percentage[0] },
-                    { "target_hits", basic_scene_targets_hit[0] },
-                    { "target_missed", basic_scene_shots_missed[0] },
-                    { "training_time", lane_1_training_time },
-                    { "user_under", lane_1_user_under },
-                    { "instructor", lane_1_instructor_n },
-                    { "weapon", lane_1_gun_type },
-                    { "split_time", basic_lane_split_times[0] },
-                    { "reaction_time", basic_lane_response_times[0] },
-                    { "user_under_email", lane_1_user_under_email },
-                    { "trainee_email", lane_1_trainee_email },
-                    { "created_at", lane_1_created_at }
-                };
-
-                Dictionary<string, string> lane2_data_2 = new Dictionary<string, string>
-                {
-                    { "trainee", lane_2_trainee_name },
-                    { "trainee_id", lane_2_trainee_id },
-                    { "trainee_percentage", basic_scene_percentage[1] },
-                    { "target_hits", basic_scene_targets_hit[1] },
-                    { "target_missed", basic_scene_shots_missed[1] },
-                    { "training_time", lane_2_training_time },
-                    { "user_under", lane_2_user_under },
-                    { "instructor", lane_2_instructor_n },
-                    { "weapon", lane_2_gun_type },
-                    { "split_time", basic_lane_split_times[1] },
-                    { "reaction_time", basic_lane_response_times[1] },
-                    { "user_under_email", lane_2_user_under_email },
-                    { "trainee_email", lane_2_trainee_email },
-                    { "created_at", lane_2_created_at }
-                };
-
-                // Add Lane 1 Data
-                jsonData_2.Add("lane_1", lane1_data_2);
-
-                // Add Lane 2 Data
-                jsonData_2.Add("lane_2", lane2_data_2);
-
-                string jsonString_2 = JsonConvert.SerializeObject(jsonData_2);
-                byte[] bodyRaw_2 = System.Text.Encoding.UTF8.GetBytes(jsonString_2);
-                print("JSON Payload: " + System.Text.Encoding.UTF8.GetString(bodyRaw_2));
-
-                // Send HTTP POST request with JSON
-                using (UnityWebRequest www = new UnityWebRequest(Url + range_scoring_endpoint, "POST"))
-                {
-                    www.uploadHandler = new UploadHandlerRaw(bodyRaw_2);
-                    www.downloadHandler = new DownloadHandlerBuffer();
-                    www.SetRequestHeader("Content-Type", "application/json");
-
-                    yield return www.SendWebRequest();
-
-                    if (www.result == UnityWebRequest.Result.Success)
-                    {
-                        Debug.Log("Data sent successfully: " + www.downloadHandler.text);
-                    }
-                    else
-                    {
-                        Debug.LogError("Error sending data for lane: " + www.error);
-                    }
-                }
-
-                break;
-            case "3":
-                // Replace commas with dots in training time
-                //basic_lane_training_times[0] = basic_lane_training_times[0].Replace(',', '.');
-
-                lane_1_trainee_Data = basic_lane_trainee_names[0].Split(':');
-                lane_2_trainee_Data = basic_lane_trainee_names[1].Split(':');
-                lane_3_trainee_Data = basic_lane_trainee_names[2].Split(':');
-                lane_1_training_time = basic_lane_training_times[0].Replace(',', '.');
-                lane_2_training_time = basic_lane_training_times[1].Replace(',', '.');
-                lane_3_training_time = basic_lane_training_times[2].Replace(',', '.');
-
-                lane_1_trainee_id = lane_1_trainee_Data[0];
-                lane_1_trainee_name = lane_1_trainee_Data[1];
-                lane_1_user_under = lane_1_trainee_Data[2];
-                lane_1_instructor_n = lane_1_trainee_Data[3];
-                lane_1_gun_type = lane_1_trainee_Data[4];
-                lane_1_trainee_email = lane_1_trainee_Data[5];
-                lane_1_created_at = lane_1_trainee_Data[6];
-                lane_1_user_under_email = lane_1_trainee_Data[7];
-
-                lane_2_trainee_id = lane_2_trainee_Data[0];
-                lane_2_trainee_name = lane_2_trainee_Data[1];
-                lane_2_user_under = lane_2_trainee_Data[2];
-                lane_2_instructor_n = lane_2_trainee_Data[3];
-                lane_2_gun_type = lane_2_trainee_Data[4];
-                lane_2_trainee_email = lane_2_trainee_Data[5];
-                lane_2_created_at = lane_2_trainee_Data[6];
-                lane_2_user_under_email = lane_2_trainee_Data[7];
-
-                lane_3_trainee_id = lane_3_trainee_Data[0];
-                lane_3_trainee_name = lane_3_trainee_Data[1];
-                lane_3_user_under = lane_3_trainee_Data[2];
-                lane_3_instructor_n = lane_3_trainee_Data[3];
-                lane_3_gun_type = lane_3_trainee_Data[4];
-                lane_3_trainee_email = lane_3_trainee_Data[5];
-                lane_3_created_at = lane_3_trainee_Data[6];
-                lane_3_user_under_email = lane_3_trainee_Data[7];
-
-                // Prepare JSON payload
-                Dictionary<string, object> jsonData_3 = new Dictionary<string, object>
-                {
-                    { "status", "success" },
-                    { "message", "Data inserted" },
-                    { "num_lanes", totNumLanes },
-                    { "scenario_type", exercise_name },
-                    { "time", time }
-                };
-
-                // Create dictionaries for each lane
-                Dictionary<string, string> lane1_data_3 = new Dictionary<string, string>
-                {
-                    { "trainee", lane_1_trainee_name },
-                    { "trainee_id", lane_1_trainee_id },
-                    { "trainee_percentage", basic_scene_percentage[0] },
-                    { "target_hits", basic_scene_targets_hit[0] },
-                    { "target_missed", basic_scene_shots_missed[0] },
-                    { "training_time", lane_1_training_time },
-                    { "user_under", lane_1_user_under },
-                    { "instructor", lane_1_instructor_n },
-                    { "weapon", lane_1_gun_type },
-                    { "split_time", basic_lane_split_times[0] },
-                    { "reaction_time", basic_lane_response_times[0] },
-                    { "user_under_email", lane_1_user_under_email },
-                    { "trainee_email", lane_1_trainee_email },
-                    { "created_at", lane_1_created_at }
-                };
-
-                Dictionary<string, string> lane2_data_3 = new Dictionary<string, string>
-                {
-                    { "trainee", lane_2_trainee_name },
-                    { "trainee_id", lane_2_trainee_id },
-                    { "trainee_percentage", basic_scene_percentage[1] },
-                    { "target_hits", basic_scene_targets_hit[1] },
-                    { "target_missed", basic_scene_shots_missed[1] },
-                    { "training_time", lane_2_training_time },
-                    { "user_under", lane_2_user_under },
-                    { "instructor", lane_2_instructor_n },
-                    { "weapon", lane_2_gun_type },
-                    { "split_time", basic_lane_split_times[1] },
-                    { "reaction_time", basic_lane_response_times[1] },
-                    { "user_under_email", lane_2_user_under_email },
-                    { "trainee_email", lane_2_trainee_email },
-                    { "created_at", lane_2_created_at }
-                };
-
-                Dictionary<string, string> lane3_data_3 = new Dictionary<string, string>
-                {
-                    { "trainee", lane_3_trainee_name },
-                    { "trainee_id", lane_3_trainee_id },
-                    { "trainee_percentage", basic_scene_percentage[2] },
-                    { "target_hits", basic_scene_targets_hit[2] },
-                    { "target_missed", basic_scene_shots_missed[2] },
-                    { "training_time", lane_3_training_time },
-                    { "user_under", lane_3_user_under },
-                    { "instructor", lane_3_instructor_n },
-                    { "weapon", lane_3_gun_type },
-                    { "split_time", basic_lane_split_times[2] },
-                    { "reaction_time", basic_lane_response_times[2] },
-                    { "user_under_email", lane_3_user_under_email },
-                    { "trainee_email", lane_3_trainee_email },
-                    { "created_at", lane_3_created_at }
-                };
-
-                // Add Lane 1 Data
-                jsonData_3.Add("lane_1", lane1_data_3);
-
-                // Add Lane 2 Data
-                jsonData_3.Add("lane_2", lane2_data_3);
-
-                // Add Lane 3 Data
-                jsonData_3.Add("lane_3", lane3_data_3);
-
-                string jsonString_3 = JsonConvert.SerializeObject(jsonData_3);
-                byte[] bodyRaw_3 = System.Text.Encoding.UTF8.GetBytes(jsonString_3);
-                print("JSON Payload: " + System.Text.Encoding.UTF8.GetString(bodyRaw_3));
-
-
-
-                // Send HTTP POST request with JSON
-                using (UnityWebRequest www = new UnityWebRequest(Url + range_scoring_endpoint, "POST"))
-                {
-                    www.uploadHandler = new UploadHandlerRaw(bodyRaw_3);
-                    www.downloadHandler = new DownloadHandlerBuffer();
-                    www.SetRequestHeader("Content-Type", "application/json");
-
-                    yield return www.SendWebRequest();
-
-                    if (www.result == UnityWebRequest.Result.Success)
-                    {
-                        Debug.Log("Data sent successfully: " + www.downloadHandler.text);
-                    }
-                    else
-                    {
-                        Debug.LogError("Error sending data for lane: " + www.error);
-                    }
-                }
-
-                break;
-        }
-
-        //Send Image data
-        switch (totNumLanes)
-        {
-            case "1":
-                // Replace commas with dots in training time
-                //basic_lane_training_times[0] = basic_lane_training_times[0].Replace(',', '.');
-
-                lane_1_trainee_Data = basic_lane_trainee_names[0].Split(':');
-                lane_1_training_time = basic_lane_training_times[0].Replace(',', '.');
-
-                lane_1_trainee_id = lane_1_trainee_Data[0];
-                lane_1_trainee_name = lane_1_trainee_Data[1];
-                lane_1_user_under = lane_1_trainee_Data[2];
-                lane_1_instructor_n = lane_1_trainee_Data[3];
-                lane_1_gun_type = lane_1_trainee_Data[4];
-                lane_1_trainee_email = lane_1_trainee_Data[5];
-                lane_1_created_at = lane_1_trainee_Data[6];
-                lane_1_user_under_email = lane_1_trainee_Data[7];
-
-                // Prepare JSON payload
-                Dictionary<string, object> jsonDataImage_1 = new Dictionary<string, object>
-                {
-                    { "status", "success" },
-                    { "user_under", lane_1_user_under},
-                    { "message", "Image inserted" },
-                    { "scenario_type", exercise_name },
-                    { "time", time }
-                };
-                //Create shooter data
-                Dictionary<string, object> Shooter_Data_1 = new Dictionary<string, object>
-                {
-
-                };jsonDataImage_1.Add("shooter_data", Shooter_Data_1);
-
-                //Process lane Data to be stored in shooter data
-                Dictionary<string, object> Lane1_Data_1 = new Dictionary<string, object>
-                {
-                    { "trainee", lane_1_trainee_name},
-                    { "trainee_id", lane_1_trainee_id },
-                };AddImage("lane_1_image", lane1_image_path, Lane1_Data_1);
-                //Add lane data to shooter data object
-                Shooter_Data_1.Add("lane_1", Lane1_Data_1);
-
-
-                string jsonString_1 = JsonConvert.SerializeObject(jsonDataImage_1);
-                byte[] bodyRaw_1 = System.Text.Encoding.UTF8.GetBytes(jsonString_1);
-                string payLoad = System.Text.Encoding.UTF8.GetString(bodyRaw_1);
-
-                print("Image JSON Payload: " + payLoad);
-
-
-                using (UnityWebRequest www = new UnityWebRequest(Url + lane_image_endpoint, "POST"))
-                {
-                    www.uploadHandler = new UploadHandlerRaw(bodyRaw_1);
-                    www.downloadHandler = new DownloadHandlerBuffer();
-                    www.SetRequestHeader("Content-Type", "application/json");
-
-                    yield return www.SendWebRequest();
-
-                    if (www.result == UnityWebRequest.Result.Success)
-                    {
-                        Debug.Log("Image Data sent successfully: " + www.downloadHandler.text);
-                    }
-                    else
-                    {
-                        Debug.LogError("Error sending data for lane: " + www.error);
-                    }
-                }
-                break;
-
-            case "2":
-                // Replace commas with dots in training time
-                //basic_lane_training_times[0] = basic_lane_training_times[0].Replace(',', '.');
-                lane_1_trainee_Data = basic_lane_trainee_names[0].Split(':');
-                lane_2_trainee_Data = basic_lane_trainee_names[1].Split(':');
-                lane_1_training_time = basic_lane_training_times[0].Replace(',', '.');
-                lane_2_training_time = basic_lane_training_times[1].Replace(',', '.');
-
-                lane_1_trainee_id = lane_1_trainee_Data[0];
-                lane_1_trainee_name = lane_1_trainee_Data[1];
-                lane_1_user_under = lane_1_trainee_Data[2];
-                lane_1_instructor_n = lane_1_trainee_Data[3];
-                lane_1_gun_type = lane_1_trainee_Data[4];
-                lane_1_trainee_email = lane_1_trainee_Data[5];
-                lane_1_created_at = lane_1_trainee_Data[6];
-                lane_1_user_under_email = lane_1_trainee_Data[7];
-
-                lane_2_trainee_id = lane_2_trainee_Data[0];
-                lane_2_trainee_name = lane_2_trainee_Data[1];
-                lane_2_user_under = lane_2_trainee_Data[2];
-                lane_2_instructor_n = lane_2_trainee_Data[3];
-                lane_2_gun_type = lane_2_trainee_Data[4];
-                lane_2_trainee_email = lane_2_trainee_Data[5];
-                lane_2_created_at = lane_2_trainee_Data[6];
-                lane_2_user_under_email = lane_2_trainee_Data[7];
-
-                // Prepare JSON payload
-                Dictionary<string, object> jsonDataImage_2 = new Dictionary<string, object>
-                {
-                    { "status", "success" },
-                    { "user_under", lane_1_user_under},
-                    { "message", "Image inserted" },
-                    { "scenario_type", exercise_name },
-                    { "time", time }
-                };
-                //Create shooter data
-                Dictionary<string, object> Shooter_Data_2 = new Dictionary<string, object>
-                {
-
-                }; jsonDataImage_2.Add("shooter_data", Shooter_Data_2);
-
-                //Process lane Data to be stored in shooter data
-                Dictionary<string, object> Lane1_Data_2 = new Dictionary<string, object>
-                {
-                    { "trainee", lane_1_trainee_name},
-                    { "trainee_id", lane_1_trainee_id },
-                }; AddImage("lane_1_image", lane1_image_path, Lane1_Data_2);
-                //Add lane data to shooter data object
-                Shooter_Data_2.Add("lane_1", Lane1_Data_2);
-
-                //Process lane Data to be stored in shooter data
-                Dictionary<string, object> Lane2_Data_2 = new Dictionary<string, object>
-                {
-                    { "trainee", lane_2_trainee_name},
-                    { "trainee_id", lane_2_trainee_id },
-                }; AddImage("lane_2_image", lane2_image_path, Lane2_Data_2);
-                //Add lane data to shooter data object
-                Shooter_Data_2.Add("lane_2", Lane2_Data_2);
-
-                string jsonString_2 = JsonConvert.SerializeObject(jsonDataImage_2);
-                byte[] bodyRaw_2 = System.Text.Encoding.UTF8.GetBytes(jsonString_2);
-                string payLoad_2 = System.Text.Encoding.UTF8.GetString(bodyRaw_2);
-
-                print("Image JSON Payload: " + payLoad_2);
-
-
-                using (UnityWebRequest www = new UnityWebRequest(Url + lane_image_endpoint, "POST"))
-                {
-                    www.uploadHandler = new UploadHandlerRaw(bodyRaw_2);
-                    www.downloadHandler = new DownloadHandlerBuffer();
-                    www.SetRequestHeader("Content-Type", "application/json");
-
-                    yield return www.SendWebRequest();
-
-                    if (www.result == UnityWebRequest.Result.Success)
-                    {
-                        Debug.Log("Image Data sent successfully: " + www.downloadHandler.text);
-                    }
-                    else
-                    {
-                        Debug.LogError("Error sending data for lane: " + www.error);
-                    }
-                }
-                break;
-            case "3":
-                // Replace commas with dots in training time
-                //basic_lane_training_times[0] = basic_lane_training_times[0].Replace(',', '.');
-
-                lane_1_trainee_Data = basic_lane_trainee_names[0].Split(':');
-                lane_2_trainee_Data = basic_lane_trainee_names[1].Split(':');
-                lane_3_trainee_Data = basic_lane_trainee_names[2].Split(':');
-                lane_1_training_time = basic_lane_training_times[0].Replace(',', '.');
-                lane_2_training_time = basic_lane_training_times[1].Replace(',', '.');
-                lane_3_training_time = basic_lane_training_times[2].Replace(',', '.');
-
-                lane_1_trainee_id = lane_1_trainee_Data[0];
-                lane_1_trainee_name = lane_1_trainee_Data[1];
-                lane_1_user_under = lane_1_trainee_Data[2];
-                lane_1_instructor_n = lane_1_trainee_Data[3];
-                lane_1_gun_type = lane_1_trainee_Data[4];
-                lane_1_trainee_email = lane_1_trainee_Data[5];
-                lane_1_created_at = lane_1_trainee_Data[6];
-                lane_1_user_under_email = lane_1_trainee_Data[7];
-
-                lane_2_trainee_id = lane_2_trainee_Data[0];
-                lane_2_trainee_name = lane_2_trainee_Data[1];
-                lane_2_user_under = lane_2_trainee_Data[2];
-                lane_2_instructor_n = lane_2_trainee_Data[3];
-                lane_2_gun_type = lane_2_trainee_Data[4];
-                lane_2_trainee_email = lane_2_trainee_Data[5];
-                lane_2_created_at = lane_2_trainee_Data[6];
-                lane_2_user_under_email = lane_2_trainee_Data[7];
-
-                lane_3_trainee_id = lane_3_trainee_Data[0];
-                lane_3_trainee_name = lane_3_trainee_Data[1];
-                lane_3_user_under = lane_3_trainee_Data[2];
-                lane_3_instructor_n = lane_3_trainee_Data[3];
-                lane_3_gun_type = lane_3_trainee_Data[4];
-                lane_3_trainee_email = lane_3_trainee_Data[5];
-                lane_3_created_at = lane_3_trainee_Data[6];
-                lane_3_user_under_email = lane_3_trainee_Data[7];
-
-                // Prepare JSON payload
-                Dictionary<string, object> jsonDataImage_3 = new Dictionary<string, object>
-                {
-                    { "status", "success" },
-                    { "user_under", lane_1_user_under},
-                    { "message", "Image inserted" },
-                    { "scenario_type", exercise_name },
-                    { "time", time }
-                };
-                //Create shooter data
-                Dictionary<string, object> Shooter_Data_3 = new Dictionary<string, object>
-                {
-
-                }; jsonDataImage_3.Add("shooter_data", Shooter_Data_3);
-
-                //Process lane 1 Data to be stored in shooter data
-                Dictionary<string, object> Lane1_Data_3 = new Dictionary<string, object>
-                {
-                    { "trainee", lane_1_trainee_name},
-                    { "trainee_id", lane_1_trainee_id },
-                }; AddImage("lane_1_image", lane1_image_path, Lane1_Data_3);
-                //Add lane data to shooter data object
-                Shooter_Data_3.Add("lane_1", Lane1_Data_3);
-
-                //Process lane 2 Data to be stored in shooter data
-                Dictionary<string, object> Lane2_Data_3 = new Dictionary<string, object>
-                {
-                    { "trainee", lane_2_trainee_name},
-                    { "trainee_id", lane_2_trainee_id },
-                }; AddImage("lane_2_image", lane2_image_path, Lane2_Data_3);
-                //Add lane data to shooter data object
-                Shooter_Data_3.Add("lane_2", Lane2_Data_3);
-
-                //Process lane 3 Data to be stored in shooter data
-                Dictionary<string, object> Lane3_Data_3 = new Dictionary<string, object>
-                {
-                    { "trainee", lane_3_trainee_name},
-                    { "trainee_id", lane_3_trainee_id },
-                }; AddImage("lane_3_image", lane3_image_path, Lane3_Data_3);
-                //Add lane data to shooter data object
-                Shooter_Data_3.Add("lane_3", Lane3_Data_3);
-
-                string jsonString_3 = JsonConvert.SerializeObject(jsonDataImage_3);
-                byte[] bodyRaw_3 = System.Text.Encoding.UTF8.GetBytes(jsonString_3);
-                string payLoad_3 = System.Text.Encoding.UTF8.GetString(bodyRaw_3);
-
-                print("Image JSON Payload: " + payLoad_3);
-
-
-                using (UnityWebRequest www = new UnityWebRequest(Url + lane_image_endpoint, "POST"))
-                {
-                    www.uploadHandler = new UploadHandlerRaw(bodyRaw_3);
-                    www.downloadHandler = new DownloadHandlerBuffer();
-                    www.SetRequestHeader("Content-Type", "application/json");
-
-                    yield return www.SendWebRequest();
-
-                    if (www.result == UnityWebRequest.Result.Success)
-                    {
-                        Debug.Log("Image Data sent successfully: " + www.downloadHandler.text);
-                    }
-                    else
-                    {
-                        Debug.LogError("Error sending data for lane: " + www.error);
-                    }
-                }
-                break;
+            request.timeout = 5;
+            yield return request.SendWebRequest();
+
+#if UNITY_2020_1_OR_NEWER
+            bool isConnected = !(request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError);
+#else
+            bool isConnected = !(request.isNetworkError || request.isHttpError);
+#endif
+
+            callback(isConnected);
         }
     }
 
-    IEnumerator SendWrappedDataToServer_Form()
-    {
-        Url = configuration.ConfigAllUrls["server_url"];
-        range_scoring_endpoint = configuration.ConfigAllEndpoints["range_scoring_endpoint"];
-
-
-        // Parse trainee data
-
-        string[] lane_1_trainee_Data;
-        string lane_1_trainee_id;
-        string lane_1_trainee_name;
-        string lane_1_user_under;
-        string lane_1_instructor_n;
-        string lane_1_gun_type;
-        string lane_1_trainee_email;
-        string lane_1_created_at;
-        string lane_1_user_under_email;
-        string lane_1_training_time;
-
-        string[] lane_2_trainee_Data;
-        string lane_2_trainee_id;
-        string lane_2_trainee_name;
-        string lane_2_user_under;
-        string lane_2_instructor_n;
-        string lane_2_gun_type;
-        string lane_2_trainee_email;
-        string lane_2_created_at;
-        string lane_2_user_under_email;
-        string lane_2_training_time;
-
-        string[] lane_3_trainee_Data;
-        string lane_3_trainee_id;
-        string lane_3_trainee_name;
-        string lane_3_user_under;
-        string lane_3_instructor_n;
-        string lane_3_gun_type;
-        string lane_3_trainee_email;
-        string lane_3_created_at;
-        string lane_3_user_under_email;
-        string lane_3_training_time;
-
-        string lane1ImagePath = Application.dataPath + "/Resources/Score Images/Trainee_1.png"; // Adjust path as needed
-        string lane2ImagePath = Application.dataPath + "/Resources/Score Images/Trainee_2.png";
-        string lane3ImagePath = Application.dataPath + "/Resources/Score Images/Trainee_3.png";
-
-        switch (totNumLanes)
-        {
-            case "1":
-                // Replace commas with dots in training time
-                //basic_lane_training_times[0] = basic_lane_training_times[0].Replace(',', '.');
-
-                lane_1_trainee_Data = basic_lane_trainee_names[0].Split(':');
-                lane_1_training_time = basic_lane_training_times[0].Replace(',', '.');
-
-                lane_1_trainee_id = lane_1_trainee_Data[0];
-                lane_1_trainee_name = lane_1_trainee_Data[1];
-                lane_1_user_under = lane_1_trainee_Data[2];
-                lane_1_instructor_n = lane_1_trainee_Data[3];
-                lane_1_gun_type = lane_1_trainee_Data[4];
-                lane_1_trainee_email = lane_1_trainee_Data[5];
-                lane_1_created_at = lane_1_trainee_Data[6];
-                lane_1_user_under_email = lane_1_trainee_Data[7];
-
-                // Prepare JSON payload
-                Dictionary<string, object> jsonData_1 = new Dictionary<string, object>
-                {
-                    { "status", "success" },
-                    { "message", "Data inserted" },
-                    { "num_lanes", totNumLanes },
-                    { "scenario_type", exercise_name },
-                    { "time", time }
-                };
-
-                // Create dictionaries for each lane
-                Dictionary<string, string> lane1_data_1 = new Dictionary<string, string>
-                {
-                    { "trainee", lane_1_trainee_name },
-                    { "trainee_id", lane_1_trainee_id },
-                    { "trainee_percentage", basic_scene_percentage[0] },
-                    { "target_hits", basic_scene_targets_hit[0] },
-                    { "target_missed", basic_scene_shots_missed[0] },
-                    { "training_time", lane_1_training_time },
-                    { "user_under", lane_1_user_under },
-                    { "instructor", lane_1_instructor_n },
-                    { "weapon", lane_1_gun_type },
-                    { "split_time", basic_lane_split_times[0] },
-                    { "reaction_time", basic_lane_response_times[0] },
-                    { "user_under_email", lane_1_user_under_email },
-                    { "trainee_email", lane_1_trainee_email },
-                    { "created_at", lane_1_created_at }
-                };
-
-                // Add Lane1 Data
-                jsonData_1.Add("lane_1", lane1_data_1);
-
-                // Serialize JSON data
-                string jsonString = JsonConvert.SerializeObject(jsonData_1);
-                byte[] jsonBytes = System.Text.Encoding.UTF8.GetBytes(jsonString);
-
-                // Read image files
-                byte[] imageBytes1 = File.ReadAllBytes(lane1ImagePath);
-                byte[] imageBytes2 = File.ReadAllBytes(lane2ImagePath);
-                byte[] imageBytes3 = File.ReadAllBytes(lane3ImagePath);
-
-                // Create multipart form-data
-                List<IMultipartFormSection> formData = new List<IMultipartFormSection>
-                {
-                    new MultipartFormDataSection("json_data", jsonString, "application/json"),
-                    new MultipartFormFileSection("lane_1_Image", imageBytes1, Path.GetFileName(lane1ImagePath), "image/png"),
-                    new MultipartFormFileSection("lane_2_Image", imageBytes2, Path.GetFileName(lane2ImagePath), "image/png"),
-                    new MultipartFormFileSection("lane_3_Image", imageBytes3, Path.GetFileName(lane3ImagePath), "image/png")
-                };
-
-                print("Form: " + formData);
-
-                using (UnityWebRequest www = UnityWebRequest.Post(Url + range_scoring_endpoint, formData))
-                {
-                    www.downloadHandler = new DownloadHandlerBuffer();
-                    yield return www.SendWebRequest();
-
-                    if (www.result == UnityWebRequest.Result.Success)
-                    {
-                        Debug.Log("Data and images sent successfully: " + www.downloadHandler.text);
-                    }
-                    else
-                    {
-                        Debug.LogError("Error sending data and images: " + www.error);
-                    }
-                }
-
-                break;
-
-            case "2":
-                // Replace commas with dots in training time
-                //basic_lane_training_times[0] = basic_lane_training_times[0].Replace(',', '.');
-                lane_1_trainee_Data = basic_lane_trainee_names[0].Split(':');
-                lane_2_trainee_Data = basic_lane_trainee_names[1].Split(':');
-                lane_1_training_time = basic_lane_training_times[0].Replace(',', '.');
-                lane_2_training_time = basic_lane_training_times[1].Replace(',', '.');
-
-                lane_1_trainee_id = lane_1_trainee_Data[0];
-                lane_1_trainee_name = lane_1_trainee_Data[1];
-                lane_1_user_under = lane_1_trainee_Data[2];
-                lane_1_instructor_n = lane_1_trainee_Data[3];
-                lane_1_gun_type = lane_1_trainee_Data[4];
-                lane_1_trainee_email = lane_1_trainee_Data[5];
-                lane_1_created_at = lane_1_trainee_Data[6];
-                lane_1_user_under_email = lane_1_trainee_Data[7];
-
-                lane_2_trainee_id = lane_2_trainee_Data[0];
-                lane_2_trainee_name = lane_2_trainee_Data[1];
-                lane_2_user_under = lane_2_trainee_Data[2];
-                lane_2_instructor_n = lane_2_trainee_Data[3];
-                lane_2_gun_type = lane_2_trainee_Data[4];
-                lane_2_trainee_email = lane_2_trainee_Data[5];
-                lane_2_created_at = lane_2_trainee_Data[6];
-                lane_2_user_under_email = lane_2_trainee_Data[7];
-
-                // Prepare JSON payload
-                Dictionary<string, object> jsonData_2 = new Dictionary<string, object>
-                {
-                    { "status", "success" },
-                    { "message", "Data inserted" },
-                    { "num_lanes", totNumLanes },
-                    { "scenario_type", exercise_name },
-                    { "time", time }
-                };
-
-                // Create dictionaries for each lane
-                Dictionary<string, string> lane1_data_2 = new Dictionary<string, string>
-                {
-                    { "trainee", lane_1_trainee_name },
-                    { "trainee_id", lane_1_trainee_id },
-                    { "trainee_percentage", basic_scene_percentage[0] },
-                    { "target_hits", basic_scene_targets_hit[0] },
-                    { "target_missed", basic_scene_shots_missed[0] },
-                    { "training_time", lane_1_training_time },
-                    { "user_under", lane_1_user_under },
-                    { "instructor", lane_1_instructor_n },
-                    { "weapon", lane_1_gun_type },
-                    { "split_time", basic_lane_split_times[0] },
-                    { "reaction_time", basic_lane_response_times[0] },
-                    { "user_under_email", lane_1_user_under_email },
-                    { "trainee_email", lane_1_trainee_email },
-                    { "created_at", lane_1_created_at }
-                };
-
-                Dictionary<string, string> lane2_data_2 = new Dictionary<string, string>
-                {
-                    { "trainee", lane_2_trainee_name },
-                    { "trainee_id", lane_2_trainee_id },
-                    { "trainee_percentage", basic_scene_percentage[1] },
-                    { "target_hits", basic_scene_targets_hit[1] },
-                    { "target_missed", basic_scene_shots_missed[1] },
-                    { "training_time", lane_2_training_time },
-                    { "user_under", lane_2_user_under },
-                    { "instructor", lane_2_instructor_n },
-                    { "weapon", lane_2_gun_type },
-                    { "split_time", basic_lane_split_times[1] },
-                    { "reaction_time", basic_lane_response_times[1] },
-                    { "user_under_email", lane_2_user_under_email },
-                    { "trainee_email", lane_2_trainee_email },
-                    { "created_at", lane_2_created_at }
-                };
-
-                // Add Lane 1 Data
-                jsonData_2.Add("lane_1", lane1_data_2);
-
-                // Add Lane 2 Data
-                jsonData_2.Add("lane_2", lane2_data_2);
-
-                string jsonString_2 = JsonConvert.SerializeObject(jsonData_2);
-                byte[] bodyRaw_2 = System.Text.Encoding.UTF8.GetBytes(jsonString_2);
-                print("JSON Payload: " + System.Text.Encoding.UTF8.GetString(bodyRaw_2));
-
-                // Send HTTP POST request with JSON
-                using (UnityWebRequest www = new UnityWebRequest(Url + range_scoring_endpoint, "POST"))
-                {
-                    www.uploadHandler = new UploadHandlerRaw(bodyRaw_2);
-                    www.downloadHandler = new DownloadHandlerBuffer();
-                    www.SetRequestHeader("Content-Type", "application/json");
-
-                    yield return www.SendWebRequest();
-
-                    if (www.result == UnityWebRequest.Result.Success)
-                    {
-                        Debug.Log("Data sent successfully: " + www.downloadHandler.text);
-                    }
-                    else
-                    {
-                        Debug.LogError("Error sending data for lane: " + www.error);
-                    }
-                }
-
-                break;
-            case "3":
-                // Replace commas with dots in training time
-                //basic_lane_training_times[0] = basic_lane_training_times[0].Replace(',', '.');
-
-                lane_1_trainee_Data = basic_lane_trainee_names[0].Split(':');
-                lane_2_trainee_Data = basic_lane_trainee_names[1].Split(':');
-                lane_3_trainee_Data = basic_lane_trainee_names[2].Split(':');
-                lane_1_training_time = basic_lane_training_times[0].Replace(',', '.');
-                lane_2_training_time = basic_lane_training_times[1].Replace(',', '.');
-                lane_3_training_time = basic_lane_training_times[2].Replace(',', '.');
-
-                lane_1_trainee_id = lane_1_trainee_Data[0];
-                lane_1_trainee_name = lane_1_trainee_Data[1];
-                lane_1_user_under = lane_1_trainee_Data[2];
-                lane_1_instructor_n = lane_1_trainee_Data[3];
-                lane_1_gun_type = lane_1_trainee_Data[4];
-                lane_1_trainee_email = lane_1_trainee_Data[5];
-                lane_1_created_at = lane_1_trainee_Data[6];
-                lane_1_user_under_email = lane_1_trainee_Data[7];
-
-                lane_2_trainee_id = lane_2_trainee_Data[0];
-                lane_2_trainee_name = lane_2_trainee_Data[1];
-                lane_2_user_under = lane_2_trainee_Data[2];
-                lane_2_instructor_n = lane_2_trainee_Data[3];
-                lane_2_gun_type = lane_2_trainee_Data[4];
-                lane_2_trainee_email = lane_2_trainee_Data[5];
-                lane_2_created_at = lane_2_trainee_Data[6];
-                lane_2_user_under_email = lane_2_trainee_Data[7];
-
-                lane_3_trainee_id = lane_3_trainee_Data[0];
-                lane_3_trainee_name = lane_3_trainee_Data[1];
-                lane_3_user_under = lane_3_trainee_Data[2];
-                lane_3_instructor_n = lane_3_trainee_Data[3];
-                lane_3_gun_type = lane_3_trainee_Data[4];
-                lane_3_trainee_email = lane_3_trainee_Data[5];
-                lane_3_created_at = lane_3_trainee_Data[6];
-                lane_3_user_under_email = lane_3_trainee_Data[7];
-
-                // Prepare JSON payload
-                Dictionary<string, object> jsonData_3 = new Dictionary<string, object>
-                {
-                    { "status", "success" },
-                    { "message", "Data inserted" },
-                    { "num_lanes", totNumLanes },
-                    { "scenario_type", exercise_name },
-                    { "time", time }
-                };
-
-                // Create dictionaries for each lane
-                Dictionary<string, string> lane1_data_3 = new Dictionary<string, string>
-                {
-                    { "trainee", lane_1_trainee_name },
-                    { "trainee_id", lane_1_trainee_id },
-                    { "trainee_percentage", basic_scene_percentage[0] },
-                    { "target_hits", basic_scene_targets_hit[0] },
-                    { "target_missed", basic_scene_shots_missed[0] },
-                    { "training_time", lane_1_training_time },
-                    { "user_under", lane_1_user_under },
-                    { "instructor", lane_1_instructor_n },
-                    { "weapon", lane_1_gun_type },
-                    { "split_time", basic_lane_split_times[0] },
-                    { "reaction_time", basic_lane_response_times[0] },
-                    { "user_under_email", lane_1_user_under_email },
-                    { "trainee_email", lane_1_trainee_email },
-                    { "created_at", lane_1_created_at }
-                };
-
-                Dictionary<string, string> lane2_data_3 = new Dictionary<string, string>
-                {
-                    { "trainee", lane_2_trainee_name },
-                    { "trainee_id", lane_2_trainee_id },
-                    { "trainee_percentage", basic_scene_percentage[1] },
-                    { "target_hits", basic_scene_targets_hit[1] },
-                    { "target_missed", basic_scene_shots_missed[1] },
-                    { "training_time", lane_2_training_time },
-                    { "user_under", lane_2_user_under },
-                    { "instructor", lane_2_instructor_n },
-                    { "weapon", lane_2_gun_type },
-                    { "split_time", basic_lane_split_times[1] },
-                    { "reaction_time", basic_lane_response_times[1] },
-                    { "user_under_email", lane_2_user_under_email },
-                    { "trainee_email", lane_2_trainee_email },
-                    { "created_at", lane_2_created_at }
-                };
-
-                Dictionary<string, string> lane3_data_3 = new Dictionary<string, string>
-                {
-                    { "trainee", lane_3_trainee_name },
-                    { "trainee_id", lane_3_trainee_id },
-                    { "trainee_percentage", basic_scene_percentage[2] },
-                    { "target_hits", basic_scene_targets_hit[2] },
-                    { "target_missed", basic_scene_shots_missed[2] },
-                    { "training_time", lane_3_training_time },
-                    { "user_under", lane_3_user_under },
-                    { "instructor", lane_3_instructor_n },
-                    { "weapon", lane_3_gun_type },
-                    { "split_time", basic_lane_split_times[2] },
-                    { "reaction_time", basic_lane_response_times[2] },
-                    { "user_under_email", lane_3_user_under_email },
-                    { "trainee_email", lane_3_trainee_email },
-                    { "created_at", lane_3_created_at }
-                };
-
-                // Add Lane 1 Data
-                jsonData_3.Add("lane_1", lane1_data_3);
-
-                // Add Lane 2 Data
-                jsonData_3.Add("lane_2", lane2_data_3);
-
-                // Add Lane 3 Data
-                jsonData_3.Add("lane_3", lane3_data_3);
-
-                string jsonString_3 = JsonConvert.SerializeObject(jsonData_3);
-                byte[] bodyRaw_3 = System.Text.Encoding.UTF8.GetBytes(jsonString_3);
-                print("JSON Payload: " + System.Text.Encoding.UTF8.GetString(bodyRaw_3));
-
-
-
-                // Send HTTP POST request with JSON
-                using (UnityWebRequest www = new UnityWebRequest(Url + range_scoring_endpoint, "POST"))
-                {
-                    www.uploadHandler = new UploadHandlerRaw(bodyRaw_3);
-                    www.downloadHandler = new DownloadHandlerBuffer();
-                    www.SetRequestHeader("Content-Type", "application/json");
-
-                    yield return www.SendWebRequest();
-
-                    if (www.result == UnityWebRequest.Result.Success)
-                    {
-                        Debug.Log("Data sent successfully: " + www.downloadHandler.text);
-                    }
-                    else
-                    {
-                        Debug.LogError("Error sending data for lane: " + www.error);
-                    }
-                }
-
-                break;
-        }
-    }
-
-    IEnumerator SendWrappedDataToServer_MainBachup()
-    {
-        Url = configuration.ConfigAllUrls["server_url"];
-        range_scoring_endpoint = configuration.ConfigAllEndpoints["range_scoring_endpoint"];
-
-
-        // Parse trainee data
-
-        string[] lane_1_trainee_Data;
-        string lane_1_trainee_id;
-        string lane_1_trainee_name;
-        string lane_1_user_under;
-        string lane_1_instructor_n;
-        string lane_1_gun_type;
-        string lane_1_trainee_email;
-        string lane_1_created_at;
-        string lane_1_user_under_email;
-        string lane_1_training_time;
-
-        string[] lane_2_trainee_Data;
-        string lane_2_trainee_id;
-        string lane_2_trainee_name;
-        string lane_2_user_under;
-        string lane_2_instructor_n;
-        string lane_2_gun_type;
-        string lane_2_trainee_email;
-        string lane_2_created_at;
-        string lane_2_user_under_email;
-        string lane_2_training_time;
-
-        string[] lane_3_trainee_Data;
-        string lane_3_trainee_id;
-        string lane_3_trainee_name;
-        string lane_3_user_under;
-        string lane_3_instructor_n;
-        string lane_3_gun_type;
-        string lane_3_trainee_email;
-        string lane_3_created_at;
-        string lane_3_user_under_email;
-        string lane_3_training_time;
-
-        string lane1_image_path = Application.dataPath + "/Resources/Score Images/Trainee_1.png"; // Adjust path as needed
-        string lane2_image_path = Application.dataPath + "/Resources/Score Images/Trainee_2.png";
-        string lane3_image_path = Application.dataPath + "/Resources/Score Images/Trainee_3.png";
-
-        switch (totNumLanes)
-        {
-            case "1":
-                // Replace commas with dots in training time
-                //basic_lane_training_times[0] = basic_lane_training_times[0].Replace(',', '.');
-
-                lane_1_trainee_Data = basic_lane_trainee_names[0].Split(':');
-                lane_1_training_time = basic_lane_training_times[0].Replace(',', '.');
-
-                lane_1_trainee_id = lane_1_trainee_Data[0];
-                lane_1_trainee_name = lane_1_trainee_Data[1];
-                lane_1_user_under = lane_1_trainee_Data[2];
-                lane_1_instructor_n = lane_1_trainee_Data[3];
-                lane_1_gun_type = lane_1_trainee_Data[4];
-                lane_1_trainee_email = lane_1_trainee_Data[5];
-                lane_1_created_at = lane_1_trainee_Data[6];
-                lane_1_user_under_email = lane_1_trainee_Data[7];
-
-                // Prepare JSON payload
-                Dictionary<string, object> jsonData_1 = new Dictionary<string, object>
-                {
-                    { "status", "success" },
-                    { "message", "Data inserted" },
-                    { "num_lanes", totNumLanes },
-                    { "scenario_type", exercise_name },
-                    { "time", time }
-                };
-
-                // Create dictionaries for each lane
-                Dictionary<string, string> lane1_data_1 = new Dictionary<string, string>
-                {
-                    { "trainee", lane_1_trainee_name },
-                    { "trainee_id", lane_1_trainee_id },
-                    { "trainee_percentage", basic_scene_percentage[0] },
-                    { "target_hits", basic_scene_targets_hit[0] },
-                    { "target_missed", basic_scene_shots_missed[0] },
-                    { "training_time", lane_1_training_time },
-                    { "user_under", lane_1_user_under },
-                    { "instructor", lane_1_instructor_n },
-                    { "weapon", lane_1_gun_type },
-                    { "split_time", basic_lane_split_times[0] },
-                    { "reaction_time", basic_lane_response_times[0] },
-                    { "user_under_email", lane_1_user_under_email },
-                    { "trainee_email", lane_1_trainee_email },
-                    { "created_at", lane_1_created_at }
-                };
-
-                // Add Lane1 Data
-                jsonData_1.Add("lane_1", lane1_data_1);
-                AddImage("lane_1_Image", lane1_image_path, jsonData_1);
-
-                string jsonString_1 = JsonConvert.SerializeObject(jsonData_1);
-                byte[] bodyRaw_1 = System.Text.Encoding.UTF8.GetBytes(jsonString_1);
-
-                string payLoad = System.Text.Encoding.UTF8.GetString(bodyRaw_1);
-
-                print("JSON Payload: " + payLoad);
-
-
-                using (UnityWebRequest www = new UnityWebRequest(Url + range_scoring_endpoint, "POST"))
-                {
-                    www.uploadHandler = new UploadHandlerRaw(bodyRaw_1);
-                    www.downloadHandler = new DownloadHandlerBuffer();
-                    www.SetRequestHeader("Content-Type", "application/json");
-
-                    yield return www.SendWebRequest();
-
-                    if (www.result == UnityWebRequest.Result.Success)
-                    {
-                        Debug.Log("Data sent successfully: " + www.downloadHandler.text);
-                    }
-                    else
-                    {
-                        Debug.LogError("Error sending data for lane: " + www.error);
-                    }
-                }
-                break;
-
-            case "2":
-                // Replace commas with dots in training time
-                //basic_lane_training_times[0] = basic_lane_training_times[0].Replace(',', '.');
-                lane_1_trainee_Data = basic_lane_trainee_names[0].Split(':');
-                lane_2_trainee_Data = basic_lane_trainee_names[1].Split(':');
-                lane_1_training_time = basic_lane_training_times[0].Replace(',', '.');
-                lane_2_training_time = basic_lane_training_times[1].Replace(',', '.');
-
-                lane_1_trainee_id = lane_1_trainee_Data[0];
-                lane_1_trainee_name = lane_1_trainee_Data[1];
-                lane_1_user_under = lane_1_trainee_Data[2];
-                lane_1_instructor_n = lane_1_trainee_Data[3];
-                lane_1_gun_type = lane_1_trainee_Data[4];
-                lane_1_trainee_email = lane_1_trainee_Data[5];
-                lane_1_created_at = lane_1_trainee_Data[6];
-                lane_1_user_under_email = lane_1_trainee_Data[7];
-
-                lane_2_trainee_id = lane_2_trainee_Data[0];
-                lane_2_trainee_name = lane_2_trainee_Data[1];
-                lane_2_user_under = lane_2_trainee_Data[2];
-                lane_2_instructor_n = lane_2_trainee_Data[3];
-                lane_2_gun_type = lane_2_trainee_Data[4];
-                lane_2_trainee_email = lane_2_trainee_Data[5];
-                lane_2_created_at = lane_2_trainee_Data[6];
-                lane_2_user_under_email = lane_2_trainee_Data[7];
-
-                // Prepare JSON payload
-                Dictionary<string, object> jsonData_2 = new Dictionary<string, object>
-                {
-                    { "status", "success" },
-                    { "message", "Data inserted" },
-                    { "num_lanes", totNumLanes },
-                    { "scenario_type", exercise_name },
-                    { "time", time }
-                };
-
-                // Create dictionaries for each lane
-                Dictionary<string, string> lane1_data_2 = new Dictionary<string, string>
-                {
-                    { "trainee", lane_1_trainee_name },
-                    { "trainee_id", lane_1_trainee_id },
-                    { "trainee_percentage", basic_scene_percentage[0] },
-                    { "target_hits", basic_scene_targets_hit[0] },
-                    { "target_missed", basic_scene_shots_missed[0] },
-                    { "training_time", lane_1_training_time },
-                    { "user_under", lane_1_user_under },
-                    { "instructor", lane_1_instructor_n },
-                    { "weapon", lane_1_gun_type },
-                    { "split_time", basic_lane_split_times[0] },
-                    { "reaction_time", basic_lane_response_times[0] },
-                    { "user_under_email", lane_1_user_under_email },
-                    { "trainee_email", lane_1_trainee_email },
-                    { "created_at", lane_1_created_at }
-                };
-
-                Dictionary<string, string> lane2_data_2 = new Dictionary<string, string>
-                {
-                    { "trainee", lane_2_trainee_name },
-                    { "trainee_id", lane_2_trainee_id },
-                    { "trainee_percentage", basic_scene_percentage[1] },
-                    { "target_hits", basic_scene_targets_hit[1] },
-                    { "target_missed", basic_scene_shots_missed[1] },
-                    { "training_time", lane_2_training_time },
-                    { "user_under", lane_2_user_under },
-                    { "instructor", lane_2_instructor_n },
-                    { "weapon", lane_2_gun_type },
-                    { "split_time", basic_lane_split_times[1] },
-                    { "reaction_time", basic_lane_response_times[1] },
-                    { "user_under_email", lane_2_user_under_email },
-                    { "trainee_email", lane_2_trainee_email },
-                    { "created_at", lane_2_created_at }
-                };
-
-                // Add Lane 1 Data
-                jsonData_2.Add("lane_1", lane1_data_2);
-                AddImage("lane_1_Image", lane1_image_path, jsonData_2);
-
-                // Add Lane 2 Data
-                jsonData_2.Add("lane_2", lane2_data_2);
-                AddImage("lane_2_Image", lane2_image_path, jsonData_2);
-
-                string jsonString_2 = JsonConvert.SerializeObject(jsonData_2);
-                byte[] bodyRaw_2 = System.Text.Encoding.UTF8.GetBytes(jsonString_2);
-                print("JSON Payload: " + System.Text.Encoding.UTF8.GetString(bodyRaw_2));
-
-                // Send HTTP POST request with JSON
-                using (UnityWebRequest www = new UnityWebRequest(Url + range_scoring_endpoint, "POST"))
-                {
-                    www.uploadHandler = new UploadHandlerRaw(bodyRaw_2);
-                    www.downloadHandler = new DownloadHandlerBuffer();
-                    www.SetRequestHeader("Content-Type", "application/json");
-
-                    yield return www.SendWebRequest();
-
-                    if (www.result == UnityWebRequest.Result.Success)
-                    {
-                        Debug.Log("Data sent successfully: " + www.downloadHandler.text);
-                    }
-                    else
-                    {
-                        Debug.LogError("Error sending data for lane: " + www.error);
-                    }
-                }
-
-                break;
-            case "3":
-                // Replace commas with dots in training time
-                //basic_lane_training_times[0] = basic_lane_training_times[0].Replace(',', '.');
-
-                lane_1_trainee_Data = basic_lane_trainee_names[0].Split(':');
-                lane_2_trainee_Data = basic_lane_trainee_names[1].Split(':');
-                lane_3_trainee_Data = basic_lane_trainee_names[2].Split(':');
-                lane_1_training_time = basic_lane_training_times[0].Replace(',', '.');
-                lane_2_training_time = basic_lane_training_times[1].Replace(',', '.');
-                lane_3_training_time = basic_lane_training_times[2].Replace(',', '.');
-
-                lane_1_trainee_id = lane_1_trainee_Data[0];
-                lane_1_trainee_name = lane_1_trainee_Data[1];
-                lane_1_user_under = lane_1_trainee_Data[2];
-                lane_1_instructor_n = lane_1_trainee_Data[3];
-                lane_1_gun_type = lane_1_trainee_Data[4];
-                lane_1_trainee_email = lane_1_trainee_Data[5];
-                lane_1_created_at = lane_1_trainee_Data[6];
-                lane_1_user_under_email = lane_1_trainee_Data[7];
-
-                lane_2_trainee_id = lane_2_trainee_Data[0];
-                lane_2_trainee_name = lane_2_trainee_Data[1];
-                lane_2_user_under = lane_2_trainee_Data[2];
-                lane_2_instructor_n = lane_2_trainee_Data[3];
-                lane_2_gun_type = lane_2_trainee_Data[4];
-                lane_2_trainee_email = lane_2_trainee_Data[5];
-                lane_2_created_at = lane_2_trainee_Data[6];
-                lane_2_user_under_email = lane_2_trainee_Data[7];
-
-                lane_3_trainee_id = lane_3_trainee_Data[0];
-                lane_3_trainee_name = lane_3_trainee_Data[1];
-                lane_3_user_under = lane_3_trainee_Data[2];
-                lane_3_instructor_n = lane_3_trainee_Data[3];
-                lane_3_gun_type = lane_3_trainee_Data[4];
-                lane_3_trainee_email = lane_3_trainee_Data[5];
-                lane_3_created_at = lane_3_trainee_Data[6];
-                lane_3_user_under_email = lane_3_trainee_Data[7];
-
-                // Prepare JSON payload
-                Dictionary<string, object> jsonData_3 = new Dictionary<string, object>
-                {
-                    { "status", "success" },
-                    { "message", "Data inserted" },
-                    { "num_lanes", totNumLanes },
-                    { "scenario_type", exercise_name },
-                    { "time", time }
-                };
-
-                // Create dictionaries for each lane
-                Dictionary<string, string> lane1_data_3 = new Dictionary<string, string>
-                {
-                    { "trainee", lane_1_trainee_name },
-                    { "trainee_id", lane_1_trainee_id },
-                    { "trainee_percentage", basic_scene_percentage[0] },
-                    { "target_hits", basic_scene_targets_hit[0] },
-                    { "target_missed", basic_scene_shots_missed[0] },
-                    { "training_time", lane_1_training_time },
-                    { "user_under", lane_1_user_under },
-                    { "instructor", lane_1_instructor_n },
-                    { "weapon", lane_1_gun_type },
-                    { "split_time", basic_lane_split_times[0] },
-                    { "reaction_time", basic_lane_response_times[0] },
-                    { "user_under_email", lane_1_user_under_email },
-                    { "trainee_email", lane_1_trainee_email },
-                    { "created_at", lane_1_created_at }
-                };
-
-                Dictionary<string, string> lane2_data_3 = new Dictionary<string, string>
-                {
-                    { "trainee", lane_2_trainee_name },
-                    { "trainee_id", lane_2_trainee_id },
-                    { "trainee_percentage", basic_scene_percentage[1] },
-                    { "target_hits", basic_scene_targets_hit[1] },
-                    { "target_missed", basic_scene_shots_missed[1] },
-                    { "training_time", lane_2_training_time },
-                    { "user_under", lane_2_user_under },
-                    { "instructor", lane_2_instructor_n },
-                    { "weapon", lane_2_gun_type },
-                    { "split_time", basic_lane_split_times[1] },
-                    { "reaction_time", basic_lane_response_times[1] },
-                    { "user_under_email", lane_2_user_under_email },
-                    { "trainee_email", lane_2_trainee_email },
-                    { "created_at", lane_2_created_at }
-                };
-
-                Dictionary<string, string> lane3_data_3 = new Dictionary<string, string>
-                {
-                    { "trainee", lane_3_trainee_name },
-                    { "trainee_id", lane_3_trainee_id },
-                    { "trainee_percentage", basic_scene_percentage[2] },
-                    { "target_hits", basic_scene_targets_hit[2] },
-                    { "target_missed", basic_scene_shots_missed[2] },
-                    { "training_time", lane_3_training_time },
-                    { "user_under", lane_3_user_under },
-                    { "instructor", lane_3_instructor_n },
-                    { "weapon", lane_3_gun_type },
-                    { "split_time", basic_lane_split_times[2] },
-                    { "reaction_time", basic_lane_response_times[2] },
-                    { "user_under_email", lane_3_user_under_email },
-                    { "trainee_email", lane_3_trainee_email },
-                    { "created_at", lane_3_created_at }
-                };
-
-                // Add Lane 1 Data
-                jsonData_3.Add("lane_1", lane1_data_3);
-                AddImage("lane_1_image", lane1_image_path, jsonData_3);
-
-                // Add Lane 2 Data
-                jsonData_3.Add("lane_2", lane2_data_3);
-                AddImage("lane_2_image", lane2_image_path, jsonData_3);
-
-                // Add Lane 3 Data
-                jsonData_3.Add("lane_3", lane3_data_3);
-                AddImage("lane_3_image", lane3_image_path, jsonData_3);
-
-                string jsonString_3 = JsonConvert.SerializeObject(jsonData_3);
-                byte[] bodyRaw_3 = System.Text.Encoding.UTF8.GetBytes(jsonString_3);
-                print("JSON Payload: " + System.Text.Encoding.UTF8.GetString(bodyRaw_3));
-
-                
-
-                // Send HTTP POST request with JSON
-                using (UnityWebRequest www = new UnityWebRequest(Url + range_scoring_endpoint, "POST"))
-                {
-                    www.uploadHandler = new UploadHandlerRaw(bodyRaw_3);
-                    www.downloadHandler = new DownloadHandlerBuffer();
-                    www.SetRequestHeader("Content-Type", "application/json");
-
-                    yield return www.SendWebRequest();
-
-                    if (www.result == UnityWebRequest.Result.Success)
-                    {
-                        Debug.Log("Data sent successfully: " + www.downloadHandler.text);
-                    }
-                    else
-                    {
-                        Debug.LogError("Error sending data for lane: " + www.error);
-                    }
-                }
-
-                break;
-        }
-    }
-
-    private void AddImage(string label,string imagePath, Dictionary<string,object> Object)
-    {
-        if (File.Exists(imagePath))
-        {
-            byte[] imageBytes = File.ReadAllBytes(imagePath);
-            string base64Image = Convert.ToBase64String(imageBytes);
-            Object.Add(label, base64Image); // Add Base64 image to JSON
-        }
-        else
-        {
-            Debug.LogError("Image file not found: " + imagePath);
-        }
-    }
 
     string ReplaceCharacter(string originalString, char charToReplace, char replacementChar)
     {
@@ -2672,252 +1241,3 @@ public class Scoring : MonoBehaviour
     }
 
 }
-/*print("Sending : " + "status " + "success");
-print("Sending : " + "message" + "Data inserted");
-print("Sending : " + "trainee" + trainee_name);
-print("Sending : " + "trainee_id" + trainee_id);
-print("Sending : " + "trainee_percentage" + basic_scene_percentage[x]);
-print("Sending : " + "scenario_type" + exercise_name);
-print("Sending : " + "target_hits" + basic_scene_targets_hit[x]);
-print("Sending : " + "target_missed" + basic_scene_shots_missed[x]);
-print("Sending : " + "num_lanes" + totNumLanes);
-print("Sending : " + "training_time" + basic_lane_training_times[x]);
-print("Sending : " + "user_under" + user_under);
-print("Sending : " + "instructor" + instructor_n);
-print("Sending : " + "weapon" + gun_type);
-print("Sending : " + "split_time" + basic_lane_split_times[x]);
-print("Sending : " + "reaction_time" + basic_lane_response_times[x]);
-print("Sending : " + "user_under_email" + user_under_email);
-print("Sending : " + "trainee_email" + trainee_email);
-print("Sending : " + "created_at" + time);
-
- 
-                ///////////////////////////////////////////////////////////////////////////////////////////
-                ////////////////////////////////////Image score processing/////////////////////////////////
-                // davidw@exanple.com_SHOOTER69125_John-Doe_lane2
-                print("Image key :" + lane1_image_key);
-
-                byte[] imageBytes = File.ReadAllBytes(lane1_image_path);
-
-                Debug.Log("Image Path: " + lane1_image_path);
-                Debug.Log("Image Key: " + lane1_image_key);
-                Debug.Log("Image Size: " + imageBytes.Length + " bytes"); // Log file size
-
-
-                // Prepare the form data
-                WWWForm form = new WWWForm();
-                form.AddBinaryData("image_blob", imageBytes, "image.png", "image/png");
-                form.AddField("image_key", lane1_image_key);
-
-                // Create the UnityWebRequest to send the POST request
-                using (UnityWebRequest www = UnityWebRequest.Post(Url + lane_image_endpoint, form))
-                {
-                    // Send the request and wait for a response
-                    yield return www.SendWebRequest();
-
-                    // Check if there were any errors
-                    if (www.result == UnityWebRequest.Result.Success)
-                    {
-                        // If the request was successful, print the response
-                        Debug.Log("Response: " + www.downloadHandler.text);
-                    }
-                    else
-                    {
-                        // If there was an error, print the error message
-                        Debug.LogError("Request failed: " + www.error);
-                    }
-                }
- 
- 
-
-        lane_1_trainee_Data = basic_lane_trainee_names[0].Split(':');
-        lane_1_training_time = basic_lane_training_times[0].Replace(',', '.');
-
-        lane_1_trainee_id = lane_1_trainee_Data[0];
-        lane_1_trainee_name = lane_1_trainee_Data[1];
-        lane_1_user_under = lane_1_trainee_Data[2];
-        lane_1_instructor_n = lane_1_trainee_Data[3];
-        lane_1_gun_type = lane_1_trainee_Data[4];
-        lane_1_trainee_email = lane_1_trainee_Data[5];
-        lane_1_created_at = lane_1_trainee_Data[6];
-        lane_1_user_under_email = lane_1_trainee_Data[7];
-
-        if(totNumLanes == "2")
-        {
-            print("lane 2 point reached...");
-
-            lane_2_trainee_Data = basic_lane_trainee_names[1].Split(':');
-            lane_2_training_time = basic_lane_training_times[1].Replace(',', '.');
-
-            lane_2_trainee_id = lane_2_trainee_Data[0];
-            lane_2_trainee_name = lane_2_trainee_Data[1];
-            lane_2_user_under = lane_2_trainee_Data[2];
-            lane_2_instructor_n = lane_2_trainee_Data[3];
-            lane_2_gun_type = lane_2_trainee_Data[4];
-            lane_2_trainee_email = lane_2_trainee_Data[5];
-            lane_2_created_at = lane_2_trainee_Data[6];
-            lane_2_user_under_email = lane_2_trainee_Data[7];
-        }
-
-        if (totNumLanes == "3")
-        {
-            print("lane 3 point reached...");
-            lane_3_training_time = basic_lane_training_times[2].Replace(',', '.');
-            lane_3_trainee_Data = basic_lane_trainee_names[2].Split(':');
-
-            lane_3_trainee_id = lane_3_trainee_Data[0];
-            lane_3_trainee_name = lane_3_trainee_Data[1];
-            lane_3_user_under = lane_3_trainee_Data[2];
-            lane_3_instructor_n = lane_3_trainee_Data[3];
-            lane_3_gun_type = lane_3_trainee_Data[4];
-            lane_3_trainee_email = lane_3_trainee_Data[5];
-            lane_3_created_at = lane_3_trainee_Data[6];
-            lane_3_user_under_email = lane_3_trainee_Data[7];
-        }
- */
-
-/*
-         //Send Image data
-        /*
-        switch (totNumLanes)
-        {
-            case "1":
-
-
-                break;
-
-            case "2":
-                // Replace commas with dots in training time
-                
-
-                // Prepare JSON payload
-                Dictionary<string, object> jsonDataImage_2 = new Dictionary<string, object>
-                {
-                    { "status", "success" },
-                    { "user_under", lane_1_user_under},
-                    { "message", "Image inserted" },
-                    { "scenario_type", exercise_name },
-                    { "time", time }
-                };
-                //Create shooter data
-                Dictionary<string, object> Shooter_Data_2 = new Dictionary<string, object>
-                {
-
-                }; jsonDataImage_2.Add("shooter_data", Shooter_Data_2);
-
-                //Process lane Data to be stored in shooter data
-                Dictionary<string, object> Lane1_Data_2 = new Dictionary<string, object>
-                {
-                    { "trainee", lane_1_trainee_name},
-                    { "trainee_id", lane_1_trainee_id },
-                }; AddImage("lane_1_image", lane1_image_path, Lane1_Data_2);
-                //Add lane data to shooter data object
-                Shooter_Data_2.Add("lane_1", Lane1_Data_2);
-
-                //Process lane Data to be stored in shooter data
-                Dictionary<string, object> Lane2_Data_2 = new Dictionary<string, object>
-                {
-                    { "trainee", lane_2_trainee_name},
-                    { "trainee_id", lane_2_trainee_id },
-                }; AddImage("lane_2_image", lane2_image_path, Lane2_Data_2);
-                //Add lane data to shooter data object
-                Shooter_Data_2.Add("lane_2", Lane2_Data_2);
-
-                string jsonString_2 = JsonConvert.SerializeObject(jsonDataImage_2);
-                byte[] bodyRaw_2 = System.Text.Encoding.UTF8.GetBytes(jsonString_2);
-                string payLoad_2 = System.Text.Encoding.UTF8.GetString(bodyRaw_2);
-
-                print("Image JSON Payload: " + payLoad_2);
-
-
-                using (UnityWebRequest www = new UnityWebRequest(Url + lane_image_endpoint, "POST"))
-                {
-                    www.uploadHandler = new UploadHandlerRaw(bodyRaw_2);
-                    www.downloadHandler = new DownloadHandlerBuffer();
-                    www.SetRequestHeader("Content-Type", "application/json");
-
-                    yield return www.SendWebRequest();
-
-                    if (www.result == UnityWebRequest.Result.Success)
-                    {
-                        Debug.Log("Image Data sent successfully: " + www.downloadHandler.text);
-                    }
-                    else
-                    {
-                        Debug.LogError("Error sending data for lane: " + www.error);
-                    }
-                }
-                break;
-            case "3":
-                // Replace commas with dots in training time
-                //basic_lane_training_times[0] = basic_lane_training_times[0].Replace(',', '.');
-
-                // Prepare JSON payload
-                Dictionary<string, object> jsonDataImage_3 = new Dictionary<string, object>
-                {
-                    { "status", "success" },
-                    { "user_under", lane_1_user_under},
-                    { "message", "Image inserted" },
-                    { "scenario_type", exercise_name },
-                    { "time", time }
-                };
-                //Create shooter data
-                Dictionary<string, object> Shooter_Data_3 = new Dictionary<string, object>
-                {
-
-                }; jsonDataImage_3.Add("shooter_data", Shooter_Data_3);
-
-                //Process lane 1 Data to be stored in shooter data
-                Dictionary<string, object> Lane1_Data_3 = new Dictionary<string, object>
-                {
-                    { "trainee", lane_1_trainee_name},
-                    { "trainee_id", lane_1_trainee_id },
-                }; AddImage("lane_1_image", lane1_image_path, Lane1_Data_3);
-                //Add lane data to shooter data object
-                Shooter_Data_3.Add("lane_1", Lane1_Data_3);
-
-                //Process lane 2 Data to be stored in shooter data
-                Dictionary<string, object> Lane2_Data_3 = new Dictionary<string, object>
-                {
-                    { "trainee", lane_2_trainee_name},
-                    { "trainee_id", lane_2_trainee_id },
-                }; AddImage("lane_2_image", lane2_image_path, Lane2_Data_3);
-                //Add lane data to shooter data object
-                Shooter_Data_3.Add("lane_2", Lane2_Data_3);
-
-                //Process lane 3 Data to be stored in shooter data
-                Dictionary<string, object> Lane3_Data_3 = new Dictionary<string, object>
-                {
-                    { "trainee", lane_3_trainee_name},
-                    { "trainee_id", lane_3_trainee_id },
-                }; AddImage("lane_3_image", lane3_image_path, Lane3_Data_3);
-                //Add lane data to shooter data object
-                Shooter_Data_3.Add("lane_3", Lane3_Data_3);
-
-                string jsonString_3 = JsonConvert.SerializeObject(jsonDataImage_3);
-                byte[] bodyRaw_3 = System.Text.Encoding.UTF8.GetBytes(jsonString_3);
-                string payLoad_3 = System.Text.Encoding.UTF8.GetString(bodyRaw_3);
-
-                print("Image JSON Payload: " + payLoad_3);
-
-
-                using (UnityWebRequest www = new UnityWebRequest(Url + lane_image_endpoint, "POST"))
-                {
-                    www.uploadHandler = new UploadHandlerRaw(bodyRaw_3);
-                    www.downloadHandler = new DownloadHandlerBuffer();
-                    www.SetRequestHeader("Content-Type", "application/json");
-
-                    yield return www.SendWebRequest();
-
-                    if (www.result == UnityWebRequest.Result.Success)
-                    {
-                        Debug.Log("Image Data sent successfully: " + www.downloadHandler.text);
-                    }
-                    else
-                    {
-                        Debug.LogError("Error sending data for lane: " + www.error);
-                    }
-                }
-                break;
-        }
-        */

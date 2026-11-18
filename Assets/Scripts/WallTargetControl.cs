@@ -69,6 +69,7 @@ public class WallTargetControl : MonoBehaviour
 
         if (activeScene.ToLower().Contains("pointbullseye"))
         {
+            targetResetTime = 0;
             HeadShots.text = ("Side Target: 0");
             BodyShots.text = ("Center Target: 0");
         }
@@ -89,7 +90,8 @@ public class WallTargetControl : MonoBehaviour
 
         if (activeScene.ToLower().Contains("targetpopupfreeshoot") || activeScene == "BasicTargetPopUpOneHand" 
             || activeScene.ToLower().Contains("threatening") || activeScene.ToLower().Contains("pointman") 
-            || activeScene.ToLower().Contains("pointbullseye") || activeScene.ToLower().Contains("animaltarget"))
+            || activeScene.ToLower().Contains("pointbullseye") || activeScene.ToLower().Contains("animaltarget")
+            || activeScene.ToLower().Contains("ipscboard"))
         {
             if(!activeScene.ToLower().Contains("static"))
             {
@@ -211,9 +213,9 @@ public class WallTargetControl : MonoBehaviour
         if (StaticVariableManager.isStopTraining && !target_enabled && !activeScene.ToLower().Contains("static"))
         {
             //print("Test: point reached...");
-            autoTarget_1.SetActive(true);
-            autoTarget_2.SetActive(true);
-            autoTarget_3.SetActive(true);
+            if(autoTarget_1 != null) autoTarget_1.SetActive(true);
+            if (autoTarget_2 != null) autoTarget_2.SetActive(true);
+            if (autoTarget_3 != null) autoTarget_3.SetActive(true);
 
             target_enabled = true;
         }
@@ -244,15 +246,13 @@ public class WallTargetControl : MonoBehaviour
                 autoTarget_3.GetComponent<TargetScaleManager_V2>().enabled = false;
 
                 prevTarget = currentTarget;
-                currentTarget = Random.Range(1, 3);
-                if (currentTarget == 1)
-                {
-                    currentTarget = Random.Range(2, 3);
-                }
+                currentTarget = (Random.Range(0, 3) == 0) ? 1 : 2;
+                if (prevTarget == currentTarget) currentTarget = (Random.Range(1, 3) == 0) ? 2 : 3;
+
 
                 //print("RE: Current target is " + currentTarget);
                 targetMoved = true;
-                StaticVariableManager.target1Active = true;
+                // StaticVariableManager.target1Active = true;
             }
             if (currentTarget == 2 && targetMoved == false)
             {
@@ -270,15 +270,14 @@ public class WallTargetControl : MonoBehaviour
                 autoTarget_3.GetComponent<TargetScaleManager_V2>().enabled = false;
 
                 prevTarget = currentTarget;
-                currentTarget = Random.Range(1, 3);
-                if (currentTarget == 2)
-                {
-                    currentTarget = 3;
-                }
+
+                currentTarget = (Random.Range(0, 2) == 0) ? 1 : 3;
+                if (prevTarget == currentTarget) currentTarget = (Random.Range(0, 2) == 0) ? 1 : 3;
+
 
                 //print("RE: Current target is " + currentTarget);
                 targetMoved = true;
-                StaticVariableManager.target1Active = true;
+                // StaticVariableManager.target1Active = true;
             }
             if (currentTarget == 3 && targetMoved == false)
             {
@@ -295,11 +294,8 @@ public class WallTargetControl : MonoBehaviour
                 autoTarget_3.GetComponent<TargetScaleManager_V2>().LoadRecurringScale();
 
                 prevTarget = currentTarget;
-                currentTarget = Random.Range(1, 3);
-                if (currentTarget == 3)
-                {
-                    currentTarget = Random.Range(1, 2);
-                }
+                currentTarget = (Random.Range(0, 2) == 0) ? 1 : 2;
+                if(prevTarget == currentTarget) currentTarget = (Random.Range(0, 2) == 0) ? 1 : 2;
 
                 //print("RE: Current target is " + currentTarget);
                 targetMoved = true;
@@ -308,7 +304,7 @@ public class WallTargetControl : MonoBehaviour
         }
         else
         {
-            StaticVariableManager.target1Active = true;
+            // StaticVariableManager.target1Active = true;
         }
         
     }

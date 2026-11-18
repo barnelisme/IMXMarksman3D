@@ -12,6 +12,8 @@ public class PointManager : MonoBehaviour
     private bool randomTargetSet = false;
     private string activeScene = "";
     private bool isColorReset = false;
+    private bool resetRandomNum = false;
+
 
     // Start is called before the first frame update
     void Start()
@@ -19,7 +21,6 @@ public class PointManager : MonoBehaviour
         activeScene = SceneManager.GetActiveScene().name;
         StaticVariableManager.resetTargets = true;
         updateColor();
-        ResetRandomTarget();
         StaticVariableManager.resetTargets = false;
         StaticVariableManager.target1Active = true;
     }
@@ -31,12 +32,10 @@ public class PointManager : MonoBehaviour
         if (StaticVariableManager.resetTargets)
         {
             updateColor();
-            ResetRandomTarget();
             StaticVariableManager.resetTargets = false;
         }
         else if (StaticVariableManager.resetTargets == false)
         {
-
             switch (this.transform.name)
             {
                 case "Target.Lane1":
@@ -94,30 +93,33 @@ public class PointManager : MonoBehaviour
 
     private void updateRandomTarget()
     {
-        do
+        print("Point reached");
+        if (resetRandomNum)
         {
-            randomIndex = Random.Range(0, 5);
-            if(randomIndex == 5)
+            int attempts = 0;
+            do
             {
-                randomIndex = 4;
+                randomIndex = Random.Range(0, 5);
+                attempts++;
+
+                // Break the loop if all 5 numbers were already used to avoid infinite loop
+                if (attempts > 10) break;
+
+            } while (StaticVariableManager.usedRandomPoints.Contains(randomIndex.ToString()));
+
+            // Add new index to the used list
+            StaticVariableManager.usedRandomPoints += randomIndex;
+
+            // Keep only the last 4 entries
+            if (StaticVariableManager.usedRandomPoints.Length > 2)
+            {
+                StaticVariableManager.usedRandomPoints = StaticVariableManager.usedRandomPoints.Substring(1);
             }
 
-        } while (StaticVariableManager.usedRandomPoints.Contains(randomIndex.ToString()));
-
-        if (StaticVariableManager.usedRandomPoints.Length <= 1)
-        {
-            StaticVariableManager.usedRandomPoints += randomIndex;
-        }
-        else
-        {
-            //string tempRanPoints = StaticVariableManager.usedRandomPoints;
-            StaticVariableManager.usedRandomPoints = StaticVariableManager.usedRandomPoints.Substring(1);
-
-            //StaticVariableManager.usedRandomPoints = tempRanPoints;
-            StaticVariableManager.usedRandomPoints += randomIndex;
+            resetRandomNum = false;
         }
 
-        //print(StaticVariableManager.usedRandomPoints);
+
 
         updateColor();
         if(targets[randomIndex].transform.name.ToLower().Contains("body"))
@@ -128,6 +130,7 @@ public class PointManager : MonoBehaviour
         {
             targets[randomIndex].transform.name = "1.Head_Cover.Target";
         }
+
     }
 
     private void updateColor()
@@ -139,15 +142,21 @@ public class PointManager : MonoBehaviour
             {
                 target.transform.GetComponent<Renderer>().material.color = Color.green;
                 currentMaterial = target.transform.GetComponent<Renderer>().material; // Assign Material
+
                 applyColorAdjustemts(currentMaterial, "green");
-                if (target.transform.name.ToLower().Contains("body"))
+
+                if(isCurrTarget())
                 {
-                    target.transform.name = "1.Body_Cover";
+                    if (target.transform.name.ToLower().Contains("body"))
+                    {
+                        target.transform.name = "1.Body_Cover";
+                    }
+                    else if (target.transform.name.ToLower().Contains("head"))
+                    {
+                        target.transform.name = "1.Head_Cover";
+                    }
                 }
-                else if (target.transform.name.ToLower().Contains("head"))
-                {
-                    target.transform.name = "1.Head_Cover";
-                }
+
             }
         }
         else
@@ -158,26 +167,16 @@ public class PointManager : MonoBehaviour
         }
     }
 
-    private void ResetRandomTarget()
+    private bool isCurrTarget()
     {
-        if(activeScene.ToLower().Contains("static"))
+
+        if (StaticVariableManager.pointHitName == targets[randomIndex].transform.name)
         {
-            switch (this.transform.name)
-            {
-                case "Target.Lane1":
-                    // StaticVariableManager.target1Active = true;
-                    
-                    break;
-
-                case "Target.Lane2":
-                    // StaticVariableManager.target2Active = true;
-                    break;
-
-                case "Target.Lane3":
-                    // StaticVariableManager.target3Active = true;
-                    break;
-            }
+            resetRandomNum = true;
+            return true;
         }
+
+        return false;
     }
 
     private void applyColorAdjustemts(Material material, string colorName)

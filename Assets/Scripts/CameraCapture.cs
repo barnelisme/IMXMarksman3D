@@ -153,7 +153,7 @@ public class CameraCapture : MonoBehaviour
         RenderTexture.active = null;
         Destroy(renderTexture);
 
-        //Debug.Log("Camera " + camera_number + " Image saved to: " + filePath);
+        Debug.Log("Camera " + camera_number + " Image saved to: " + filePath);
     }
 
 

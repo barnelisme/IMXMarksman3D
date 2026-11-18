@@ -18,7 +18,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &6281365712972183627
 RectTransform:
   m_ObjectHideFlags: 0
@@ -253,7 +253,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 291828718312102190}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 8373285535781440573}
+        m_TargetAssemblyTypeName: TargetScaleUIManager, Assembly-CSharp
+        m_MethodName: ChangeMoveSetting
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!1 &1409557456618496880
 GameObject:
   m_ObjectHideFlags: 0
@@ -427,7 +439,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 97.400024, y: 20.200012}
+  m_AnchoredPosition: {x: 113, y: 20.200012}
   m_SizeDelta: {x: -260.15625, y: -59.8242}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &8544075677095668217
@@ -1021,7 +1033,7 @@ GameObject:
   - component: {fileID: 6904463071346662703}
   - component: {fileID: 1036152535940813691}
   m_Layer: 5
-  m_Name: Shot count
+  m_Name: Admin Distance Text
   m_TagString: AdminScaleMeter
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1043,7 +1055,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -56.2, y: 18}
+  m_AnchoredPosition: {x: -28, y: 18}
   m_SizeDelta: {x: 190.84, y: 40.6916}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6904463071346662703
@@ -1181,7 +1193,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -108, y: -23}
+  m_AnchoredPosition: {x: -79.80002, y: -23}
   m_SizeDelta: {x: 81.4402, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &696623534898224486
@@ -1314,7 +1326,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -3, y: -23}
+  m_AnchoredPosition: {x: 25.2, y: -23}
   m_SizeDelta: {x: 81.4402, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &825104755538622340

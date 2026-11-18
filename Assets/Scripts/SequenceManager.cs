@@ -9,6 +9,8 @@ public class SequenceManager : MonoBehaviour
     [Header("Plates")]
     public List<GameObject> plates = new List<GameObject>();
     public List<TextMesh> platesTexts = new List<TextMesh>();
+    private static List<GameObject> staticUserPlates = new List<GameObject>();
+    private static List<TextMesh> staticUserPlatesTexts = new List<TextMesh>();
     private List<string> availableColors = new List<string>();
     /// <summary>
     private Dictionary<string, List<string>> colorToPlates = new Dictionary<string, List<string>>();
@@ -59,6 +61,8 @@ public class SequenceManager : MonoBehaviour
         int randomVal = 0;
         switchOffTimer = setSwitchOffTimer;
         targetRevealTimer = setTargetRevealTimer;
+        staticUserPlates = plates;
+        staticUserPlatesTexts = platesTexts;
 
         resetStaticVariables();
         setupNumTargets();
@@ -961,8 +965,8 @@ public class SequenceManager : MonoBehaviour
          StaticVariableManager.isColorDisplayed = false;
          StaticVariableManager.currentTargetColor = "";
          StaticVariableManager.sequenceCreated = false;
-         StaticVariableManager.correctTargetsHits = 0;
-         StaticVariableManager.wrongTargetsHits = 0;
+         StaticVariableManager.lane1CorrectTargetsHits = 0;
+         StaticVariableManager.lane1IncorrectTargetsHits = 0;
          StaticVariableManager.colorDisplayTimer = 5;
     }
 
@@ -1004,6 +1008,29 @@ public class SequenceManager : MonoBehaviour
         //print(incomingProgressValue);
         progressUpdated = false;
     }
+
+    public static void updateSequencePoints(GameObject target)
+    {
+
+        if(staticUserPlates.Contains(target))
+        {
+            int index = staticUserPlates.IndexOf(target);
+
+            if (staticUserPlatesTexts[index].text == StaticVariableManager.currLane1TargetNum.ToString())
+            {
+                StaticVariableManager.lane1CorrectTargetsHits++;
+                //print("Correct hits: " + StaticVariableManager.correctColorHits);
+            }
+            else
+            {
+                StaticVariableManager.lane1IncorrectTargetsHits++;
+                //print("Wrong hits: " + StaticVariableManager.wrongColorHits);
+            }
+
+        }
+
+    }
+
     public static void receiveTargetName(string name)
     {
         hitTargetName = name;

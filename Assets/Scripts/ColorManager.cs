@@ -37,8 +37,8 @@ public class ColorManager : MonoBehaviour
             LoadTargetStartInfo();
             // print("RE: Data loaded");
         }
-
     }
+    
     void Update()
     {
         if (runChange == true)
@@ -50,18 +50,19 @@ public class ColorManager : MonoBehaviour
                 //print("RE: Color Reset");
                 runChange = false;
             }
-
         }
         else
         {
             timer = 0.2f;
         }
     }
+
     void LoadTargetStartInfo()
     {
-        objectMateria2 = ipec_head.GetComponent<Renderer>().material;
-        objectMateria3 = ipec_body.GetComponent<Renderer>().material;
+        if(ipec_head != null) objectMateria2 = ipec_head.GetComponent<Renderer>().material;
+        if(ipec_body != null) objectMateria3 = ipec_body.GetComponent<Renderer>().material;
     }
+
     private void revertTargetColor()
     {
         if(activeScene.ToLower().Contains("ipec"))
@@ -75,12 +76,14 @@ public class ColorManager : MonoBehaviour
             currentTargetColor.material.color = Color.black;
         }
     }
+    
     public static void revert_head_body(RaycastHit hit)
     {
         //print("RE: change request received");
         currentTargetColor = hit.transform.gameObject.GetComponent<Renderer>();
         runChange = true;
     }
+    
     public static void revert_head_body(float rf, float gf, float bf, float af)
     {
         //print("RE: change request received");
@@ -92,31 +95,37 @@ public class ColorManager : MonoBehaviour
 
         runChange = true;
     }
+    
     public void setBlackPlate()
     {
         currentPlateColor.text = "Black";
         StaticVariableManager.targetColorSetting = "Black";
     }
+    
     public void setWhitePlate()
     {
         currentPlateColor.text = "White";
         StaticVariableManager.targetColorSetting = "White";
     }
+    
     public void setBluePlate()
     {
         currentPlateColor.text = "Blue";
         StaticVariableManager.targetColorSetting = "Blue";
     }
+    
     public void setRedPlate()
     {
         currentPlateColor.text = "Red";
         StaticVariableManager.targetColorSetting = "Red";
     }
+    
     public void setGreenPlate()
     {
         currentPlateColor.text = "Green";
         StaticVariableManager.targetColorSetting = "Green";
     }
+
     public void setYellowPlate()
     {
         currentPlateColor.text = "Yellow";
@@ -128,26 +137,31 @@ public class ColorManager : MonoBehaviour
         currentBackroundColor.text = "Black";
         StaticVariableManager.backgroundColorSetting = "Black";
     }
+    
     public void setWhiteBackground()
     {
         currentBackroundColor.text = "White";
         StaticVariableManager.backgroundColorSetting = "White";
     }
+    
     public void setBlueBackground()
     {
         currentBackroundColor.text = "Blue";
         StaticVariableManager.backgroundColorSetting = "Blue";
     }
+    
     public void setRedBackgrounde()
     {
         currentBackroundColor.text = "Red";
         StaticVariableManager.backgroundColorSetting = "Red";
     }
+    
     public void setGreenBackground()
     {
         currentBackroundColor.text = "Green";
         StaticVariableManager.backgroundColorSetting = "Green";
     }
+    
     public void setYellowBackground()
     {
         currentBackroundColor.text = "Yellow";

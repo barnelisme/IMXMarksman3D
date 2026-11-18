@@ -35,6 +35,7 @@ public class Shooting : MonoBehaviour
     public bool sendUDPReset = false;
     public bool sendUDPSimSetting = true;
     public bool bullseye_hit = false;
+    private bool isCurrShotProcessed = false;
 
     string calibrationPath = "";
     string DelaySavePath = "";
@@ -61,6 +62,8 @@ public class Shooting : MonoBehaviour
     public AudioSource CitySound2;
     public AudioSource ForestSound;
     public AudioSource ForestSound2;
+    public AudioSource HuntingForestSound;
+    public AudioSource BirdHuntingSound;
 
     public AudioClip handgunAudio;
     public AudioClip baloonPopAudio;
@@ -77,6 +80,10 @@ public class Shooting : MonoBehaviour
     public AudioClip CityAudio2;
     public AudioClip ForestAudio;
     public AudioClip ForestAudio2;
+    public AudioClip daytime_HuntingForestAudio;
+    public AudioClip nighttime_HuntingForestAudio;
+    public AudioClip birdHuntingIdleAudio;
+    public AudioClip birdHuntingEvadeAudio;
 
     public TextMeshProUGUI totalshots;
     //int bulletCount;
@@ -108,6 +115,8 @@ public class Shooting : MonoBehaviour
     public GameObject backgroundImageDisplay;
     public ParticleSystem muzzleFlash;
     public GameObject impactEffect;
+    public GameObject impactEffect_TargetHit;
+    public GameObject impactEffect_PlateHit;
     public GameObject blood;
     public GameObject bullethole;
     public GameObject bullethole_2;
@@ -117,6 +126,10 @@ public class Shooting : MonoBehaviour
     UdpClient udpClientImg;
     public int portnum = 22222;
     public int portnumImg = 22223;
+    // Store up to 10 recent coordinates
+    private List<Vector2> recentPoints = new List<Vector2>();
+    private const int MaxRecentPoints = 10;
+
     Boolean FlagBulletRx = false;
     int CountShotFired = 0;
     Vector2Int CalibratePoint1 = new Vector2Int(0, 0);
@@ -165,6 +178,9 @@ public class Shooting : MonoBehaviour
 
     static public int shotsFired = 0, civilianShot = 0;
     static public int enemyshot = 0;
+    private int lane1ShotsFired = 0;
+    private int lane2ShotsFired = 0;
+    private int lane3ShotsFired = 0;
 
     static public int totalNumberOfEnemies = 0;
     static public int numberOfCivilians = 0;
@@ -342,7 +358,7 @@ public class Shooting : MonoBehaviour
     public AudioClip platHitAudio;
 
     //GAME SETTINGS
-    string sim_ammo_setting;
+    string sim_ammo_setting = "";
     public GameObject assistPanel;
     public TextMeshProUGUI assistText;
     static bool isAssistOpen;
@@ -350,6 +366,8 @@ public class Shooting : MonoBehaviour
     float f1OpenHoldCountDown = 0.1f;
     float f1CloseHoldCountDown = 0.1f;
     float f1HoldSetValue = 0.1f;
+    private float gunResetTimer = 4f;
+    private float setGunTimer = 4f;
 
     //SCENE: IPEC Boad
     int boardHit = 0;
@@ -370,7 +388,7 @@ public class Shooting : MonoBehaviour
     public TextMeshProUGUI targetText;
 
     //SCENE: Accurate point Calibration
-    static bool isAccMode = false;
+    static bool isAccMode = true;
     float Ey = 0;
     float Ex = 0;
     float Emin = 1;
@@ -482,7 +500,8 @@ public class Shooting : MonoBehaviour
     // Canca variables
     public Image accLight;
     string AccSaveData;
-    static int num_targets_input = 10;
+    int num_set_shots = 10;
+    int num_targets_to_hit = 10000;
     public TMP_InputField numTargetInput;
     int currentInput = 0;
     int inputChangeSwitch = 0;
@@ -503,6 +522,7 @@ public class Shooting : MonoBehaviour
     float restartTimer = 7;
     bool trainingPaused = false;
     bool final_target_flag = false;
+    private bool isCIScene = false;
 
     //SCENE: Lane Selectable
     int point_1_hits = 0;
@@ -517,10 +537,10 @@ public class Shooting : MonoBehaviour
     List<string> lane2SplitTime = new List<string>();
     List<string> lane3SplitTime = new List<string>();
     List<string> lane4SplitTime = new List<string>();
-    List<string> lane1ResponseTime = new List<string>(); //Split time memory
-    List<string> lane2ResponseTime = new List<string>();
-    List<string> lane3ResponseTime = new List<string>();
-    List<string> lane4ResponseTime = new List<string>();
+    public List<string> lane1ResponseTime = new List<string>(); //Split time memory
+    public List<string> lane2ResponseTime = new List<string>();
+    public List<string> lane3ResponseTime = new List<string>();
+    public List<string> lane4ResponseTime = new List<string>();
     string lane1SplitTimeString = ""; //split time string addition chain
     string lane2SplitTimeString = "";
     string lane3SplitTimeString = "";
@@ -615,6 +635,8 @@ public class Shooting : MonoBehaviour
     public TextMeshProUGUI admin_Lane1_HitShotsTxt;
     public TextMeshProUGUI admin_Lane1_ScoreTxt;
     public TextMeshProUGUI admin_Lane1_PercentageTxt;
+    public TextMeshProUGUI admin_Lane1_CorrectHitsTxt;
+    public TextMeshProUGUI admin_Lane1_IncorrectHitsTxt;
     public TextMeshProUGUI admin_Lane2_Header;
     public TextMeshProUGUI admin_Lane2_ShotsFiredTxt;
     public TextMeshProUGUI admin_Lane2_ShotsMissedTxt;
@@ -622,6 +644,8 @@ public class Shooting : MonoBehaviour
     public TextMeshProUGUI admin_Lane2_HitShotsTxt;
     public TextMeshProUGUI admin_Lane2_ScoreTxt;
     public TextMeshProUGUI admin_Lane2_PercentageTxt;
+    public TextMeshProUGUI admin_Lane2_CorrectHitsTxt;
+    public TextMeshProUGUI admin_Lane2_IncorrectHitsTxt;
     public TextMeshProUGUI admin_Lane3_Header;
     public TextMeshProUGUI admin_Lane3_ShotsFiredTxt;
     public TextMeshProUGUI admin_Lane3_ShotsMissedTxt;
@@ -629,6 +653,8 @@ public class Shooting : MonoBehaviour
     public TextMeshProUGUI admin_Lane3_HitShotsTxt;
     public TextMeshProUGUI admin_Lane3_ScoreTxt;
     public TextMeshProUGUI admin_Lane3_PercentageTxt;
+    public TextMeshProUGUI admin_Lane3_CorrectHitsTxt;
+    public TextMeshProUGUI admin_Lane3_IncorrectHitsTxt;
     public TextMeshProUGUI admin_Lane4_Header;
     public TextMeshProUGUI admin_Lane4_ShotsFiredTxt;
     public TextMeshProUGUI admin_Lane4_ShotsMissedTxt;
@@ -636,6 +662,8 @@ public class Shooting : MonoBehaviour
     public TextMeshProUGUI admin_Lane4_HitShotsTxt;
     public TextMeshProUGUI admin_Lane4_ScoreTxt;
     public TextMeshProUGUI admin_Lane4_PercentageTxt;
+    public TextMeshProUGUI admin_Lane4_CorrectHitsTxt;
+    public TextMeshProUGUI admin_Lane4_IncorrectHitsTxt;
     public GameObject distanceSimulatorPanel;
 
     [Header("Shooter Results")]
@@ -647,6 +675,8 @@ public class Shooting : MonoBehaviour
     public TextMeshProUGUI shooter_Lane1_HitShotsTxt;
     public TextMeshProUGUI shooter_Lane1_ScoreTxt;
     public TextMeshProUGUI shooter_Lane1_PercentageTxt;
+    public TextMeshProUGUI shooter_Lane1_CorrectHitsTxt;
+    public TextMeshProUGUI shooter_Lane1_IncorrectHitsTxt;
     public TextMeshProUGUI shooter_Lane2_Header;
     public TextMeshProUGUI shooter_Lane2_SplitTime_Header;
     public TextMeshProUGUI shooter_Lane2_ShotsFiredTxt;
@@ -655,6 +685,8 @@ public class Shooting : MonoBehaviour
     public TextMeshProUGUI shooter_Lane2_HitShotsTxt;
     public TextMeshProUGUI shooter_Lane2_ScoreTxt;
     public TextMeshProUGUI shooter_Lane2_PercentageTxt;
+    public TextMeshProUGUI shooter_Lane2_CorrectHitsTxt;
+    public TextMeshProUGUI shooter_Lane2_IncorrectHitsTxt;
     public TextMeshProUGUI shooter_Lane3_Header;
     public TextMeshProUGUI shooter_Lane3_SplitTime_Header;
     public TextMeshProUGUI shooter_Lane3_ShotsFiredTxt;
@@ -663,6 +695,8 @@ public class Shooting : MonoBehaviour
     public TextMeshProUGUI shooter_Lane3_HitShotsTxt;
     public TextMeshProUGUI shooter_Lane3_ScoreTxt;
     public TextMeshProUGUI shooter_Lane3_PercentageTxt;
+    public TextMeshProUGUI shooter_Lane3_CorrectHitsTxt;
+    public TextMeshProUGUI shooter_Lane3_IncorrectHitsTxt;
     public TextMeshProUGUI shooter_Lane4_Header;
     public TextMeshProUGUI shooter_Lane4_SplitTime_Header;
     public TextMeshProUGUI shooter_Lane4_ShotsFiredTxt;
@@ -671,6 +705,8 @@ public class Shooting : MonoBehaviour
     public TextMeshProUGUI shooter_Lane4_HitShotsTxt;
     public TextMeshProUGUI shooter_Lane4_ScoreTxt;
     public TextMeshProUGUI shooter_Lane4_PercentageTxt;
+    public TextMeshProUGUI shooter_Lane4_CorrectHitsTxt;
+    public TextMeshProUGUI shooter_Lane4_IncorrectHitsTxt;
 
 
     [Header("Stop Indicators")]
@@ -707,21 +743,40 @@ public class Shooting : MonoBehaviour
     int lane1ThreatsShot = 0, lane1NonThreatsShot = 0;
     int lane2ThreatsShot = 0, lane2NonThreatsShot = 0;
 
+    [Header("Video Training")]
+    public GameObject deadShader;
 
+    void Awake()
+    {
+        // ⭐ PERFORMANCE BOOST: Unlock frame rate and sync with camera
+        // Application.targetFrameRate = 120;      // 120 FPS target
+        // QualitySettings.vSyncCount = 0;         // Disable VSync
+        // Time.fixedDeltaTime = 0.008f;           // Match 120 FPS physics
+        
+        // Debug.Log("Performance: 120 FPS mode enabled!");
+    }
+    
     public void Start()
     {
+        activeScene = SceneManager.GetActiveScene().name;
+
+
 
         try
         {
-            activeScene = SceneManager.GetActiveScene().name;
-            ResetUIPanels();
+            SetUIPanels();
             ResetStaticVariables();
             SetDataDirectory();
             loadBackgroundColor();
             ReadFiles();
+            SendUDPSignal();
+            // sendSceneName();
 
-            //ReloadIndicator = GameObject.FindGameObjectWithTag("ReloadIndicator");
-            //ReloadIndicator.SetActive(false);
+            if (activeScene.ToLower().Contains("range_"))
+            {
+                resetIndoorPapers();
+            }
+
             bullethole_2 = bullethole_3;
 
             if (activeScene.ToLower().Contains("suspect") || activeScene.ToLower().Contains("baloon"))
@@ -736,9 +791,9 @@ public class Shooting : MonoBehaviour
                 // startLane4ResponseCount = true;
             }
 
-            if (activeScene.ToLower().Contains("hunting"))
+            if (activeScene.ToLower().Contains("hunting") && !activeScene.ToLower().Contains("directforesthunting"))
             {
-                player.GetComponent<FirstPersonController>().enabled = false;
+                // player.GetComponent<FirstPersonController>().enabled = false;
             }
 
             loadTraineeNames();
@@ -749,10 +804,6 @@ public class Shooting : MonoBehaviour
             trainingStarted = true;
             isReset = true;
             startTraining = false;
-            if (Scoring.ammo_setting.ToLower().Contains("laser"))
-            {
-                Calibration.isAccMode = false;
-            }
             isAccMode = Calibration.isAccMode;
 
             Reset_Time();
@@ -846,10 +897,6 @@ public class Shooting : MonoBehaviour
             //aimingImage.SetActive(true);
 
             ConfigureGuns();
-            if (activeScene.ToLower().Contains("range"))
-            {
-                resetIndoorPapers();
-            }
 
             if (activeScene.ToLower().Contains("basic") && Scoring.ammo_setting.ToLower().Contains("live"))
             {
@@ -871,9 +918,7 @@ public class Shooting : MonoBehaviour
         }
         catch (Exception e)
         {
-            Debug.Log("Error when instantiating uDp:" + e.Message);
-
-            
+            Debug.Log("Error:" + e.Message);
         }
 
 
@@ -967,21 +1012,31 @@ public class Shooting : MonoBehaviour
         }
         catch (Exception e)
         {
-            Debug.Log("Error when instantiating uDp:" + e.Message);
+            Debug.Log("Error:" + e.Message);
         }
 
 
         try
         {
-            if (sim_ammo_setting.ToLower().Contains("laser") || sim_ammo_setting.ToLower().Contains("live"))
+            if (activeScene == "OpenPlain" || activeScene == "MiniCity")
             {
-                aimingImage.SetActive(false);
+                CitySound2.loop = true;
+                CitySound2.PlayDelayed(1);
             }
-            else if (sim_ammo_setting == "Game")
+            else if (activeScene.ToLower().Contains("foresthunting"))
             {
-                aimingImage.SetActive(true);
+                HuntingForestSound.loop = true;
+                HuntingForestSound.PlayDelayed(1);
             }
-            else
+            else if(activeScene.ToLower().Contains("birdhunting"))
+            {
+                BirdHuntingSound.loop = true;
+                BirdHuntingSound.PlayDelayed(1);
+            }
+
+            if(aimingImage!= null) aimingImage.SetActive(false);
+
+            if (DropDown.scene_type == "3D" && TestConditionsManager.typeOfHunt.ToLower().Contains("search"))
             {
                 aimingImage.SetActive(true);
             }
@@ -990,50 +1045,20 @@ public class Shooting : MonoBehaviour
             {
                 if (sim_ammo_setting.ToLower().Contains("live") || sim_ammo_setting.ToLower().Contains("laser"))
                 {
-                    if(sim_ammo_setting.ToLower().Contains("remote"))
-                    {
-                        //num_targets_input = TestConditionsManager.totalAllowedHitShots; //initialize condition after setup
-                        num_targets_input = TestConditionsManager.numBullets * TestConditionsManager.numMegs;
-                    }
-                    else
-                    {
-                        num_targets_input = TestConditionsManager.numBullets * TestConditionsManager.numMegs;
-                    }
-                }
-                else
-                {
-                    if(activeScene.ToLower().Contains("1lane"))
-                    {
-                        num_targets_input = TestConditionsManager.totalAllowedHitShots; //Initialize condition after setup
-                    }
-                    else if (activeScene.ToLower().Contains("2lane"))
-                    {
-                        num_targets_input = TestConditionsManager.totalAllowedHitShots; //Initialize condition after setup
-                    }
-                    else if (activeScene.ToLower().Contains("3lane"))
-                    {
-                        num_targets_input = TestConditionsManager.totalAllowedHitShots; //Initialize condition after setup
-                    }
-                    else
-                    {
-                        num_targets_input = TestConditionsManager.totalAllowedHitShots; //Initialize condition after setup
-                    }
+                    num_set_shots = TestConditionsManager.numBullets * TestConditionsManager.numMegs;
+                    num_targets_to_hit = TestConditionsManager.totalAllowedHitShots;
                 }
             }
             else if(activeScene.ToLower().Contains("hunting"))
             {
-                num_targets_input = TestConditionsManager.totalAllowedHitShots; //initialize condition after setup
+                num_set_shots = TestConditionsManager.totalAllowedHitShots; //initialize condition after setup
             }
             else 
             {
-                num_targets_input = TestConditionsManager.numBullets * TestConditionsManager.numMegs;
+                num_set_shots = TestConditionsManager.numBullets * TestConditionsManager.numMegs;
+                num_targets_to_hit = TestConditionsManager.totalAllowedHitShots;
             }
 
-            if (activeScene == "OpenPlain" || activeScene == "MiniCity")
-            {
-                CitySound2.loop = true;
-                CitySound2.PlayDelayed(1);
-            }
             if (activeScene.ToLower().Contains("basic"))
             {
                 platHitSound = gameObject.AddComponent<AudioSource>();
@@ -1063,13 +1088,11 @@ public class Shooting : MonoBehaviour
             }
             assistPanel.SetActive(false);
 
-            sendSceneName();
-
             //print("RE: try 3 complete...");
         }
         catch (Exception e)
         {
-            Debug.Log("Error when instantiating uDp:" + e.Message);
+             Debug.Log("Error:" + e.Message);
         }
 
         // print("Num targets: " + TestConditionsManager.numLaneTargets);
@@ -1101,7 +1124,7 @@ public class Shooting : MonoBehaviour
                 // print("Running...");
                 if (sendUDPSimSetting && countDownStart.start_training)
                 {
-                    SendUDPSignal();
+                    // SendUDPSignal();
                     //print("Sent!");
                     sendUDPSimSetting = false;
                 }
@@ -1114,7 +1137,7 @@ public class Shooting : MonoBehaviour
 
                         buzzerTime -= Time.deltaTime;
                         buzzerText.text = "Stand by:" + ((int)buzzerTime).ToString();
-                        print("BuzzerTime==" + buzzerTime.ToString());
+                        // print("BuzzerTime==" + buzzerTime.ToString());
                         if (Math.Round(buzzerTime, 2) == 1.0f || Math.Round(buzzerTime, 2) == 2.0f || Math.Round(buzzerTime, 2) == 3.0f || Math.Round(buzzerTime, 2) == 4.0f || Math.Round(buzzerTime, 2) == 5.0f)
                         {
                             gunCockingSound.Play();
@@ -1196,11 +1219,7 @@ public class Shooting : MonoBehaviour
 
                 if (Keyboard.current.leftShiftKey.isPressed && Keyboard.current.enterKey.isPressed)//Start/stop timer
                 {
-                    buzzerFlag = true;
-                    buzzerTime = 6;
-                    startTime = float.Parse(TimeLimit.text);
-                    rangeTime = TimeLimit.text;
-                    //print(TimeLimit.text);
+                    startTimer();
                 }
                 if ((Keyboard.current.escapeKey.isPressed && Keyboard.current.enterKey.isPressed) || startTime <= 0)//Start/stop timer
                 {
@@ -1248,7 +1267,7 @@ public class Shooting : MonoBehaviour
                 }
                 if (Keyboard.current.leftShiftKey.isPressed || activeScene.ToLower().Contains("moving"))
                 {
-                    aimingImage.SetActive(false);
+                    // aimingImage.SetActive(false);
                 }
                 if (Keyboard.current.leftShiftKey.isPressed && Keyboard.current.cKey.isPressed)//Start/stop timer
                 {
@@ -1343,14 +1362,14 @@ public class Shooting : MonoBehaviour
                 //Split time counters
                 manageSplitAndReactionTime();
 
-                //Hunting scenes Stop Conditions
-                manageHuntTrainingStopCondition();
+                // Stop Conditions
+                StopConditions();
 
-                //Lane shooting Stop Condition
-                manageLaneTarinigStopCondition();
-
-                //Suspect Shoot stop condition
-                manageSuspectShootStopCondition();
+                // Manage Gunshot cooldown
+                if (activeScene.ToLower().Contains("hunting"))
+                {
+                    ManageGunShotCooldown();
+                }
             }
             if (sim_ammo_setting == "Live")
             {
@@ -1370,7 +1389,6 @@ public class Shooting : MonoBehaviour
                 }
             } //Auto restart and move the paper roll in the range
 
-            manageMouseClickStopCondition();
             manageGlobalTrainingVariable();
 
         }
@@ -1386,13 +1404,13 @@ public class Shooting : MonoBehaviour
         Vector3 cameraVector = Camera.main.ScreenToWorldPoint(vector3);
 
         //UDP Receive Function
-        udpDataProcessing();
+        udpDataProcessing(); // if(countDownStart.start_training) 
 
         //|Call acc after receiving udp
         loadAccValues();
         if (Keyboard.current.leftShiftKey.isPressed && Keyboard.current.rightAltKey.isPressed)
         {
-            isAccMode = false;
+            // isAccMode = false;
         }
         if (Keyboard.current.leftShiftKey.isPressed && Keyboard.current.leftAltKey.isPressed)
         {
@@ -1404,6 +1422,19 @@ public class Shooting : MonoBehaviour
             }
         }
 
+    }
+
+    private void ManageGunShotCooldown()
+    {
+        if (StaticVariableManager.isGunFired)
+        {
+            gunResetTimer -= Time.deltaTime;
+            if (gunResetTimer <= 0f)
+            {
+                StaticVariableManager.isGunFired = false;
+                gunResetTimer = setGunTimer;
+            }
+        }
     }
 
     private void ManageMouseShoot()
@@ -1437,7 +1468,7 @@ public class Shooting : MonoBehaviour
     private void manageSplitAndReactionTime()
     {
 
-        if(countDownStart.start_training)
+        if(countDownStart.start_training && !StaticVariableManager.isStopTraining)
         {
             //print("RE: Point Reached............");
             //Split Time
@@ -1460,23 +1491,35 @@ public class Shooting : MonoBehaviour
                 lane4SplitTimeCounter += Time.deltaTime * 1;
             }
 
-            //Response Time
-            if (startLane1ResponseCount)
+            if(activeScene.Contains("VideoTraining"))
             {
-                lane1ResponseTimeCounter += Time.deltaTime * 1;
-                //print("Test: Time " + lane1ResponseTimeCounter);
+                //Response Time
+                if (startLane1ResponseCount && StaticVariableManager.isStartVideoTime)
+                {
+                    lane1ResponseTimeCounter += Time.deltaTime * 1;
+                    // print("Reaction Time: " + lane1ResponseTimeCounter);
+                }
             }
-            if (startLane2ResponseCount)
+            else
             {
-                lane2ResponseTimeCounter += Time.deltaTime * 1;
-            }
-            if (startLane3ResponseCount)
-            {
-                lane3ResponseTimeCounter += Time.deltaTime * 1;
-            }
-            if (startLane4ResponseCount)
-            {
-                lane4ResponseTimeCounter += Time.deltaTime * 1;
+                //Response Time
+                if (startLane1ResponseCount)
+                {
+                    lane1ResponseTimeCounter += Time.deltaTime * 1;
+                    //print("Test: Time " + lane1ResponseTimeCounter);
+                }
+                if (startLane2ResponseCount)
+                {
+                    lane2ResponseTimeCounter += Time.deltaTime * 1;
+                }
+                if (startLane3ResponseCount)
+                {
+                    lane3ResponseTimeCounter += Time.deltaTime * 1;
+                }
+                if (startLane4ResponseCount)
+                {
+                    lane4ResponseTimeCounter += Time.deltaTime * 1;
+                }
             }
         }
 
@@ -1608,6 +1651,27 @@ public class Shooting : MonoBehaviour
             sendEndless("scene,BaloonTargets");
         }
     }
+
+    private void StopConditions()
+    {
+        manageMouseClickStopCondition();
+
+        // IPSC Extended Stop condition
+        ManageIPSCExtStopCondition();
+
+        //Hunting scenes Stop Conditions
+        manageHuntTrainingStopCondition();
+
+        //Lane shooting Stop Condition
+        manageLaneTarinigStopCondition();
+
+        //Suspect Shoot stop condition
+        manageSuspectShootStopCondition();
+
+        //Video Training Stop Condition
+        ManageVideoStopCondition();
+    }
+
     private void manageSuspectShootStopCondition()
     {
         if(StaticVariableManager.isStopTraining)
@@ -1618,6 +1682,46 @@ public class Shooting : MonoBehaviour
         }
     }
 
+    private void ManageIPSCExtStopCondition()
+    {
+        switch (StaticVariableManager.numIPSCTargetOption)
+        {
+            case 1:
+                if (StaticVariableManager.isTarget1Complete)
+                {
+                    //print("Test: Point reached");
+                    StopTraining();
+
+                    StaticVariableManager.isTarget1Complete = false;
+                    StaticVariableManager.isTarget2Complete = false;
+                    StaticVariableManager.isTarget3Complete = false;
+                }
+                break;
+            case 2:
+                if (StaticVariableManager.isTarget1Complete && StaticVariableManager.isTarget2Complete)
+                {
+                    //print("Test: Point reached");
+                    StopTraining();
+
+                    StaticVariableManager.isTarget1Complete = false;
+                    StaticVariableManager.isTarget2Complete = false;
+                    StaticVariableManager.isTarget3Complete = false;
+                }
+                break;
+            case 3:
+                if (StaticVariableManager.isTarget1Complete && StaticVariableManager.isTarget2Complete && StaticVariableManager.isTarget3Complete)
+                {
+                    //print("Test: Point reached");
+                    StopTraining();
+
+                    StaticVariableManager.isTarget1Complete = false;
+                    StaticVariableManager.isTarget2Complete = false;
+                    StaticVariableManager.isTarget3Complete = false;
+                }
+                break;
+        }
+    }
+    
     private void manageHuntTrainingStopCondition()
     {
 
@@ -1625,7 +1729,7 @@ public class Shooting : MonoBehaviour
         {
             if (activeScene.ToLower().Contains("direct"))
             {
-                if (StaticVariableManager.totalTargetAnimalsKilled >= num_targets_input)
+                if (StaticVariableManager.totalTargetAnimalsKilled >= num_set_shots)
                 {
                     targetsFinished = true;
                     targetFinished = true;
@@ -1634,7 +1738,7 @@ public class Shooting : MonoBehaviour
             }
             else if (activeScene.ToLower().Contains("avoid"))
             {
-                if (StaticVariableManager.totalTargetAnimalsKilled + StaticVariableManager.totalTargetCasualtiesKilled >= num_targets_input)
+                if (StaticVariableManager.totalTargetAnimalsKilled + StaticVariableManager.totalTargetCasualtiesKilled >= num_set_shots)
                 {
                     targetsFinished = true;
                     targetFinished = true;
@@ -1649,7 +1753,7 @@ public class Shooting : MonoBehaviour
         //sim_ammo_setting == "Laser" || sim_ammo_setting.ToLower().Contains("remote")
         if (!trainingPaused)
         {
-            if (Mouse.current.rightButton.wasPressedThisFrame)
+            if (Mouse.current.rightButton.wasPressedThisFrame && !Keyboard.current.leftShiftKey.isPressed && !activeScene.ToLower().Contains("indoor_range"))
             {
                 StopTraining();
             }
@@ -1730,6 +1834,40 @@ public class Shooting : MonoBehaviour
 
         manageShotCount();
     }
+
+    private void ManagerScenarioStopCondition()
+    {
+        if(activeScene.Contains("2LaneDuelingTree"))
+        {
+            if(StaticVariableManager.duelingTreeComplete)
+            {
+                StopTraining();
+            }
+        }
+        else if(activeScene.Contains("DecisionPTShoot")) // activeScene.Contains("TargetRecognition")
+        {
+            if (StaticVariableManager.isTRTTrainingComplete)
+            {
+                StopTraining();
+            }
+        }
+        else if(activeScene.Contains("VideoTraining"))
+        {
+            if(StaticVariableManager.isVideoTrainingComplete || !StaticVariableManager.isStartVideoTime)
+            {
+                StopTraining();
+            }
+        }
+    }
+
+    private void ManageVideoStopCondition()
+    {
+        if (StaticVariableManager.isVideoTrainingComplete)
+        {
+            StopTraining();
+        }
+    }
+
     private void manageGlobalTrainingVariable()
     {
         StaticVariableManager.isTrainingPause = trainingPaused;
@@ -1742,10 +1880,10 @@ public class Shooting : MonoBehaviour
 
         sendUDP = true;  //UDP Sending switch
         listOfPoint = new List<string>();
-        
+
         if(activeScene.ToLower().Contains("range"))
         {
-            //timerText.text = "Timer: 0";
+            timerText.text = "Timer: " + TestConditionsManager.total_test_time;
         }
     
 
@@ -1772,98 +1910,88 @@ public class Shooting : MonoBehaviour
     {
         try
         {
-            IPEndPoint remoteEP = null;
-            if (udpClient.Available > 0)   // Cam Points
+            const int MAX_PACKETS_PER_FRAME = 45;
+            const float MAX_TIME_MS = 1.5f; // Hard cap to protect Unity frame time
+
+            int packetsProcessed = 0;
+            float startTimeMs = Time.realtimeSinceStartup * 1000f;
+
+            while (udpClient.Available > 0 && packetsProcessed < MAX_PACKETS_PER_FRAME)
             {
-                //print("RE: In UDP Client 1");
-                byte[] data = udpClient.Receive(ref remoteEP);
+                // ⛔ Time safety guard
+                if ((Time.realtimeSinceStartup * 1000f - startTimeMs) > MAX_TIME_MS)
+                    break;
+
+                packetsProcessed++;
+
+                IPEndPoint remoteEP = null;
+                byte[] data;
+
+                try
+                {
+                    data = udpClient.Receive(ref remoteEP);
+                }
+                catch (SocketException)
+                {
+                    break;
+                }
+
+                // Fast reject (no allocation)
+                if (data.Length < 6 || data[0] != 'C')
+                    continue;
+
                 string message = Encoding.ASCII.GetString(data);
 
-                string input = "0:0"; // Example input string
-                Regex numberPattern = new Regex(@"\d+"); // Pattern to match one or more digits
-
-
-                //Debug.Log(message + " from " + remoteEP.Address.ToString());
-
-                if (message.ToLower().Contains("exit test calibration") && activeScene.ToLower().Contains("calibration"))
+                // Handle non-COORD commands
+                if (!message.StartsWith("COORD,", StringComparison.Ordinal))
                 {
-                    SceneManager.LoadScene("Calib_Acc_Page");
-                }
-                else if (numberPattern.IsMatch(input))
-                {
-                    print("cam:" + message);
-                    xPos = float.Parse(message.Split(':')[0]);
-                    yPos = float.Parse(message.Split(':')[1]);
-
-                    if (Ball1Y > y_CentrePos)
+                    if (message.IndexOf("exit test calibration", StringComparison.OrdinalIgnoreCase) >= 0 &&
+                        activeScene.IndexOf("calibration", StringComparison.OrdinalIgnoreCase) >= 0)
                     {
-                        lowerAcc = false;
-                        upAcc = true;
-
-                        if (Ball1X > x_CentrePos)  //Right
-                        {
-                            upLeftAcc = false;
-                            upRightAcc = true;    //Priority
-                            lowerLeftAcc = false;
-                            lowerRightAcc = false;
-                        }
-                        else if (Ball1X < x_CentrePos)
-                        {
-                            upLeftAcc = true;     //Priority
-                            upRightAcc = false;
-                            lowerLeftAcc = false;
-                            lowerRightAcc = false;
-
-                        }
-
-                    } //High point
-                    else if (Ball1Y < y_CentrePos) //Low Point
-                    {
-                        lowerAcc = true;
-                        upAcc = false;
-
-                        if (Ball1X > x_CentrePos) //Right
-                        {
-                            upLeftAcc = false;
-                            upRightAcc = false;
-                            lowerLeftAcc = false;
-                            lowerRightAcc = true;  //priority
-                        }
-                        else if (Ball1X < x_CentrePos) //Left
-                        {
-                            upLeftAcc = false;
-                            upRightAcc = false;
-                            lowerLeftAcc = true;   //priority
-                            lowerRightAcc = false;
-
-                        }
-
+                        SceneManager.LoadScene("Calib_Acc_Page");
                     }
-
-                    if (activeScene.ToLower().Contains("range") && startTime > 0 && buzzerTime <= 0)
-                    {
-                        Shoot();
-                    }
-                    else
-                    {
-                        Shoot();
-                    }
+                    continue;
                 }
 
-            }
-            if (udpClientImg.Available > 0)   //Score Image Saver
-            {
-                print("RE: In UDP Client 2");
-                byte[] dataImg = udpClientImg.Receive(ref remoteEP);
-                UdpImageSaver.receiveImageBytes(dataImg);
+                // Manual parse instead of Split()
+                int firstComma = message.IndexOf(',', 6);
+                if (firstComma < 0)
+                    continue;
+
+                if (!float.TryParse(message.AsSpan(6, firstComma - 6),
+                                    NumberStyles.Float,
+                                    CultureInfo.InvariantCulture,
+                                    out float parsedX))
+                    continue;
+
+                if (!float.TryParse(message.AsSpan(firstComma + 1),
+                                    NumberStyles.Float,
+                                    CultureInfo.InvariantCulture,
+                                    out float parsedY))
+                    continue;
+
+                // Duplicate rejection (fast)
+                if (StaticVariableManager.IsDuplicate(parsedX, parsedY))
+                    continue;
+
+                StaticVariableManager.AddPoint(parsedX, parsedY);
+
+                xPos = parsedX;
+                yPos = parsedY;
+
+                if (!countDownStart.start_training)
+                    continue;
+
+                Shoot();
             }
         }
         catch (Exception e)
         {
-            print("Error: " + e);
+            Debug.LogError("UDP Processing Error: " + e);
         }
-
     }
+
+
     private void openAssistance()
     {
         if(login_Manager.EmailText.ToLower().Contains("range"))
@@ -2085,9 +2213,13 @@ public class Shooting : MonoBehaviour
                 range = 55;
             }
         }
+
+        range = 10000;
     }
     public void SendUDPSignal()
     {
+        UDPSetup.FindLocalIP(); // Set the Global IP string incase it has changed
+
         if(activeScene.ToLower().Contains("calibration"))
         {
             sendEndless("Calibrate");
@@ -2101,17 +2233,13 @@ public class Shooting : MonoBehaviour
             if (Scoring.ammo_setting.ToLower().Contains("live"))
             {
                 sendEndless("Live");
-                if (Scoring.shooting_PaperRoll_Setting.ToLower().Contains("dynamic"))
-                {
-                    sendEndless("Reset");
-                }
             }
             else
             {
                 sendEndless("Laser");
             }
 
-            sendEndless("Simulate");
+            // sendEndless("Simulate");
         }
 
     }
@@ -2200,152 +2328,57 @@ public class Shooting : MonoBehaviour
     void Shoot()
     {
         isShooting = true;
-        //print("RE: startTraining " + startTraining);
-        //print("RE: isResetDelay " + isResetDelay);
-        //print("RE: trainingStarted " + trainingStarted);
-        //print("RE: trainingPaused" + trainingPaused);
-        //
-        //print("RE: " + sim_ammo_setting);
-        //print("Test: Shooting...");
+
+        // If video training and step back procedure is running. Do Not SHoot.
+        if(activeScene.Contains("Video") && StaticVariableManager.initializeStepBack)
+        {
+            return; 
+        }
+
         if ((startTraining == true && isResetDelay == false && trainingStarted == true && trainingPaused == false
             && StaticVariableManager.isResetingPoints == false && StaticVariableManager.isEnded == false) || activeScene == "CalibrationTest")
         {
-            if (lane1ShootDelayTimer <= 0 )
-            {
-                //set delay;
-                lane1ShootDelayTimer = delaySetting;
-            }
 
-            shotsFired++;
-            //ShootSateText.text = "Shoot";
+            ApplyDelay(); // Apply delay
+            ApplySoundChanges();  // Manage sounds
+
+            RaycastHit hit;
             isShootState = true;
-
-
             totalshots.text = "Shots Fired : ";
             totalshots.text += shotsFired;
-            //print(totalshots.text);
-            //ShootRayCast();
-            if (activeScene == "Outdoor_FOREST" && !ForestSound2.isPlaying)
-            {
-                //ForestSound.Stop();
-                ForestSound2.loop = true;
-                ForestSound2.PlayDelayed(1);
-            }
-            if (randomTalkSound.isPlaying)
-            {
-                randomTalkSound.Stop();
-                CitySound.Stop();
-
-                if (activeScene == "OpenPlain" || activeScene == "MiniCity")
-                {
-                    CitySound2.loop = true;
-                    CitySound2.PlayDelayed(1);
-                }
+            if (is3DScene) shotsFired++; // This variable is only used in 3D
+            if (is3DScene && activeScene.ToLower().Contains("hunting"))
+                StaticVariableManager.isGunFired = true;
 
 
-            }
-            //handgunSound.Play();
-            RaycastHit hit;
-            //Ray ray;
-            if (xPos == -1f && yPos == -1f)
-            {
-                ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue()); //new Vector3(xPos, yPos, -1)
-                                                                                        //print("Shooting in a range");
-            }
-            else
-            {
-                if (isAccMode == false)
-                {
-                    DrawMatrixLines1(new Vector2Int((int)xPos, (int)yPos));
-                }
-                else if (isAccMode == true)
-                {
-                    DrawMatrixLines(new Vector2Int((int)xPos, (int)yPos));
-                }
-            }
+            // Apply point calculation
+            ApplyShotCoordinate();
 
+            // Handle Raycasting
             if (Physics.Raycast(ray, out hit, range)) // if Hit
             {
+                // StaticVariableManager.isGunFired = true;
                 /////////////////////Manage Shot Delay////////////////////
                 if (lane1ShotDelayActive && is3DScene) return;
-                if (lane1ShotDelayActive && (hit.transform.name.ToLower().StartsWith("1") || hit.transform.tag.ToLower().Contains("lane1misscollider"))) return;
-                if (lane2ShotDelayActive && (hit.transform.name.ToLower().StartsWith("2") || hit.transform.tag.ToLower().Contains("lane2misscollider"))) return;
-                if (lane3ShotDelayActive && (hit.transform.name.ToLower().StartsWith("3") || hit.transform.tag.ToLower().Contains("lane3misscollider"))) return;
+                if ((lane1ShotDelayActive || lane1TargetsComplete) && (hit.transform.name.ToLower().StartsWith("1") || hit.transform.tag.ToLower().Contains("lane1misscollider"))) return;
+                if ((lane2ShotDelayActive || lane2TargetsComplete) && (hit.transform.name.ToLower().StartsWith("2") || hit.transform.tag.ToLower().Contains("lane2misscollider"))) return;
+                if ((lane3ShotDelayActive || lane3TargetsComplete) && (hit.transform.name.ToLower().StartsWith("3") || hit.transform.tag.ToLower().Contains("lane3misscollider"))) return;
                 ManageShootDelay(hit);
                 ///////////////////////////////////////////////////////////////////////////////
 
-                if (activeScene.ToLower().Contains("calibration"))
-                {
-                    //print("RE: Shooting Calib impact");
-                    GameObject impactGo = Instantiate(acc_Bullet, hit.point, Quaternion.LookRotation(hit.normal));
-                    Destroy(impactGo, 0.1f);
-                }
-                else
-                {
-                    if (hit.transform.tag.ToLower().Contains("soldier") || hit.transform.tag.ToLower().Contains("civilian"))
-                    {
-                        //Do Nothing for now
-                    }
-                    else
-                    {
-                        if (Scoring.ammo_setting == "Live")
-                        {
-                            if (pointInRadiusG == false && isCalibrate == false)
-                            {
-                                GameObject impactGo = Instantiate(impactEffect, hit.point, Quaternion.LookRotation(hit.normal));
-                                Destroy(impactGo, 0.4f);
-                            }
-                            else if (isCalibrate == true)
-                            {
-                                GameObject impactGo = Instantiate(impactEffect, hit.point, Quaternion.LookRotation(hit.normal));
-                                Destroy(impactGo, 0.4f);
-                            }
-                        }
-                        else
-                        {
-                            GameObject impactGo_2 = Instantiate(impactEffect, hit.point, Quaternion.LookRotation(hit.normal));
-                            Destroy(impactGo_2, 0.4f);
-                        }
-                    }
+                // Handle hit impact
+                ApplyImpact(hit);
 
-                }
-
+                // print(hit.transform.name);
+                // is3DScene = true;
                 if (is3DScene)
                 {
+                    Debug.Log("Hit=" + hit.transform.name);
                     sceneOpenPlainShoot(hit);
-                    //Debug.Log("Hit=" + hit.transform.name);
-
-                    if (activeScene.ToLower().Contains("hunting"))
-                    {
-                        StaticVariableManager.isGunFired = true;
-                    }
                 }
                 else if (activeScene.ToLower().Contains("closeupsuspect"))
                 {
                     sceneOpenPlainShoot(hit);
-                }
-                else if (activeScene.ToLower().Contains("minicity"))
-                {
-                    sceneOpenPlainShoot(hit);
-
-                }
-                else if (activeScene.ToLower().Contains("moving_targets"))
-                {
-
-                    //target for moving targets
-                    targetHitParent = hit.transform.parent.name;
-                    targetHit = hit.transform.name;
-
-                }
-                else if (activeScene == ("BasicAimAndShoot"))
-                {
-                    sceneIndoorShoot(hit);
-                }
-                else if (activeScene == ("BlockShooting"))
-                {
-                    sceneOpenPlainShoot(hit);
-                    //MovingBoxTarget
-                    //sceneIndoorShoot(hit);
                 }
                 else if (activeScene.ToLower().Contains("basic"))
                 {
@@ -2353,17 +2386,152 @@ public class Shooting : MonoBehaviour
                 }
                 else
                 {
-                    //Debug.Log("Hit=" + hit.transform.name);
+                    Debug.Log("Hit=" + hit.transform.name);
                     sceneIndoorShoot(hit);
                 }
 
             }
 
+            HandlExtMissedShots(hit);
+            DisplayLaneShotsFired();
+
+            ManagerScenarioStopCondition(); // Ensure this is called after all tarining data is update!!
             SaveCalibration();
-            //manageShotCount();
-            //xPos = -1f; yPos = -1f;
         }
 
+    }
+
+    private void ApplySoundChanges()
+    {
+
+        if (activeScene == "Outdoor_FOREST" && !ForestSound2.isPlaying)
+        {
+            //ForestSound.Stop();
+            ForestSound2.loop = true;
+            ForestSound2.PlayDelayed(1);
+        }
+        if (randomTalkSound.isPlaying)
+        {
+            randomTalkSound.Stop();
+            CitySound.Stop();
+
+            if (activeScene == "OpenPlain" || activeScene == "MiniCity")
+            {
+                CitySound2.loop = true;
+                CitySound2.PlayDelayed(1);
+            }
+        }
+
+        if (Scoring.ammo_setting.ToLower().Contains("laser") && StaticVariableManager.gunShotSetting)
+        {
+            // print("Shooing Laser Sound");
+            handgunSound.Play();
+            handgunSound.volume = 0.75f;
+        }
+    }
+
+    private void ApplyDelay()
+    {
+        if (lane1ShootDelayTimer <= 0)
+        {
+            //set delay;
+            lane1ShootDelayTimer = delaySetting;
+        }
+    }
+
+    private void ApplyShotCoordinate()
+    {
+        if (xPos == -1f && yPos == -1f)
+        {
+            ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue()); //new Vector3(xPos, yPos, -1)
+        }
+        else
+        {
+            isAccMode = true; // Set by default
+            if (isAccMode == false)
+            {
+                DrawMatrixLines1(new Vector2Int((int)xPos, (int)yPos));
+            }
+            else if (isAccMode == true)
+            {
+                // NEW, CORRECT CALL: Use Vector2 instead of Vector2Int.
+                DrawMatrixLines(new Vector2(xPos, yPos));
+            }
+        }
+    }
+
+    private void ApplyImpact(RaycastHit hit)
+    {
+        if (activeScene.ToLower().Contains("calibration"))
+        {
+            //print("RE: Shooting Calib impact");
+            GameObject impactGo = Instantiate(acc_Bullet, hit.point, Quaternion.LookRotation(hit.normal));
+            Destroy(impactGo, 0.1f);
+        }
+        else
+        {
+            if (hit.transform.tag.ToLower().Contains("soldier") || hit.transform.tag.ToLower().Contains("civilian"))
+            {
+                // Do Nothing for now
+                HandleHitImpact(hit);
+            }
+            else
+            {
+
+                if (Scoring.ammo_setting == "Live")
+                {
+                    if (pointInRadiusG == false && isCalibrate == false)
+                    {
+                        HandleHitImpact(hit);
+                    }
+                    else if (isCalibrate == true)
+                    {
+                        GameObject impactGo = Instantiate(impactEffect, hit.point, Quaternion.LookRotation(hit.normal));
+                        Destroy(impactGo, 0.4f);
+                    }
+                }
+                else
+                {
+                    HandleHitImpact(hit);
+                }
+            }
+
+        }
+    }
+
+    private void HandleHitImpact(RaycastHit hit)
+    {
+        // print("Playing hit impact: " + LayerMask.LayerToName(hit.collider.gameObject.layer));
+
+        if (impactEffect_TargetHit != null && (LayerMask.LayerToName(hit.collider.gameObject.layer) == "animal" ||
+            LayerMask.LayerToName(hit.collider.gameObject.layer) == "civilian"))
+        {
+            GameObject impactGo = Instantiate(impactEffect_TargetHit, hit.point, Quaternion.LookRotation(hit.normal));
+            Destroy(impactGo, 0.4f);
+        }
+        else if (StaticVariableManager.smokeImpactSetting && impactEffect_PlateHit != null )
+        {
+            if(activeScene.ToLower().Contains("3dclaypigeon") || activeScene.ToLower().Contains("hunting") 
+                || sim_ammo_setting.ToLower().Contains("live"))
+            {
+                if((hit.transform.tag == "target"))
+                {
+                    GameObject impactGo = Instantiate(impactEffect_PlateHit, hit.point, Quaternion.LookRotation(hit.normal));
+                    Destroy(impactGo, 0.4f);
+                }
+            }
+            else
+            {
+                GameObject impactGo = Instantiate(impactEffect_PlateHit, hit.point, Quaternion.LookRotation(hit.normal));
+                Destroy(impactGo, 0.4f);
+            }
+
+        }
+        else
+        {
+            GameObject impactGo = Instantiate(impactEffect, hit.point, Quaternion.LookRotation(hit.normal));
+            Destroy(impactGo, 0.4f);
+        }
     }
 
     private void manageShotCount()
@@ -2377,9 +2545,9 @@ public class Shooting : MonoBehaviour
             }
             // print("In Laser");
         }
-        else if (sim_ammo_setting == "Live")
+        else if (sim_ammo_setting == "Live" && DropDown.scene_type == "3D")
         {
-            if (shotsFired >= num_targets_input && !activeScene.ToLower().Contains("hunting") && !activeScene.ToLower().Contains("calibration"))
+            if (shotsFired >= num_set_shots && !activeScene.ToLower().Contains("hunting") && !activeScene.ToLower().Contains("calibration"))
             {
                 GameOver = true;
                 targetsFinished = true;
@@ -2419,30 +2587,46 @@ public class Shooting : MonoBehaviour
         }
     }
 
-    private void DrawMatrixLines(Vector2Int p)
+    private void DrawMatrixLines(Vector2 normalizedPoint)
     {
         /************* Variables to draw bullets on targets ********************/
-        Vector2 point = new Vector2(p.x, p.y); // Convert raw OpenCV point
+        // The input 'normalizedPoint' is now (0.0 to 1.0)
+        // print("Drawing: " + normalizedPoint.x + "," + normalizedPoint.y);
 
-        SetQuadrantOne(point);
-        SetQuadrantTwo(point);
-        SetQuadrantThree(point);
-        SetQuadrantFour(point);
+        // Convert normalized point to screen pixel coordinates
+        float finalX_Screen = normalizedPoint.x * Screen.width;
+        // NOTE: normalizedPoint.y is already Unity-inverted (0.0=bottom, 1.0=top) from Python.
+        float finalY_Screen = normalizedPoint.y * Screen.height;
 
-        // Merge ball points
+        // Create the final screen position Vector
+        Vector2 finalScreenPos = new Vector2(finalX_Screen, finalY_Screen);
+
+        // --- OLD LOGIC REMOVED: All Quadrant/Sub-Quadrant Checks and CalibratePoint logic ---
+        // The goal of the old logic was to map a distorted point (x,y) to a screen coordinate (eX, eY)
+        // using interpolation between calibration points. Since Python provides the FINAL, CORRECTED (0-1) point, 
+        // we just need the direct scaling.
+
+        // Assign the new, corrected screen coordinates to your output variables
+        eX = finalScreenPos.x;
+        eY = finalScreenPos.y;
+
+        // Merge ball points (SetBallPoint should use eX, eY)
         SetBallPoint(eX, eY, minX, maxX, minY, maxY);
 
-       
-        ///
-        
-
-        if (false)
+        // Since the point is normalized, it will always be within the 0-1 range.
+        // The check for "Point is outside the calibration grid!" is now unnecessary 
+        // unless you want to check if it's outside a smaller sub-region.
+        if (eX < 0 || eX > Screen.width || eY < 0 || eY > Screen.height)
         {
-            print("Point is outside the calibration grid!");
-            return; // Ignore points outside the grid
+            print("ERROR: Final Screen Point is outside screen boundaries!");
+            return; // Ignore points outside the screen
         }
 
     }
+    // NOTE: All the SetQuadrantOne, SetQuadrantTwo, SetQuadrantThree, SetQuadrantFour functions 
+    // are now redundant for **drawing the shot marker** and can be safely removed or commented out.
+    // If they are used for other side effects (like triggering other events), you will need to re-integrate 
+    // that logic using the new normalized xPos/yPos values.
 
     private void SetQuadrantOne(Vector2 point)
     {
@@ -3226,25 +3410,41 @@ public class Shooting : MonoBehaviour
 
     private void SetBallPoint(float eX, float eY, float minX, float maxX, float minY, float maxY)
     {
-        // float eX = 0, eY = 0;
-        //float minX = 0, maxX = 0, minY = 0, maxY = 0;
+        // The parameters minX, maxX, minY, maxY are now redundant 
+        // because eX and eY are already the final, calculated screen pixel coordinates.
 
         try
         {
-            // Map to quadrant-specific screen space
-            Ball1X = Mathf.Lerp(minX, maxX, eX);
-            Ball1Y = Mathf.Lerp(minY, maxY, eY);
+            // --- MODIFICATION START ---
+            // 1. Directly assign the final screen pixel coordinates.
+            // The screen mapping happened in DrawMatrixLines:
+            // e.g., eX = normalizedPoint.x * Screen.width;
 
-            //print("Mapped X - " + Ball1X);
-            //print("Mapped Y - " + Ball1Y);
+            Ball1X = eX;
+            Ball1Y = eY;
 
+            // print("Final Screen X - " + Ball1X);
+            // print("Final Screen Y - " + Ball1Y);
+
+            // 2. Preserve your data serialization
             unityCamValues = Ball1X.ToString() + ":" + Ball1Y.ToString();
 
-            ray = Camera.main.ScreenPointToRay(new Vector3((int)(Ball1X), (int)(Ball1Y), 0));
+            // 3. Create the Raycast
+            // NOTE: Camera.main.ScreenPointToRay expects a Vector3 in screen space, 
+            // which Ball1X and Ball1Y now correctly represent.
+            ray = Camera.main.ScreenPointToRay(new Vector3(Ball1X, Ball1Y, 0));
+            // We use float values directly, though ScreenPointToRay usually takes integers.
+            // It's generally safe to rely on the engine's implicit casting here.
+            // If you were to explicitly cast: (int)(Ball1X), (int)(Ball1Y)
+            // I'll leave the (int) casts removed as the input to this function (eX, eY)
+            // is based on a float operation, but ScreenPointToRay often uses integers.
+            // I've removed the (int) cast on the ray creation for now.
+            // If you still see issues, reinstate the (int) casts.
+            // --- MODIFICATION END ---
         }
         catch (Exception e)
         {
-            Debug.Log("Error: " + e.Message);
+            Debug.Log("Error in SetBallPoint: " + e.Message);
         }
     }
 
@@ -3266,7 +3466,7 @@ public class Shooting : MonoBehaviour
         Vector2 point = new Vector2(p.x, p.y); // Convert raw OpenCV point
 
         // Debugging the detected point
-        print("Detected Point: " + point);
+        // print("Detected Point: " + point);
 
         float eX = 0, eY = 0;
         float minX = 0, maxX = 0, minY = 0, maxY = 0;
@@ -3327,8 +3527,8 @@ public class Shooting : MonoBehaviour
             Ball1X = Mathf.Lerp(minX, maxX, eX);
             Ball1Y = Mathf.Lerp(minY, maxY, eY);
 
-            print("Mapped X - " + Ball1X);
-            print("Mapped Y - " + Ball1Y);
+            //print("Mapped X - " + Ball1X);
+            //print("Mapped Y - " + Ball1Y);
 
             unityCamValues = Ball1X.ToString() + ":" + Ball1Y.ToString();
 
@@ -3709,6 +3909,12 @@ public class Shooting : MonoBehaviour
 
     void sceneOpenPlainShoot(RaycastHit hit)
     {
+        // print("Point reached..." + hit.transform.name);
+        HandleIsShotFired(); // Updates shots fired booleans
+
+
+        // print("Point Reached... " + hit.transform.name );
+
         all_soldiers = GameObject.FindGameObjectsWithTag("soldier");
 
         if (!activeScene.ToLower().Contains("crouching"))
@@ -3719,7 +3925,7 @@ public class Shooting : MonoBehaviour
             }
         }
         
-        //Debug.Log("hit:" + hit.transform.name);
+        // Debug.Log("hit:" + hit.transform.name);
         if (hit.transform.name.Contains("civilian"))
         {
             hit.rigidbody.AddForce(-hit.normal * 10F);
@@ -3772,31 +3978,67 @@ public class Shooting : MonoBehaviour
         }
         else if (hit.transform.tag.ToLower().Contains("target"))
         {
+            // print("Point Reached...");
+
             if(activeScene.ToLower().Contains("basic"))
             {
                 string targetHitName = SetHitSearchName(hit);
 
                 //Apply Targate Impact
-                
+                if (sendHitSignal(hit) == true)
+                    return;
+
                 PlayHitSound(hit); // Play target sound
                 ManageShootingPoints(hit, targetHitName);
-                sendHitSignal(hit); //Apply Damage
             }
         }
-        else if(hit.transform.tag == "deer" || hit.transform.tag == "animal_head")
+        else if(activeScene.ToLower().Contains("hunting")) // (hit.transform.name.ToLower().Contains(TestConditionsManager.animalName) || hit.transform.tag == "animal_head")
         {
-            if(hit.transform.tag == "deer")
+            if(activeScene.Contains("ForestHunting"))
             {
-                hit.transform.gameObject.GetComponent<AnimalController>().SendMessage("ApplyDamage", hit.transform.tag);
+                print("Point reached..." + hit.transform.tag);
+                if (hit.transform.tag == "deer" || hit.transform.tag == "boar" || hit.transform.tag == "buffalo" || hit.transform.tag == "moose")
+                {
+                    hit.transform.gameObject.GetComponent<HuntAnimalController>().SendMessage("ApplyDamage", hit.transform.name);
+                }
+                else if (hit.transform.tag == "bear")
+                {
+                    hit.transform.gameObject.GetComponent<BearAIController>().SendMessage("ApplyDamage", hit.transform.name);
+                }
+                else if (hit.transform.tag == "animal_head")
+                {
+                    hit.transform.gameObject.GetComponent<AnimalHeadReference>().SendMessage("ApplyDamage", hit.transform.name);
+                }
             }
-            else if(hit.transform.tag == "animal_head")
+            else
             {
-                hit.transform.gameObject.GetComponent<AnimalHeadReference>().SendMessage("ApplyDamage", hit.transform.GetComponent<AnimalHeadReference>().mainBody.transform.name);
+                if (hit.transform.tag == "deer")
+                {
+                    hit.transform.gameObject.GetComponent<AnimalController>().SendMessage("ApplyDamage", hit.transform.tag);
+                }
+                else if (hit.transform.tag == "animal_head")
+                {
+                    hit.transform.gameObject.GetComponent<AnimalHeadReference>().SendMessage("ApplyDamage", hit.transform.GetComponent<AnimalHeadReference>().mainBody.transform.name);
+                }
             }
 
         }
 
         //Target Popup SHooting
+        else if(activeScene.Contains("TargetRecognition") || activeScene.Contains("DecisionPTShoot"))
+        {
+            UpdateTRTSequence(hit);
+            string targetHitName = SetHitSearchName(hit);
+
+            //Apply Targate Impact
+            if (sendHitSignal(hit) == true)
+                return;
+
+            ManageShootingPoints(hit, targetHitName);;
+
+            // GameObject trt_manager = GameObject.FindGameObjectWithTag("TRTManager");
+            // trt_manager.GetComponent<TRTManager>().GenerateTargetGroup();
+        }
         else if (hit.transform.tag.ToLower().Contains("head") || hit.transform.tag.ToLower().Contains("body"))
         {
             string targetHitName = SetHitSearchName(hit);
@@ -3807,27 +4049,15 @@ public class Shooting : MonoBehaviour
         }
 
         manageLaneShotsMissed(hit);
-        assignShotsFiredData();
     }
 
-    private void PlayHitSound(RaycastHit hit)
+    private void HandleIsShotFired()
     {
-        if (!activeScene.ToLower().Contains("risingplate"))
+        if (activeScene.Contains("VideoTraining"))
         {
-            platesHit++;
+            StaticVariableManager.isVideoShotFired = true;
         }
-        if (hit.transform.name.ToLower().Contains("plate"))
-        {
-            platHitSound.Play();
-        }
-        else if (hit.transform.name.ToLower().Contains("baloon"))
-        {
-            baloonPopSound.Play();
-        }
-        else if(hit.transform.tag.ToLower().Contains("head") || hit.transform.tag.ToLower().Contains("body"))
-        {
-            PlayIPECHitSound(hit);
-        }
+
     }
 
     private string SetHitSearchName(RaycastHit hit)
@@ -3876,22 +4106,181 @@ public class Shooting : MonoBehaviour
         {
             targetSearchName = "cover";
         }
+        else if (activeScene.Contains("TargetRecognition") || activeScene.Contains("DecisionPTShoot"))
+        {
+            if(!StaticVariableManager.TRTTargetsShot.Contains(hit.transform.gameObject))
+            {
+                StaticVariableManager.TRTTargetsShot.Add(hit.transform.gameObject);
+
+                if (hit.transform.name.ToLower().Contains("head"))
+                {
+                    targetSearchName = "head";
+                    if (hit.transform.name.ToLower().Contains("suspect"))
+                    {
+                        targetSearchName = "suspect";
+                        StaticVariableManager.numSuspectHeadShot++;
+                    }
+                }
+                if (hit.transform.name.ToLower().Contains("body"))
+                {
+                    targetSearchName = "body";
+                    if (hit.transform.name.ToLower().Contains("suspect"))
+                    {
+                        targetSearchName = "suspect";
+                        StaticVariableManager.numSuspectBodyShot++;
+                    }
+                }
+
+                if (hit.transform.name.ToLower().Contains("civilian"))
+                {
+                    targetSearchName = "civilian";
+                    StaticVariableManager.numCiviliansHit++;
+                }
+                else if (hit.transform.name.ToLower().Contains("suspect"))
+                {
+                    targetSearchName = "suspect";
+                    StaticVariableManager.numSuspectsHit++;
+                }
+
+                ManageTRTBoard(hit, targetSearchName);
+            }
+
+        }
+        else if(activeScene.Contains("VideoTraining") || activeScene.Contains("VideoTransition"))
+        {
+            // print("Hit: " + hit.transform.name);
+            if (hit.transform.name.Contains("(Threat)"))
+            {
+                StaticVariableManager.isThreatShot = true;
+                // StaticVariableManager.isVideoTrainingComplete = true;
+                if(!StaticVariableManager.videoThreatsShot.Contains(hit.transform.gameObject))
+                {
+                    StaticVariableManager.numVideoThreatsShot++;
+                    //print("Threats: " + StaticVariableManager.numVideoThreatsShot);
+                    StaticVariableManager.videoThreatsShot.Add(hit.transform.gameObject);
+                    StaticVariableManager.videoThreatsShot.Add(hit.transform.gameObject.
+                        GetComponent<TargetMessageReceive>().pair); // Add pair
+
+                }
+
+                targetSearchName = "threat";
+            }
+            else if (hit.transform.name.Contains("(None Threat)"))
+            {
+                StaticVariableManager.isNoneThreatShot = true;
+                StaticVariableManager.numVideoNoneThreatsShot++;
+                // StaticVariableManager.isVideoTrainingComplete = true;
+                targetSearchName = "none threat";
+            }
+
+            if(StaticVariableManager.isVideoTrainingComplete) ManualVideoTracker.ManageStartAndPause();
+        }
 
         return targetSearchName;
     }
 
+    private void ManageTRTBoard(RaycastHit hit, string target_search_name)
+    {
+        if (hit.transform.name.ToLower().Contains("suspect"))
+        {
+            StaticVariableManager.threatCount++;
+        }
+
+        if (StaticVariableManager.threatCount >= StaticVariableManager.numCurrThreats)
+        {
+            if (hit.transform.name.ToLower().Contains(target_search_name) && target_search_name != "")
+            {
+                // print(target_search_name);
+                //GameObject trt_manager = GameObject.FindGameObjectWithTag("TRTManager");
+                //trt_manager.GetComponent<TRTManager>().GenerateTargetGroup();
+            }
+
+            if(activeScene.Contains("DecisionPTShoot")) CheckTRTSequence();
+        }
+
+    }
+
+    private void UpdateTRTSequence(RaycastHit hit)
+    {
+        Transform parent = hit.transform.parent;
+
+        while (parent != null)
+        {
+            if (parent.name.Contains("Level_"))
+            {
+                // Extract the "Level_*" part
+                int idx = parent.name.IndexOf("Level_");
+                string temp = parent.name.Substring(idx);
+
+                // If there’s extra stuff after the number, trim it
+                int spaceIdx = temp.IndexOfAny(new char[] { ' ', '(', ')' });
+                string levelName = (spaceIdx > 0) ? temp.Substring(0, spaceIdx) : temp;
+
+                // Debug.Log("" + levelName + "");
+
+                switch (levelName)
+                {
+                    case "Level_1":
+                        StaticVariableManager.TRTFollowUpSequence += "1";
+                        break;
+                    case "Level_2":
+                        StaticVariableManager.TRTFollowUpSequence += "2";
+                        break;
+                    case "Level_3":
+                        StaticVariableManager.TRTFollowUpSequence += "3";
+                        break;
+                    case "Level_4":
+                        StaticVariableManager.TRTFollowUpSequence += "4";
+                        break;
+                }
+
+                return;
+            }
+
+            parent = parent.parent;
+        }
+
+        Debug.Log("No Level_ found in parents.");
+    }
+
+    private void CheckTRTSequence()
+    {
+
+        foreach(String sequence in StaticVariableManager.TRTShootSequence)
+        {
+
+            // print($"Set sequence {sequence} Follow up sequence {StaticVariableManager.TRTFollowUpSequence}");
+
+            if(StaticVariableManager.TRTFollowUpSequence == sequence)
+            {
+                // print("Correct sequence");
+                StaticVariableManager.isCorrectTRTRequence = true;
+            }
+            else
+            {
+                // print("Incorrect sequence");
+                StaticVariableManager.isCorrectTRTRequence = false;
+            }
+            StaticVariableManager.isTRTTrainingComplete = true;
+        }
+
+    }
+
     private void ManageShootingPoints(RaycastHit hit, string target_search_name)
     {
+        print(target_search_name);
         if (hit.transform.name.ToLower().Contains(target_search_name))
         {
             //Evaluate Current Lane
             string tempTargetName = hit.transform.name;
             char tempFirstChar = tempTargetName[0];
+            isCurrShotProcessed = true;
             switch (tempFirstChar)
             {
                 case '1':
                     if (lane1TargetsComplete == false)
                     {
+                        // print("Point Reached...");
                         //Calculate Split time
                         updateLane1SplitTime("hit", "c");
                         updateLane1ResponseTime("hit", "c");
@@ -3902,28 +4291,7 @@ public class Shooting : MonoBehaviour
                         lane1ActiveTimeCounter = lane1TimeActiveCounter; //Assign Current Time
                         point_lane_1 = updateLanePoint(tempTargetName, point_lane_1);
                         lane1PointsHit++;
-
-
-                        if (Scoring.ammo_setting == "Live")
-                        {
-                            //targetText.text = "Hit Plate" + platesHit;
-                            if (lane1PointsHit + (shotsFired - lane1PointsHit) >= num_targets_input)
-                            {
-                                lane1TargetsComplete = true;
-                                lane1ActiveTimeCounter = timeActiveCounter;
-                                //lane1StopSignal.SetActive(true);
-                            }
-                        }
-                        else
-                        {
-                            //targetText.text = "Hit Plate" + platesHit;
-                            if (lane1PointsHit >= num_targets_input)
-                            {
-                                lane1TargetsComplete = true;
-                                lane1ActiveTimeCounter = timeActiveCounter;
-                                lane1StopSignal.SetActive(true);
-                            }
-                        }
+                        UpdateShotsFired("1");
 
                         //StaticVariableManager.lane1PredelayActive = true;
                     }
@@ -3943,28 +4311,7 @@ public class Shooting : MonoBehaviour
 
                         point_lane_2 = updateLanePoint(tempTargetName, point_lane_2);
                         lane2PointsHit++;
-
-                        if (Scoring.ammo_setting == "Live")
-                        {
-                            //targetText.text = "Hit Plate" + platesHit;
-                            if (lane2PointsHit + (shotsFired - lane2PointsHit) >= num_targets_input)
-                            {
-                                lane2TargetsComplete = true;
-                                lane2ActiveTimeCounter = timeActiveCounter;
-                                //lane2StopSignal.SetActive(true);
-                            }
-                        }
-                        else
-                        {
-                            //lane1ActiveTimeCounter = timeActiveCounter;
-                            //targetText.text = "Hit Plate" + platesHit;
-                            if (lane2PointsHit >= num_targets_input)
-                            {
-                                lane2TargetsComplete = true;
-                                lane2ActiveTimeCounter = timeActiveCounter;
-                                lane2StopSignal.SetActive(true);
-                            }
-                        }
+                        UpdateShotsFired("2");
 
                         //StaticVariableManager.lane2PredelayActive = true;
                     }
@@ -3984,28 +4331,7 @@ public class Shooting : MonoBehaviour
 
                         point_lane_3 = updateLanePoint(tempTargetName, point_lane_3);
                         lane3PointsHit++;
-
-                        if (Scoring.ammo_setting == "Live")
-                        {
-                            //targetText.text = "Hit Plate" + platesHit;
-                            if (lane3PointsHit + (shotsFired - lane3PointsHit) >= num_targets_input)
-                            {
-                                lane3TargetsComplete = true;
-                                lane3ActiveTimeCounter = timeActiveCounter;
-                                //lane3StopSignal.SetActive(true);
-                            }
-                        }
-                        else
-                        {
-                            //lane1ActiveTimeCounter = timeActiveCounter;
-                            //targetText.text = "Hit Plate" + platesHit;
-                            if (lane3PointsHit >= num_targets_input)
-                            {
-                                lane3TargetsComplete = true;
-                                lane3ActiveTimeCounter = timeActiveCounter;
-                                lane3StopSignal.SetActive(true);
-                            }
-                        }
+                        UpdateShotsFired("3");
 
                         //StaticVariableManager.lane3PredelayActive = true;
                     }
@@ -4033,18 +4359,328 @@ public class Shooting : MonoBehaviour
 
             }
         }
-        else if(activeScene.ToLower().Contains("5pointbullseye"))
+        else if (activeScene.ToLower().Contains("5pointbullseye"))
         {
             bullseye_hit = true;
         }
+    }
+
+
+
+    private void PlayHitSound(RaycastHit hit)
+    {
+        // print("Hit: " + hit.transform.name);
+
+        if (!activeScene.ToLower().Contains("risingplate"))
+        {
+            platesHit++;
+        }
+        if (hit.transform.name.ToLower().Contains("plate"))
+        {
+            platHitSound.Play();
+        }
+        else if (hit.transform.name.ToLower().Contains("baloon"))
+        {
+            baloonPopSound.Play();
+        }
+        else if(hit.transform.tag.ToLower().Contains("head") || hit.transform.tag.ToLower().Contains("body"))
+        {
+            PlayIPECHitSound(hit);
+        }
+    }
+
+
+    private void manageLaneShotsMissed(RaycastHit hit)
+    {
+        if (hit.transform.tag.ToLower().Contains("misscollider"))
+        {
+
+            if (hit.transform.tag.Contains("Lane1") && !lane1TargetsComplete)
+            {
+                generateBulletImpact2(hit);
+
+                numLane1ShotsMissed++;
+                updateLane1ResponseTime("miss", "c");
+                updateLane1SplitTime("miss", "c");
+                UpdateShotsFired("1");
+            }
+            else if (hit.transform.tag.Contains("Lane2") && !lane2TargetsComplete)
+            {
+                generateBulletImpact2(hit);
+
+                numLane2ShotsMissed++;
+                updateLane2ResponseTime("miss", "c");
+                updateLane2SplitTime("miss", "c");
+                UpdateShotsFired("2");
+            }
+            else if (hit.transform.tag.Contains("Lane3") && !lane3TargetsComplete)
+            {
+                generateBulletImpact2(hit);
+
+                numLane3ShotsMissed++;
+                updateLane3ResponseTime("miss", "c");
+                updateLane3SplitTime("miss", "c");
+                UpdateShotsFired("3");
+            }
+
+            if (activeScene.ToLower().Contains("suspectshoot"))
+            {
+                if (StaticVariableManager.isLane1TargetMissed || StaticVariableManager.isLane2TargetMissed || StaticVariableManager.isLane3TargetMissed)
+                {
+                    showSuspectResult(hit);
+                }
+            }
+            else if(activeScene.Contains("VideoTraining") /*&& (!StaticVariableManager.isStartVideoTime || !StaticVariableManager.isThreatVideo)*/) // only when the video is not in threat state
+            {
+                // StaticVariableManager.isVideoTrainingComplete = true;
+                // ManualVideoTracker.ManageStartAndPause();
+            }
+        }
+        else if (hit.transform.name.ToLower().Contains("body.") || hit.transform.name.ToLower().Contains("head."))
+        {
+            generateBulletImpact2(hit);
+            if (hit.transform.name.Contains("1"))
+            {
+                numLane1ShotsMissed++;
+                updateLane1ResponseTime("miss", "c");
+                updateLane1SplitTime("miss", "c");
+                UpdateShotsFired("1");
+            }
+            else if (hit.transform.name.Contains("2"))
+            {
+                numLane2ShotsMissed++;
+                updateLane2ResponseTime("miss", "c");
+                updateLane2SplitTime("miss", "c");
+                UpdateShotsFired("2");
+            }
+            else if (hit.transform.name.Contains("3"))
+            {
+                numLane3ShotsMissed++;
+                updateLane3ResponseTime("miss", "c");
+                updateLane3SplitTime("miss", "c");
+                UpdateShotsFired("3");
+            }
+
+            if (activeScene.ToLower().Contains("suspectshoot"))
+            {
+                if (StaticVariableManager.isLane1TargetMissed || StaticVariableManager.isLane2TargetMissed || StaticVariableManager.isLane3TargetMissed)
+                {
+                    showSuspectResult(hit);
+                }
+            }
+        }
+        else if (hit.transform.tag.ToLower().Contains("hostage"))
+        {
+            generateBulletImpact2(hit);
+            if (hit.transform.name.Contains("1"))
+            {
+                numLane1ShotsMissed++;
+                updateLane1ResponseTime("miss", "c");
+                updateLane1SplitTime("miss", "c");
+                generateBulletImpact2(hit);
+                UpdateShotsFired("1");
+            }
+            else if (hit.transform.name.Contains("2"))
+            {
+                numLane2ShotsMissed++;
+                updateLane2ResponseTime("miss", "c");
+                updateLane2SplitTime("miss", "c");
+                generateBulletImpact2(hit);
+                UpdateShotsFired("2");
+            }
+            else if (hit.transform.name.Contains("3"))
+            {
+                numLane3ShotsMissed++;
+                updateLane3ResponseTime("miss", "c");
+                updateLane3SplitTime("miss", "c");
+                generateBulletImpact2(hit);
+                UpdateShotsFired("3");
+            }
+            WallTargetControl.requestMove();
+        }
+        else if (activeScene.ToLower().Contains("shell"))
+        {
+            generateBulletImpact2(hit);
+            if (!hit.transform.name.Contains("holder"))
+            {
+                numLane1ShotsMissed++;
+                updateLane1ResponseTime("miss", "c");
+                updateLane1SplitTime("miss", "c");
+                UpdateShotsFired("1");
+            }
+        }
+        else if (activeScene.ToLower().Contains("5pointbullseye"))
+        {
+            generateBulletImpact2(hit);
+            if (!bullseye_hit)
+            {
+                numLane1ShotsMissed++;
+                updateLane1ResponseTime("miss", "c");
+                updateLane1SplitTime("miss", "c");
+                generateBulletImpact2(hit);
+                UpdateShotsFired("1");
+            }
+            bullseye_hit = false;
+        }
+        else if (activeScene.ToLower().Contains("basic1laneipecboard"))
+        {
+            //    generateBulletImpact2(hit);
+            //    UpdateShotsFired("1");
+            //print("Point Reached...");
+            //updateLane1ResponseTime("miss", "c");
+            //updateLane1SplitTime("miss", "c");
+            //generateBulletImpact2(hit);
+        }
+        else if (hit.transform.tag.ToLower().Contains("wall"))
+        {
+            generateBulletImpact2(hit);
+            switch (hit.transform.tag)
+            {
+                case "Lane1Wall":
+                    numLane1ShotsMissed++;
+                    UpdateShotsFired("1");
+                    //updateLane1ResponseTime("miss", "c");
+                    //updateLane1SplitTime("miss", "c");
+                    //StaticVariableManager.isLane1TargetMissed = true;
+                    //print("RE: Lane 1 Shots missed is : " + numLane1ShotsMissed);
+                    break;
+                case "Lane2Wall":
+                    numLane2ShotsMissed++;
+                    UpdateShotsFired("2");
+                    //updateLane2ResponseTime("miss", "c");
+                    //updateLane2SplitTime("miss", "c");
+                    //StaticVariableManager.isLane2TargetMissed = true;
+                    //print("RE: Lane 2 Shots missed is : " + numLane2ShotsMissed);
+                    break;
+                case "Lane3Wall":
+                    numLane3ShotsMissed++;
+                    UpdateShotsFired("3");
+                    //updateLane3ResponseTime("miss", "c");
+                    //updateLane3SplitTime("miss", "c");
+                    //StaticVariableManager.isLane3TargetMissed = true;
+                    //print("RE: Lane 3 Shots missed is : " + numLane3ShotsMissed);
+                    break;
+            }
+        }
+        else if (activeScene == "DirectForestHunting")
+        {
+            /*if (hit.transform.gameObject.layer != "animal")
+            {
+
+                // numLane1ShotsMissed++;
+                // updateLane1ResponseTime("miss", "c");
+                // updateLane1SplitTime("miss", "c");
+                // UpdateShotsFired("1");
+            }*/
+        }
+ 
+    }
+
+    private void HandlExtMissedShots(RaycastHit hit)
+    {
+        // print("Point 2 reached...");
+        if (activeScene == "Basic1Lane3DClayPigeon")
+        {
+            // print("Point 3 reached...");
+            // isCurrShotProcessed = false;
+            if (!isCurrShotProcessed)
+            {
+                // print("Point 4 reached...");
+                // generateBulletImpact2(hit);
+
+                numLane1ShotsMissed++;
+                updateLane1ResponseTime("miss", "c");
+                updateLane1SplitTime("miss", "c");
+                UpdateShotsFired("1");
+            }
+        }
+
+        isCurrShotProcessed = false; // Reset
+    }
+
+    private void DisplayLaneShotsFired()
+    {
+        //print("Test: Point reached...");
+        // numLane1ShotsFired = lane1PointsHit + numLane1ShotsMissed;
+        // numLane2ShotsFired = lane2PointsHit + numLane2ShotsMissed;
+        // numLane3ShotsFired = lane3PointsHit + numLane3ShotsMissed;
+
+        lane1ShotsFiredDisplay.text = numLane1ShotsFired.ToString("0");
+        lane2ShotsFiredDisplay.text = numLane2ShotsFired.ToString("0");
+        lane3ShotsFiredDisplay.text = numLane3ShotsFired.ToString("0");
+    }
+
+    private void UpdateShotsFired(string lane)
+    {
+        switch (lane)
+        {
+            case "1":
+                numLane1ShotsFired++;
+                if (numLane1ShotsFired >= num_set_shots || lane1PointsHit >= num_targets_to_hit)
+                {
+                    SetLaneStopIndicators(ref lane1TargetsComplete, ref lane1ActiveTimeCounter, lane1StopSignal);
+                    // print("Lane 1 Target Complete: " + lane1TargetsComplete);
+                }
+                break;
+            case "2":
+                numLane2ShotsFired++;
+                if (numLane2ShotsFired >= num_set_shots || lane2PointsHit >= num_targets_to_hit)
+                {
+                    SetLaneStopIndicators(ref lane2TargetsComplete, ref lane2ActiveTimeCounter, lane2StopSignal);
+                    // print("Lane 2 Target Complete: " + lane1TargetsComplete);
+                }
+                break;
+            case "3":
+                numLane3ShotsFired++;
+                if (numLane3ShotsFired >= num_set_shots || lane3PointsHit >= num_targets_to_hit)
+                {
+                    SetLaneStopIndicators(ref lane3TargetsComplete, ref lane3ActiveTimeCounter, lane3StopSignal);
+                    // print("Lane 3 Target Complete: " + lane1TargetsComplete);
+                }
+                break;
+        }
+    }
+
+    private void SetLaneStopIndicators(ref bool targetComplete, ref float activeTimer, GameObject stopSignal)
+    {
+        targetComplete = true;
+        activeTimer = timeActiveCounter;
+        stopSignal.SetActive(true);
     }
 
     private void generateBulletImpact(RaycastHit hit)
     {
         if (Scoring.ammo_setting == "Live" || Scoring.ammo_setting.ToLower().Contains("laser"))
         {
-            GameObject impactGo = Instantiate(bullethole_2, hit.point, Quaternion.LookRotation(hit.normal));
+            GameObject impactGo = null;
+            if (activeScene.Contains("IPSCExtended") || activeScene.Contains("VideoTraining") || activeScene.Contains("VideoTransition")) // || activeScene.Contains("VideoTraining")
+            {
+                // Store the prefab's intended local scale
+                Vector3 prefabScale = bullethole_2.transform.localScale;
+
+                // Instantiate the bullet hole
+                impactGo = Instantiate(bullethole_2, hit.point, Quaternion.LookRotation(hit.normal));
+                // NOTE: Still NO parenting (impactGo.transform.SetParent(hit.transform) is GONE)
+
+                // Set the initial world scale to match the prefab's local scale
+                impactGo.transform.localScale = prefabScale;
+
+                // Get the KeepUpright script
+                KeepUpright keeper = impactGo.GetComponent<KeepUpright>();
+
+                if (keeper != null)
+                {
+                    // Pass the tracking data AND the correct target scale
+                    keeper.Initialize(hit.transform, hit.transform.InverseTransformPoint(hit.point), prefabScale);
+                }
+            }
+            else
+            {
+                impactGo = Instantiate(bullethole_2, hit.point, Quaternion.LookRotation(hit.normal));
+            }
+
             impactGo.transform.name = "Hit";
+
 
             switch (hit.transform.name[0])
             {
@@ -4073,7 +4709,7 @@ public class Shooting : MonoBehaviour
             //Destroy(impactGo, 1.0f);
             if (!activeScene.ToLower().Contains("distance") && Scoring.ammo_setting == "Live")
             {
-                impactGo.SetActive(false);
+                // impactGo.SetActive(false);
             }
 
             if (StaticVariableManager.backgroundColorSetting.ToLower().Contains("red"))
@@ -4085,9 +4721,9 @@ public class Shooting : MonoBehaviour
                 impactGo.GetComponent<Renderer>().material.color = Color.red;
             }
 
-            if (activeScene.ToLower().Contains("suspect"))
+            if (activeScene.ToLower().Contains("suspect") || activeScene.Contains("VideoTransition"))
             {
-                Destroy(impactGo, .5f);
+                Destroy(impactGo, 1f);
             }
         }
     }
@@ -4096,9 +4732,28 @@ public class Shooting : MonoBehaviour
     {
         if (Scoring.ammo_setting == "Live" || Scoring.ammo_setting.ToLower().Contains("laser"))
         {
+            // 1. Store prefab scale ONCE.
+            Vector3 prefabScale = bullethole_3.transform.localScale;
 
+            // 2. Instantiate bullet hole ONCE.
             GameObject impactGo = Instantiate(bullethole_3, hit.point, Quaternion.LookRotation(hit.normal));
-            impactGo.transform.name = "Miss";
+
+            // 3. Set the initial world scale to match the prefab's local scale
+            impactGo.transform.localScale = prefabScale;
+
+            // 4. Initialization (Only necessary if the MISS target might move, which is unusual)
+            KeepUpright keeper = impactGo.GetComponent<KeepUpright>();
+
+            if (keeper != null)
+            {
+                // Pass the tracking data AND the correct target scale
+                // NOTE: If the hit object is static (a true 'miss' wall), the tracking will be redundant but harmless.
+                keeper.Initialize(hit.transform, hit.transform.InverseTransformPoint(hit.point), prefabScale);
+            }
+
+
+            // GameObject impactGo = Instantiate(bullethole_3, hit.point, Quaternion.LookRotation(hit.normal));
+            // impactGo.transform.name = "Miss";
             //print("Test: Point Reached...");
 
             if (hit.transform.tag == "Lane1MissCollider" || hit.transform.tag == "lane1hostage")
@@ -4120,12 +4775,18 @@ public class Shooting : MonoBehaviour
             {
                 AssignMissImpact(hit, impactGo, lane_1_impact_list);
             }
+
+            if (activeScene.ToLower().Contains("suspect") || activeScene.Contains("VideoTransition"))
+            {
+                Destroy(impactGo, 1f);
+            }
         }
     }
 
     private void SetReplayCounter(string lane, GameObject bullet)
     {
-        if(DropDown.scene_type == "static" || DropDown.scene_type == "static response")
+        if((DropDown.scene_type == "static" || DropDown.scene_type == "static response" || activeScene.ToLower().Contains("hiddentarget"))
+            && !is3DScene)
         {
             switch (lane)
             {
@@ -4189,51 +4850,62 @@ public class Shooting : MonoBehaviour
 
             if (hit.transform.tag.ToLower().Contains("head"))
             {
-                hit.transform.gameObject.GetComponent<HeadTarget>().SendMessage("ApplyDamage", hit.transform.tag);
                 headShots++;
                 if (activeScene.ToLower().Contains("pointbullseye"))
                 {
                     HeadShots.text = ("Side Target: " + headShots.ToString());
+                    if (hit.transform.name.ToLower().Contains("cover.target")) { WallTargetControl.requestMove(); }
                 }
                 else
                 {
                     HeadShots.text = ("Head Shots: " + headShots.ToString());
+                    WallTargetControl.requestMove();
                 }
+
+                hit.transform.gameObject.GetComponent<HeadTarget>().SendMessage("ApplyDamage", hit.transform.name);
             }
             else if (hit.transform.tag.ToLower().Contains("body"))
             {
-                hit.transform.gameObject.GetComponent<BodyTarget>().SendMessage("ApplyDamage", hit.transform.tag);
+
                 bodyShots++;
                 if (activeScene.ToLower().Contains("pointbullseye"))
                 {
                     BodyShots.text = ("Center Target: " + bodyShots.ToString());
+                    if (hit.transform.name.ToLower().Contains("cover.target")) { WallTargetControl.requestMove(); }
                 }
                 else
                 {
                     BodyShots.text = ("Body Shots: " + bodyShots.ToString());
+                    WallTargetControl.requestMove();
                 }
-            }
 
-            WallTargetControl.requestMove();
-            if (Scoring.simulation_type == "training")
-            {
-                if ((headShots + bodyShots) + (shotsFired - (headShots + bodyShots)) >= num_targets_input)
-                {
-                    GameOver = true;
-                    StopTraining();
-                }
+                hit.transform.gameObject.GetComponent<BodyTarget>().SendMessage("ApplyDamage", hit.transform.name);
             }
-            else
-            {
-                if ((headShots + bodyShots) >= num_targets_input)
-                {
-                    GameOver = true;
-                    StopTraining();
-                }
-            }
-
 
         }
+    }
+    void changeColor(RaycastHit hit)
+    {
+        /*float colorChangeTimer;
+    float colorChangeTimerReset = 1;*/
+        colorHolder = GameObject.FindGameObjectWithTag("IPECColor");
+        currentTargetColr = hit.transform.gameObject.GetComponent<Renderer>().material;
+        if(currentTargetColr != null) hitColor = colorHolder.transform.gameObject.GetComponent<Renderer>().material;
+
+        PlayerPrefs.SetFloat("ObjectColorR", currentTargetColr.color.r);
+        PlayerPrefs.SetFloat("ObjectColorG", currentTargetColr.color.g);
+        PlayerPrefs.SetFloat("ObjectColorB", currentTargetColr.color.b);
+        PlayerPrefs.SetFloat("ObjectColorA", currentTargetColr.color.a);
+
+        // Load the color of the material
+        r = PlayerPrefs.GetFloat("ObjectColorR");
+        g = PlayerPrefs.GetFloat("ObjectColorG");
+        b = PlayerPrefs.GetFloat("ObjectColorB");
+        a = PlayerPrefs.GetFloat("ObjectColorA");
+
+        currentTargetColr.color = hitColor.color;
+        ColorManager.revert_head_body(hit);
+        //print("Test:Color changed");
     }
 
     private void ManageCorrectColorHit(RaycastHit hit, string lane)
@@ -4246,23 +4918,39 @@ public class Shooting : MonoBehaviour
             {
                 case "lane 1":
                     currentLaneColor = StaticVariableManager.currentLane1Color;
+                    if (hit.transform.name.ToLower().Contains(currentLaneColor.ToLower()))
+                    {
+                        StaticVariableManager.lane1CorrectTargetsHits++;
+                    }
+                    else
+                    {
+                        StaticVariableManager.lane1IncorrectTargetsHits++;
+                    }
                     break;
                 case "lane 2":
                     currentLaneColor = StaticVariableManager.currentLane2Color;
+                    if (hit.transform.name.ToLower().Contains(currentLaneColor.ToLower()))
+                    {
+                        StaticVariableManager.lane2CorrectTargetsHits++;
+                    }
+                    else
+                    {
+                        StaticVariableManager.lane2IncorrectTargetsHits++;
+                    }
                     break;
                 case "lane 3":
-                    currentLaneColor = StaticVariableManager.currentLane2Color;
+                    currentLaneColor = StaticVariableManager.currentLane3Color;
+                    if (hit.transform.name.ToLower().Contains(currentLaneColor.ToLower()))
+                    {
+                        StaticVariableManager.lane3CorrectTargetsHits++;
+                    }
+                    else
+                    {
+                        StaticVariableManager.lane3IncorrectTargetsHits++;
+                    }
                     break;
             }
 
-            if (hit.transform.name.ToLower().Contains(currentLaneColor.ToLower()))
-            {
-                StaticVariableManager.correctTargetsHits++;
-            }
-            else
-            {
-                StaticVariableManager.wrongTargetsHits++;
-            }
         }
     }
 
@@ -4281,9 +4969,8 @@ public class Shooting : MonoBehaviour
         }
     }
 
-    private void sendHitSignal(RaycastHit hit)
+    private bool sendHitSignal(RaycastHit hit)
     {
-
         if (activeScene.ToLower().Contains("ipec"))
         {
             if (TargetMessageReceive.body_head_ishit == false && !targetsFinished && !ammaFinished)
@@ -4304,10 +4991,92 @@ public class Shooting : MonoBehaviour
 
             StaticVariableManager.isLane1BoardSet = false;
         }
-        else if (!activeScene.ToLower().Contains("ipec") && platesHit < num_targets_input)
+        else if (activeScene.ToLower().Contains("ipscextended") )
+        {
+            print(hit.transform.name);
+
+            if (hit.transform.gameObject.GetComponent<IPSCPlateHandler>().targetHolder.transform.name.Contains("Target 1"))
+            {
+                StaticVariableManager.numTarget1Hits++;
+
+                if(StaticVariableManager.numTarget1Hits <= StaticVariableManager.numTarget1ShotsSetting)
+                {
+                    // print("Target 1: " + StaticVariableManager.numTarget1Hits);
+                    hit.transform.gameObject.GetComponent<IPSCPlateHandler>().SendMessage("ApplyDamage", hit.transform.name);
+                    if (StaticVariableManager.numTarget1Hits == StaticVariableManager.numTarget1ShotsSetting)
+                        StaticVariableManager.isTarget1Complete = true;
+                }
+                
+                if (StaticVariableManager.numTarget1Hits > StaticVariableManager.numTarget1ShotsSetting)
+                {
+                    StaticVariableManager.isTarget1Complete = true;
+                    return true;
+                }
+
+            }
+
+            if (hit.transform.gameObject.GetComponent<IPSCPlateHandler>().targetHolder.transform.name.Contains("Target 2"))
+            {
+                StaticVariableManager.numTarget2Hits++;
+
+                if (StaticVariableManager.numTarget2Hits <= StaticVariableManager.numTarget2ShotsSetting)
+                {
+                    print("Target 2: " + StaticVariableManager.numTarget2Hits);
+                    hit.transform.gameObject.GetComponent<IPSCPlateHandler>().SendMessage("ApplyDamage", hit.transform.name);
+                    if (StaticVariableManager.numTarget2Hits == StaticVariableManager.numTarget2ShotsSetting)
+                        StaticVariableManager.isTarget2Complete = true;
+                }
+                
+                if (StaticVariableManager.numTarget2Hits > StaticVariableManager.numTarget2ShotsSetting)
+                {
+                    StaticVariableManager.isTarget2Complete = true;
+                    return true;
+                }
+
+            }
+
+            if (hit.transform.gameObject.GetComponent<IPSCPlateHandler>().targetHolder.transform.name.Contains("Target 3"))
+            {
+                StaticVariableManager.numTarget3Hits++;
+
+
+                if (StaticVariableManager.numTarget3Hits <= StaticVariableManager.numTarget3ShotsSetting)
+                {
+                    print("Target 3: " + StaticVariableManager.numTarget3Hits);
+                    hit.transform.gameObject.GetComponent<IPSCPlateHandler>().SendMessage("ApplyDamage", hit.transform.name);
+
+                    if (StaticVariableManager.numTarget3Hits == StaticVariableManager.numTarget3ShotsSetting)
+                        StaticVariableManager.isTarget3Complete = true;
+                }
+                
+                if (StaticVariableManager.numTarget3Hits > StaticVariableManager.numTarget3ShotsSetting)
+                {
+                    StaticVariableManager.isTarget3Complete = true;
+                    return true;
+                }
+
+            }
+
+        }
+        else if(activeScene.ToLower().Contains("targetrecognition") || activeScene.ToLower().Contains("decisionptshoot"))
+        {
+            // NA
+        }
+        else if (activeScene.Contains("VideoTraining"))
         {
             hit.transform.gameObject.GetComponent<TargetMessageReceive>().SendMessage("ApplyDamage", hit.transform.name); //
         }
+        else if (activeScene.Contains("Bird"))
+        {
+            hit.transform.gameObject.GetComponent<BirdController>().SendMessage("ApplyDamage", hit.transform.name); //
+        }
+        else if (!activeScene.ToLower().Contains("ipec")) // && platesHit < num_set_shots
+        {
+            hit.transform.gameObject.GetComponent<TargetMessageReceive>().SendMessage("ApplyDamage", hit.transform.name); //
+        }
+
+
+        return false;
     }
 
     public void updateLane1ResponseTime(string label, string response_type)
@@ -4341,6 +5110,7 @@ public class Shooting : MonoBehaviour
                 }
                 break;
         }
+
     }
      
     public void updateLane2ResponseTime(string label, string response_type)
@@ -4357,6 +5127,7 @@ public class Shooting : MonoBehaviour
                     lane2ResponseTime.Add((lane2ResponseTimeCounter).ToString("0.00") + " sec" + ":" + label);
 
                     lane2ResponseTimeCounter = 0;
+
                 }
                 break;
 
@@ -4372,7 +5143,6 @@ public class Shooting : MonoBehaviour
                 }
                 break;
         }
-     
     }
      
     public void updateLane3ResponseTime(string label, string response_type)
@@ -4389,6 +5159,7 @@ public class Shooting : MonoBehaviour
                     lane3ResponseTime.Add((lane3ResponseTimeCounter).ToString("0.00") + " sec" + ":" + label);
 
                     lane3ResponseTimeCounter = 0;
+
                 }
                 break;
 
@@ -4404,19 +5175,18 @@ public class Shooting : MonoBehaviour
                 }
                 break;
         }
-
-        
     }
 
     private void updateLane1SplitTime(string label, string response_type)
     {
         label = updateLabel(label);
 
+        // print(startLane1Count);
+
         if (startLane1Count)
         {
             if(label == "H")
             {
-
                 numLane1Splits++;
                 lane1SplitTime.Add((lane1SplitTimeCounter).ToString("0.00") + " sec");
 
@@ -4645,154 +5415,6 @@ public class Shooting : MonoBehaviour
         }
     }
 
-    private void manageLaneShotsMissed(RaycastHit hit)
-    {
-        if(hit.transform.tag.ToLower().Contains("misscollider"))
-        {
-
-            generateBulletImpact2(hit);
-            switch(hit.transform.tag)
-            {
-                case "Lane1MissCollider":
-                    numLane1ShotsMissed++;
-                    updateLane1ResponseTime("miss","c");
-                    updateLane1SplitTime("miss", "c");
-                    //StaticVariableManager.isLane1TargetMissed = true;
-                    //print("RE: Lane 1 Shots missed is : " + numLane1ShotsMissed);
-                    break;
-                case "Lane2MissCollider":
-                    numLane2ShotsMissed++;
-                    updateLane2ResponseTime("miss", "c");
-                    updateLane2SplitTime("miss", "c");
-                    //StaticVariableManager.isLane2TargetMissed = true;
-                    //print("RE: Lane 2 Shots missed is : " + numLane2ShotsMissed);
-                    break;
-                case "Lane3MissCollider":
-                    numLane3ShotsMissed++;
-                    updateLane3ResponseTime("miss", "c");
-                    updateLane3SplitTime("miss", "c");
-                    //StaticVariableManager.isLane3TargetMissed = true;
-                    //print("RE: Lane 3 Shots missed is : " + numLane3ShotsMissed);
-                    break;
-            }
-
-            if (activeScene.ToLower().Contains("suspectshoot"))
-            {
-                if (StaticVariableManager.isLane1TargetMissed || StaticVariableManager.isLane2TargetMissed || StaticVariableManager.isLane3TargetMissed)
-                {
-                    showSuspectResult(hit);
-                }
-            }
-        }
-        else if (hit.transform.name.ToLower().Contains("body.") || hit.transform.name.ToLower().Contains("head."))
-        {
-            if(hit.transform.name.Contains("1"))
-            {
-                numLane1ShotsMissed++;
-                updateLane1ResponseTime("miss", "c");
-                updateLane1SplitTime("miss", "c");
-            }
-            else if(hit.transform.name.Contains("2"))
-            {
-                numLane2ShotsMissed++;
-                updateLane2ResponseTime("miss", "c");
-                updateLane2SplitTime("miss", "c");
-            }
-            else if (hit.transform.name.Contains("3"))
-            {
-                numLane3ShotsMissed++;
-                updateLane3ResponseTime("miss", "c");
-                updateLane3SplitTime("miss", "c");
-            }
-
-            if (activeScene.ToLower().Contains("suspectshoot"))
-            {
-                if (StaticVariableManager.isLane1TargetMissed || StaticVariableManager.isLane2TargetMissed || StaticVariableManager.isLane3TargetMissed)
-                {
-                    showSuspectResult(hit);
-                }
-            }
-        }
-        else if (hit.transform.tag.ToLower().Contains("hostage"))
-        {
-            if (hit.transform.name.Contains("1"))
-            {
-                numLane1ShotsMissed++;
-                updateLane1ResponseTime("miss", "c");
-                updateLane1SplitTime("miss", "c");
-                generateBulletImpact2(hit);
-            }
-            else if (hit.transform.name.Contains("2"))
-            {
-                numLane2ShotsMissed++;
-                updateLane2ResponseTime("miss", "c");
-                updateLane2SplitTime("miss", "c");
-                generateBulletImpact2(hit);
-            }
-            else if (hit.transform.name.Contains("3"))
-            {
-                numLane3ShotsMissed++;
-                updateLane3ResponseTime("miss", "c");
-                updateLane3SplitTime("miss", "c");
-                generateBulletImpact2(hit);
-            }
-            WallTargetControl.requestMove();
-        }
-        else if (activeScene.ToLower().Contains("shell"))
-        {
-            if (!hit.transform.name.Contains("holder"))
-            {
-                numLane1ShotsMissed++;
-                updateLane1ResponseTime("miss", "c");
-                updateLane1SplitTime("miss", "c");
-            }
-        }
-        else if (activeScene.ToLower().Contains("5pointbullseye"))
-        {
-            if (!bullseye_hit)
-            {
-                numLane1ShotsMissed++;
-                updateLane1ResponseTime("miss", "c");
-                updateLane1SplitTime("miss", "c");
-                generateBulletImpact2(hit);
-            }
-            bullseye_hit = false;
-        }
-        else if (activeScene.ToLower().Contains("basic1laneipecboard"))
-        {
-            //print("Point Reached...");
-            //updateLane1ResponseTime("miss", "c");
-            //updateLane1SplitTime("miss", "c");
-            //generateBulletImpact2(hit);
-        }
-        else if(hit.transform.tag.ToLower().Contains("wall"))
-        {
-            switch (hit.transform.tag)
-            {
-                case "Lane1Wall":
-                    numLane1ShotsMissed++;
-                    //updateLane1ResponseTime("miss", "c");
-                    //updateLane1SplitTime("miss", "c");
-                    //StaticVariableManager.isLane1TargetMissed = true;
-                    //print("RE: Lane 1 Shots missed is : " + numLane1ShotsMissed);
-                    break;
-                case "Lane2Wall":
-                    numLane2ShotsMissed++;
-                    //updateLane2ResponseTime("miss", "c");
-                    //updateLane2SplitTime("miss", "c");
-                    //StaticVariableManager.isLane2TargetMissed = true;
-                    //print("RE: Lane 2 Shots missed is : " + numLane2ShotsMissed);
-                    break;
-                case "Lane3Wall":
-                    numLane3ShotsMissed++;
-                    //updateLane3ResponseTime("miss", "c");
-                    //updateLane3SplitTime("miss", "c");
-                    //StaticVariableManager.isLane3TargetMissed = true;
-                    //print("RE: Lane 3 Shots missed is : " + numLane3ShotsMissed);
-                    break;
-            }
-        }
-    }
 
     private void AssignMissImpact(RaycastHit hit, GameObject impactGo, List<GameObject> impact_list)
     {
@@ -4812,7 +5434,7 @@ public class Shooting : MonoBehaviour
         //Destroy(impactGo, 1.0f);
         if (!activeScene.ToLower().Contains("distance") && Scoring.ammo_setting == "Live")
         {
-            impactGo.SetActive(false);
+            // impactGo.SetActive(false);
         }
     }
 
@@ -4881,34 +5503,17 @@ public class Shooting : MonoBehaviour
 
         return point_lane;
     }
-    void changeColor(RaycastHit hit)
-    {
-        /*float colorChangeTimer;
-    float colorChangeTimerReset = 1;*/
-        colorHolder = GameObject.FindGameObjectWithTag("IPECColor");
-         currentTargetColr = hit.transform.gameObject.GetComponent<Renderer>().material;
-        hitColor = colorHolder.transform.gameObject.GetComponent<Renderer>().material;
-
-        PlayerPrefs.SetFloat("ObjectColorR", currentTargetColr.color.r);
-        PlayerPrefs.SetFloat("ObjectColorG", currentTargetColr.color.g);
-        PlayerPrefs.SetFloat("ObjectColorB", currentTargetColr.color.b);
-        PlayerPrefs.SetFloat("ObjectColorA", currentTargetColr.color.a);
-
-        // Load the color of the material
-        r = PlayerPrefs.GetFloat("ObjectColorR");
-        g = PlayerPrefs.GetFloat("ObjectColorG");
-        b = PlayerPrefs.GetFloat("ObjectColorB");
-        a = PlayerPrefs.GetFloat("ObjectColorA");
-
-        currentTargetColr.color = hitColor.color;
-        ColorManager.revert_head_body(hit);
-        //print("Test:Color changed");
-    }
 
     private void StopTraining()
     {
-        
+
         //Pause();
+        if (ManualVideoTracker.isVideoPlaying) ManualVideoTracker.ManageStartAndPause();
+
+        // ⭐ CRITICAL: Reset FoodAllocationManager before stopping training
+        // This ensures all food claims are released and the singleton is reset for the next scenario
+        FoodAllocationManager.ResetInstance();
+
         trainingPaused = true;
         isScoreOpen = true;
 
@@ -4916,6 +5521,7 @@ public class Shooting : MonoBehaviour
         countDownStart.start_training = false;
         StaticVariableManager.isStopTraining = true;
         StaticVariableManager.startCountDown = false;
+        // if(DropDown.scene_type == "3D") this.GetComponent<FirstPersonController>().UnlockCursor();
 
         targetFinished = true;
         targetsFinished = true;
@@ -4927,6 +5533,7 @@ public class Shooting : MonoBehaviour
         //standby_txt.SetActive(false);
         //ReloadIndicator.SetActive(false);
         sendEndless("stop");
+        // manageBaloonScoring();
 
         lane1ActiveTimeCounter = lane1TimeActiveCounter;
         lane2ActiveTimeCounter = lane2TimeActiveCounter;
@@ -4934,7 +5541,7 @@ public class Shooting : MonoBehaviour
 
         if (!dead && !activeScene.ToLower().Contains("range"))
         {
-            assignShotsFiredData();
+            DisplayLaneShotsFired();
             if (is3DScene) shooterScorePanel.SetActive(true);
 
             if (TypeOfTraining() == "3D animations") 
@@ -5034,6 +5641,81 @@ public class Shooting : MonoBehaviour
                 {
                     totPlates = TestConditionsManager.totalAllowedHitShots;
 
+                    float targetsKilled = StaticVariableManager.totalTargetAnimalsKilled;
+                    float ShotsMissed = shotsFired - targetsKilled;
+                    //float scoreResult = percResult;
+
+                    if (ShotsMissed < 0)
+                    {
+                        ShotsMissed = 0;
+                    }
+
+                    total_3d_shots_fired.text += " " + shotsFired;
+                    total_3d_training_time.text = "Time: " + timeActiveCounter.ToString("0") + " Seconds ";
+                    enemiesKilled.text = "Targets Shot: " + targetsKilled;
+                    civiliansShot.text = "Shots Missed : " + ShotsMissed;
+                    score.text = "Head Shots : " + StaticVariableManager.totalHeadShots;
+
+                    //plate_score = platesHit; // omp score
+
+                    if (activeScene == "Outdoor_FOREST" || activeScene.Contains("range"))
+                    {
+                        civiliansShot.enabled = false;
+                    }
+
+                    //score.text = "SCORE : " + scoreResult.ToString("0");
+
+                    if (StaticVariableManager.isBearKilledPlayer)
+                    {
+                        Result.text = "<color=#FF0000>Failed!! \nkilled by a Bear</color>";
+                    }
+                    else
+                    {
+                        Result.text = "...Complete...";
+                    }
+                }
+                else if (activeScene.ToLower().Contains("bird"))
+                {
+                    totPlates = TestConditionsManager.totalAllowedHitShots;
+
+                    float targetsKilled = StaticVariableManager.totalTargetAnimalsKilled;
+                    float ShotsMissed = shotsFired - targetsKilled;
+                    //float scoreResult = percResult;
+
+                    if (ShotsMissed < 0)
+                    {
+                        ShotsMissed = 0;
+                    }
+
+                    total_3d_shots_fired.text += " " + shotsFired;
+                    total_3d_training_time.text = "Time: " + timeActiveCounter.ToString("0") + " Seconds ";
+                    enemiesKilled.text = "Targets Shot: " + targetsKilled;
+                    civiliansShot.text = "Shots Missed : " + ShotsMissed;
+                    // score.text = "Head Shots : " + StaticVariableManager.totalHeadShots;
+                    score.enabled = false;
+
+                    //plate_score = platesHit; // omp score
+
+                    if (activeScene == "Outdoor_FOREST" || activeScene.Contains("range"))
+                    {
+                        civiliansShot.enabled = false;
+                    }
+
+                    //score.text = "SCORE : " + scoreResult.ToString("0");
+
+                    if (StaticVariableManager.isBearKilledPlayer)
+                    {
+                        Result.text = "<color=#FF0000>Failed!! \nkilled by a Bear</color>";
+                    }
+                    else
+                    {
+                        Result.text = "...Complete...";
+                    }
+                }
+                else
+                {
+                    totPlates = TestConditionsManager.totalAllowedHitShots;
+
                     float ShotsMissed = (shotsFired - ((StaticVariableManager.totalBodyShots * 2) + StaticVariableManager.totalHeadShots));
                     float targetsKilled = StaticVariableManager.totalTargetAnimalsKilled;
                     //float scoreResult = percResult;
@@ -5045,7 +5727,14 @@ public class Shooting : MonoBehaviour
 
                     total_3d_shots_fired.text += " " + shotsFired;
                     total_3d_training_time.text = "Time: " + timeActiveCounter.ToString("0") + " Seconds ";
-                    enemiesKilled.text = TestConditionsManager.animalName + "s Shot: " + targetsKilled;
+                    if( TestConditionsManager.animalName != "...select...")
+                    {
+                        enemiesKilled.text = TestConditionsManager.animalName + "s Shot: " + targetsKilled;
+                    } 
+                    else
+                    {
+                        enemiesKilled.text = "Animals Killed: " + targetsKilled;
+                    }
                     civiliansShot.text = "Shots Missed : " + ShotsMissed;
                     score.text = "Head Shots : " + StaticVariableManager.totalHeadShots;
 
@@ -5060,36 +5749,8 @@ public class Shooting : MonoBehaviour
 
                     Result.text = "...Complete...";
                 }
-                else if (activeScene.ToLower().Contains("avoid"))
-                {
-                    float ShotsMissed = (shotsFired - ((StaticVariableManager.totalBodyShots * 2) + StaticVariableManager.totalHeadShots));
-                    float targetsKilled = StaticVariableManager.totalTargetAnimalsKilled;
-                    //float scoreResult = percResult;
-
-                    if (ShotsMissed < 0)
-                    {
-                        ShotsMissed = 0;
-                    }
-
-                    total_3d_shots_fired.text += " " + shotsFired;
-                    total_3d_training_time.text = "Time: " + timeActiveCounter.ToString("0") + " Seconds ";
-                    enemiesKilled.text = TestConditionsManager.animalName + "s Shot: " + targetsKilled;
-                    civiliansShot.text = "Casualties : " + StaticVariableManager.totalTargetCasualtiesKilled;
-                    score.text = "Head Shots : " + StaticVariableManager.totalHeadShots;
-
-                    //plate_score = platesHit; // omp score
-
-                    if (activeScene == "Outdoor_FOREST" || activeScene.Contains("range"))
-                    {
-                        civiliansShot.enabled = false;
-                    }
-
-                    //score.text = "SCORE : " + scoreResult.ToString("0");
-
-                    Result.text = "...Complete...";
-                }
             }
-            else if (TypeOfTraining() == "plate or IPEC shoot")
+            else if (TypeOfTraining() == "plate or IPSC shoot")
             {
                 managePlateTargetScoring();
             }
@@ -5100,6 +5761,10 @@ public class Shooting : MonoBehaviour
             else if (TypeOfTraining() == "board shoot")
             {
                 manageSuspectShootScoring();
+            }
+            else if (TypeOfTraining() == "video shoot")
+            {
+                manageVideoShootScoring();
             }
             else
             {
@@ -5122,7 +5787,7 @@ public class Shooting : MonoBehaviour
         string typeOfTraining = "";
 
         // 3d scenes
-        if (activeScene.ToLower().Contains("forest") || activeScene.ToLower().Contains("openplain") || activeScene.ToLower().Contains("mall") || activeScene.ToLower().Contains("container")
+        if (activeScene.ToLower().Contains("outdoor_forest") || activeScene.ToLower().Contains("openplain") || activeScene.ToLower().Contains("mall") || activeScene.ToLower().Contains("container")
             || activeScene.ToLower().Contains("parking") || activeScene.ToLower().Contains("restaurant") || activeScene.ToLower().Contains("closeupsuspect"))
         {
             typeOfTraining = "3D animations";
@@ -5141,7 +5806,7 @@ public class Shooting : MonoBehaviour
             || activeScene.ToLower().Contains("block") || activeScene.ToLower().Contains("cargame") || activeScene.ToLower().Contains("cyclic")
             || activeScene.ToLower().Contains("colorsequence") || activeScene.ToLower().Contains("expressionshoot") || activeScene.ToLower().Contains("sequencenum"))
         {
-            typeOfTraining = "plate or IPEC shoot";
+            typeOfTraining = "plate or IPSC shoot";
         }
         // Baloon
         else if (activeScene.ToLower().Contains("baloon"))
@@ -5149,9 +5814,13 @@ public class Shooting : MonoBehaviour
             typeOfTraining = "baloon shoot";
         }
         // Board scenes
-        else if (activeScene.ToLower().Contains("suspectshoot"))
+        else if (activeScene.ToLower().Contains("suspectshoot") || activeScene.ToLower().Contains("targetrecognition") || activeScene.ToLower().Contains("decisionptshoot")) // 
         {
             typeOfTraining = "board shoot";
+        }
+        else if(activeScene.Contains("VideoTraining") || activeScene.Contains("VideoTransition"))
+        {
+            typeOfTraining = "video shoot";
         }
         else
         {
@@ -5172,30 +5841,13 @@ public class Shooting : MonoBehaviour
         {
             GetTrainees.trainee_name = "shooter 1";
         }
-        if (activeScene.ToLower().Contains("range") || activeScene.ToLower().Contains("basic"))
-        {
-            //this.GetComponent<Scoring>().SaveScore(GetTrainees.trainee_id, GetTrainees.trainee_name, activeScene, login_Manager.EmailText, DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), plate_score.ToString(), plate_score.ToString());
-        }
-        else
-        {
-            this.GetComponent<Scoring>().SaveScore(GetTrainees.trainee_id, GetTrainees.trainee_name, activeScene, login_Manager.EmailText, DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), civilianShot.ToString(), enemyshot.ToString(), ((int)(((enemyshot * 2) - civilianShot) / shotsFired) * 100).ToString(), shotsFired.ToString());
-        }
-        // this.GetComponent<Scoring>().SaveScore(GetTrainees.trainee_id, GetTrainees.trainee_name, activeScene, login_Manager.EmailText, DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), civilianShot.ToString(), enemyshot.ToString(), ((int)(((enemyshot * 2) - civilianShot) / shotsFired) * 100).ToString(), shotsFired.ToString());
     }
-    private void assignShotsFiredData()
-    {
-        //print("Test: Point reached...");
-        numLane1ShotsFired = lane1PointsHit + numLane1ShotsMissed;
-        numLane2ShotsFired = lane2PointsHit + numLane2ShotsMissed;
-        numLane3ShotsFired = lane3PointsHit + numLane3ShotsMissed;
 
-        lane1ShotsFiredDisplay.text = numLane1ShotsFired.ToString("0");
-        lane2ShotsFiredDisplay.text = numLane2ShotsFired.ToString("0");
-        lane3ShotsFiredDisplay.text = numLane3ShotsFired.ToString("0");
-    }
 
     private void manageSuspectShootScoring()
     {
+        print("Managing suspect score");
+
         shooterScorePanel.SetActive(false);
         adminScorePanel.SetActive(false);
 
@@ -5260,7 +5912,7 @@ public class Shooting : MonoBehaviour
             }
 
             //Respose Time Assignment
-            lane3ResponseTimeString = generateResponseString(lane3ResponseTime);
+            lane3ResponseTimeString = generateResponseTimeString(lane3ResponseTime);
 
             //splitTimeDisplay.text = "None";
 
@@ -5328,7 +5980,7 @@ public class Shooting : MonoBehaviour
             }
 
             //Response Time Assignemnt
-            lane2ResponseTimeString = generateResponseString(lane2ResponseTime);
+            lane2ResponseTimeString = generateResponseTimeString(lane2ResponseTime);
             //splitTimeDisplay.text = "None";
 
             plate_score = platesHit; // omp score
@@ -5398,7 +6050,7 @@ public class Shooting : MonoBehaviour
 
             }
             //Response Time Assignemnt
-            lane1ResponseTimeString = generateResponseString(lane1ResponseTime);
+            lane1ResponseTimeString = generateResponseTimeString(lane1ResponseTime);
 
             plate_score = platesHit; // omp score
 
@@ -5416,15 +6068,55 @@ public class Shooting : MonoBehaviour
         if (adminScoreUpdated == false)
         {
             constructSaveData(percentage1, percentage2, percentage3);
-            //updateScoreDisplay();
+            updateScoreDisplay();
             adminScoreUpdated = true;
         }
 
         if (activeScene.ToLower().Contains("1lane"))
         {
-            lane1Result.text = "Threats Shot: " + lane1ThreatsShot + " \n"
-                + "Non-Threats Shot: " + lane1NonThreatsShot + "\n"
-                + "Shots Missed: " + numLane1ShotsMissed;
+
+            if(StaticVariableManager.numCurrThreats <= 0)
+            {
+                lane1Result.text = "Civilians Shot: " + StaticVariableManager.numCiviliansHit + "\n";
+            }
+            else
+            {
+                lane1Result.text = "Threats Shot: " + StaticVariableManager.numSuspectsHit + "\n"
+                    + "Civilians Shot: " + StaticVariableManager.numCiviliansHit + "\n";
+            }
+
+
+                // + "Lethal Shots: " + StaticVariableManager.numSuspectHeadShot + "\n"
+                // + "Non-Lethal Shots: " + StaticVariableManager.numSuspectBodyShot + "\n";
+
+            if(activeScene.ToLower().Contains("targetrecognition"))
+            {
+                if (StaticVariableManager.numCiviliansHit == 0 && StaticVariableManager.numCurrThreats == StaticVariableManager.numSuspectsHit)
+                {
+                    lane1Result.text += "<b> Success </b>";
+                }
+                else if (StaticVariableManager.numCiviliansHit > 0)
+                {
+                    lane1Result.text += "<b> Failed. Civilian shot. </b>";
+                }
+                else if(StaticVariableManager.numCurrThreats != StaticVariableManager.numSuspectsHit)
+                {
+                    /*lane1Result.text += $"{StaticVariableManager.threatCount} threats shot out of {StaticVariableManager.numCurrThreats}\n" +
+                        $"<b> Failed </b>";*/
+                }
+            }
+            else if(activeScene.ToLower().Contains("decisionptshoot"))
+            {
+                if (StaticVariableManager.isCorrectTRTRequence)
+                {
+                    lane1Result.text += "<b> Correct Sequence </b>";
+                }
+                else
+                {
+                    lane1Result.text += "<b> Incorrect Sequence </b>";
+                }
+            }
+
             lane1ResultPanel.SetActive(true);
         }
         else if (activeScene.ToLower().Contains("2lane"))
@@ -5445,8 +6137,13 @@ public class Shooting : MonoBehaviour
             }
         }
     }
-    private void managePlateTargetScoring()
+    private void manageVideoShootScoring()
     {
+        // print("Managing suspect score");
+
+        shooterScorePanel.SetActive(false);
+        adminScorePanel.SetActive(false);
+
         float percentage1 = 0;
         float percentage2 = 0;
         float percentage3 = 0;
@@ -5457,9 +6154,26 @@ public class Shooting : MonoBehaviour
 
         if (laneSelected == 3 || !adminScoreUpdated)
         {
-            //print("RRE: lane3Selected");
+
             lane_number_Txt.text = "Lane 3";
-            float totalPoints = CalculatePoints(point_lane_3);
+            string[] pointOptions;
+            foreach (string line in point_lane_3)
+            {
+                pointOptions = line.Split(",");
+                if (pointOptions[0].ToLower().Contains("point1"))
+                {
+                    point_1_hits = int.Parse(pointOptions[1]);
+                }
+                if (pointOptions[0].ToLower().Contains("point2"))
+                {
+                    point_2_hits = int.Parse(pointOptions[1]);
+                }
+                if (pointOptions[0].ToLower().Contains("point3"))
+                {
+                    point_3_hits = int.Parse(pointOptions[1]);
+                }
+            }
+            float totalPoints = (point_1_hits * 10) + (point_2_hits * 5) + (point_3_hits * 2);
             lane3TrainingScorePoints = totalPoints;
             percentage3 = generatePercentage(numLane3ShotsFired, numLane3ShotsMissed);
 
@@ -5491,7 +6205,408 @@ public class Shooting : MonoBehaviour
             }
 
             //Respose Time Assignment
-            lane3ResponseTimeString = generateResponseString(lane3ResponseTime);
+            lane3ResponseTimeString = generateResponseTimeString(lane3ResponseTime);
+
+            //splitTimeDisplay.text = "None";
+
+            plate_score = platesHit; // omp score
+
+            //score.text = "SCORE : " + scoreResult.ToString("0");
+            if (timeFinished && !targetsFinished)
+            {
+                //Result.text = "Timeout!";
+            }
+            else
+            {
+                //Result.text = "...Complete...";
+            }
+        }
+        if (laneSelected == 2 || !adminScoreUpdated)
+        {
+            lane_number_Txt.text = "Lane 2";
+            string[] pointOptions;
+            foreach (string line in point_lane_2)
+            {
+                pointOptions = line.Split(",");
+                if (pointOptions[0].ToLower().Contains("point1"))
+                {
+                    point_1_hits = int.Parse(pointOptions[1]);
+                }
+                if (pointOptions[0].ToLower().Contains("point2"))
+                {
+                    point_2_hits = int.Parse(pointOptions[1]);
+                }
+                if (pointOptions[0].ToLower().Contains("point3"))
+                {
+                    point_3_hits = int.Parse(pointOptions[1]);
+                }
+            }
+            float totalPoints = (point_1_hits * 10) + (point_2_hits * 5) + (point_3_hits * 2);
+            lane2TrainingScorePoints = totalPoints;
+            percentage2 = generatePercentage(numLane2ShotsFired, numLane2ShotsMissed);
+
+            Location.text = "Run Time: " + lane2ActiveTimeCounter.ToString("0.0") + " Sec";
+            enemiesKilled.text = "Hit Shots: " + lane2PointsHit;
+            civiliansShot.text = "Total points : " + totalPoints;
+            strikesScoreText.text = "Shots Missed : " + numLane2ShotsMissed.ToString("0");
+            Result.text = percentage2.ToString("0.0") + "%";
+            admin_Lane2_PercentageTxt.text = percentage2.ToString("0.0") + "%";
+            shooter_Lane2_PercentageTxt.text = percentage2.ToString("0.0") + "%";
+
+            lane2SplitTimeDisplay.text = "No split time.";
+            int pos = 1;
+            foreach (string tim in lane2SplitTime)
+            {
+                if (lane2SplitTimeSet == false)
+                {
+                    lane2SplitTimeDisplay.text = "";
+                    lane2SplitTimeSet = true;
+                }
+                lane2SplitTimeDisplay.text += tim + "\n";
+
+                lane2SplitTimeString += tim;
+                if (pos < lane2SplitTime.Count)
+                {
+                    lane2SplitTimeString += ";";
+                    pos++;
+                }
+            }
+
+            //Response Time Assignemnt
+            lane2ResponseTimeString = generateResponseTimeString(lane2ResponseTime);
+            //splitTimeDisplay.text = "None";
+
+            plate_score = platesHit; // omp score
+
+            //score.text = "SCORE : " + scoreResult.ToString("0");
+            if (timeFinished && !targetsFinished)
+            {
+                //Result.text = "Timeout!";
+            }
+            else
+            {
+                //Result.text = "...Complete...";
+            }
+        }
+        if (laneSelected == 1 || !adminScoreUpdated)
+        {
+            lane_number_Txt.text = "Lane 1";
+            string[] pointOptions;
+            foreach (string line in point_lane_1)
+            {
+                pointOptions = line.Split(",");
+                if (pointOptions[0].ToLower().Contains("point1"))
+                {
+                    point_1_hits = int.Parse(pointOptions[1]);
+                }
+                if (pointOptions[0].ToLower().Contains("point2"))
+                {
+                    point_2_hits = int.Parse(pointOptions[1]);
+                }
+                if (pointOptions[0].ToLower().Contains("point3"))
+                {
+                    point_3_hits = int.Parse(pointOptions[1]);
+                }
+            }
+            float totalPoints = (point_1_hits * 10) + (point_2_hits * 5) + (point_3_hits * 2);
+            lane1TrainingScorePoints = totalPoints;
+            percentage1 = generatePercentage(numLane1ShotsFired, numLane1ShotsMissed);
+
+
+            //print("RE: Lane percentage is " + numLane1ShotsMissed);
+
+            Location.text = "Run Time: " + lane1ActiveTimeCounter.ToString("0.0") + " Sec";
+            enemiesKilled.text = "Hit Shots: " + lane1PointsHit;
+            civiliansShot.text = "Total points : " + totalPoints;
+            strikesScoreText.text = "Shots Missed : " + numLane1ShotsMissed.ToString("0");
+            Result.text = percentage1.ToString("0.0") + "%";
+            admin_Lane1_PercentageTxt.text = percentage1.ToString("0.0") + "%";
+            shooter_Lane1_PercentageTxt.text = percentage1.ToString("0.0") + "%";
+
+            lane1SplitTimeDisplay.text = "No split time.";
+            int pos = 1;
+            foreach (string tim in lane1SplitTime)
+            {
+                if (lane1SplitTimeSet == false)
+                {
+                    lane1SplitTimeDisplay.text = "";
+                    lane1SplitTimeSet = true;
+                }
+                lane1SplitTimeDisplay.text += tim + "\n";
+
+                lane1SplitTimeString += tim;
+                if (pos < lane1SplitTime.Count)
+                {
+                    lane1SplitTimeString += ";";
+                    pos++;
+                }
+
+            }
+            //Response Time Assignemnt
+            lane1ResponseTimeString = generateResponseTimeString(lane1ResponseTime);
+
+            plate_score = platesHit; // omp score
+
+            //score.text = "SCORE : " + scoreResult.ToString("0");
+            if (timeFinished && !targetsFinished)
+            {
+                //Result.text = "Timeout!";
+            }
+            else
+            {
+                //Result.text = "...Complete...";
+            }
+        }
+
+        if (adminScoreUpdated == false)
+        {
+            constructSaveData(percentage1, percentage2, percentage3);
+            updateScoreDisplay();
+            adminScoreUpdated = true;
+        }
+
+        if(activeScene.Contains("VideoTraining"))
+        {
+            if (StaticVariableManager.isThreatVideo)
+            {
+                if (StaticVariableManager.isVideoShotFired)
+                {
+                    if (StaticVariableManager.isThreatShot && !StaticVariableManager.isNoneThreatShot)
+                    {
+                        string reactionTime = lane1ResponseTime[0].Split(":")[0];
+
+                        if (StaticVariableManager.currVideoThreats == 1)
+                        {
+                            lane1Result.text = $"shot {StaticVariableManager.numVideoThreatsShot} assailant of {StaticVariableManager.currVideoThreats}\n";
+                        }
+                        else if (StaticVariableManager.currVideoThreats > 1)
+                        {
+                            lane1Result.text = $"shot {StaticVariableManager.numVideoThreatsShot} assailants of {StaticVariableManager.currVideoThreats}\n";
+                        }
+
+                        lane1Result.text += "Reaction Time: " + reactionTime + "\n";
+
+                        if (StaticVariableManager.currVideoThreats == StaticVariableManager.numVideoThreatsShot)
+                        {
+                            lane1Result.text += "<b> Success <b>";
+                        }
+                        else
+                        {
+                            lane1Result.text += "<b> Failed <b>";
+                            deadShader.SetActive(true);
+                        }
+
+                        // "<b> Success <b>";
+                    }
+                    else if (StaticVariableManager.isNoneThreatShot)
+                    {
+                        string reactionTime = lane1ResponseTime[0].Split(":")[0];
+
+                        if (StaticVariableManager.currVideoThreats == 1)
+                        {
+                            lane1Result.text = $"shot {StaticVariableManager.numVideoThreatsShot} assailant of {StaticVariableManager.currVideoThreats}\n";
+                        }
+                        else if (StaticVariableManager.currVideoThreats > 1)
+                        {
+                            lane1Result.text = $"shot {StaticVariableManager.numVideoThreatsShot} assailants of {StaticVariableManager.currVideoThreats}\n";
+                        }
+
+                        lane1Result.text += "You shot a non-threat! \n" +
+                            //"Reaction Time: " + reactionTime + "\n" +
+                            "<b> Failed <b>";
+
+                        // deadShader.SetActive(true);
+                    }
+                    else if (!StaticVariableManager.isStartVideoTime)
+                    {
+                        lane1Result.text = "Shots fired early\n" +
+                            "No threat yet \n" +
+                            // "Reaction Time: NA \n" +
+                            "<b> Failed <b>";
+                    }
+                    else
+                    {
+                        lane1Result.text = "Assailant not shot \n" +
+                          // "Reaction Time: " + reactionTime + "\n" +
+                          "<b> Failed <b>";
+                        deadShader.SetActive(true);
+                    }
+                }
+                else
+                {
+                    if (StaticVariableManager.isTrainingEndReached)
+                    {
+                        lane1Result.text = "No Reaction \n" +
+                            "<b> Failed <b>";
+                    }
+                    else
+                    {
+                        lane1Result.text = "No Reaction \n" +
+                            "<b> Failed <b>";
+                    }
+                    deadShader.SetActive(true);
+                }
+
+
+                lane1ResultPanel.SetActive(true);
+            }
+            else
+            {
+
+                if (StaticVariableManager.isVideoShotFired)
+                {
+                    if (StaticVariableManager.isNoneThreatShot)
+                    {
+                        // string reactionTime = lane1ResponseTime[0].Split(":")[0];
+
+                        lane1Result.text = "Civilian shot \n" +
+                                "No threat visible \n" +
+                                "<b> Failed <b>";
+
+                    }
+                    else
+                    {
+                        lane1Result.text = "Shots fired \n" +
+                            "No threat visible \n" +
+                            "<b> Failed <b>";
+                    }
+                }
+                else
+                {
+                    if (!StaticVariableManager.isNoneThreatShot)
+                    {
+                        lane1Result.text = "Civilian not shot \n" +
+                            // "Reaction Time: NA \n" +
+                            "<b> Success <b>";
+
+                    }
+                }
+
+                lane1ResultPanel.SetActive(true);
+            }
+        }
+        else if(activeScene.Contains("VideoTransitionTraining"))
+        {
+            // StaticVariableManager.isTrainingEndReached
+            // StaticVariableManager.currVideoThreats
+            // assailant of {StaticVariableManager.currVideoThreats}
+            if (StaticVariableManager.numVideoThreatsShot == 1)
+            {
+                lane1Result.text = $" Assailants Shot: {StaticVariableManager.numVideoThreatsShot} \n";
+            }
+            else
+            {
+                lane1Result.text = $" Assailants Shot: {StaticVariableManager.numVideoThreatsShot} \n";
+            }
+
+            // Non Threats shot: {StaticVariableManager.numVideoNoneThreatsShot}
+            if (StaticVariableManager.isNoneThreatShot) 
+                lane1Result.text += $"Non Threats shot: {StaticVariableManager.numVideoNoneThreatsShot}\n";
+
+            if (StaticVariableManager.isTrainingEndReached)
+            {
+                lane1Result.text += "<b> Training Complete <b>"; // \nSuccess
+            }
+            else
+            {
+                lane1Result.text += "<b> Training Complete <b>"; // \nSuccess
+                // lane1Result.text += " <b> Training Incomplete "; // \nFailed<b> 
+                // deadShader.SetActive(true);
+            }
+
+            lane1ResultPanel.SetActive(true);
+        }
+
+    }
+    private void managePlateTargetScoring()
+    {
+        float percentage1 = 0;
+        float percentage2 = 0;
+        float percentage3 = 0;
+        assistPanel.SetActive(false);
+        lane1StopSignal.SetActive(false);
+        lane2StopSignal.SetActive(false);
+        lane3StopSignal.SetActive(false);
+
+        if (activeScene.ToLower().Contains("expressionshoot"))
+        {
+            isCIScene = true;
+        }
+        else if (activeScene.ToLower().Contains("colorsequence") || activeScene.ToLower().Contains("add") 
+            || activeScene.ToLower().Contains("sequencenum"))
+        {
+            isCIScene = true;
+        }
+        else if (activeScene.ToLower().Contains("cargame"))
+        {
+            HandleCarGameScoring();
+        }
+        else if (activeScene.ToLower().Contains("duelingtree"))
+        {
+            // print("dueling tree complete: " + StaticVariableManager.duelingTreeS1Points);
+            // print("dueling tree complete: " + StaticVariableManager.duelingTreeS2Points);
+
+            if (StaticVariableManager.duelingTreeS1Points > StaticVariableManager.duelingTreeS2Points)
+            {
+                //winnerScore_carGame.text = ("Winner: Shooter 1");
+            }
+            else if (StaticVariableManager.duelingTreeS2Points > StaticVariableManager.duelingTreeS1Points)
+            {
+                //winnerScore_carGame.text = ("Winner: Shooter 2");
+            }
+            else if (StaticVariableManager.duelingTreeS1Points == StaticVariableManager.duelingTreeS2Points)
+            {
+                //winnerScore_carGame.text = ("");
+            }
+
+            if (winnerScore_carGame != null) winnerScore_carGame.color = Color.black;
+            // winnerScore_carGame.text = (StaticVariableManager.correctTargetsHits + " CORRECT \n" + StaticVariableManager.wrongTargetsHits + " INCORRECT");
+        }
+        else
+        {
+            //winnerScore_carGame.text = (StaticVariableManager.correctNumberHits + " CORRECT \n" + StaticVariableManager.wrongNumberHits + " INCORRECT");
+            //winnerScore_carGame.color = Color.black;
+        }
+
+        if (laneSelected == 3 || !adminScoreUpdated)
+        {
+            //print("RRE: lane3Selected");
+            lane_number_Txt.text = "Lane 3";
+            float totalPoints = CalculatePoints(point_lane_3);
+            totalPoints = CalculateCIPoints("lane 3", totalPoints);
+
+            lane3TrainingScorePoints = totalPoints;
+            percentage3 = generatePercentage(numLane3ShotsFired, numLane3ShotsMissed);
+
+            Location.text = "Run Time: " + lane3ActiveTimeCounter.ToString("0.0") + " Sec";
+            enemiesKilled.text = "Hit Shots: " + lane3PointsHit;
+            civiliansShot.text = "Total points : " + totalPoints;
+            strikesScoreText.text = "Shots Missed : " + numLane3ShotsMissed.ToString("0");
+            Result.text = percentage3.ToString("0.0") + "%";
+            admin_Lane3_PercentageTxt.text = percentage3.ToString("0.0") + "%";
+            shooter_Lane3_PercentageTxt.text = percentage3.ToString("0.0") + "%";
+
+            lane3SplitTimeDisplay.text = "No split time.";
+            int pos = 1;
+            foreach (string tim in lane3SplitTime)
+            {
+                if (lane3SplitTimeSet == false)
+                {
+                    lane3SplitTimeDisplay.text = "";
+                    lane3SplitTimeSet = true;
+                }
+                lane3SplitTimeDisplay.text += tim + "\n";
+
+                lane3SplitTimeString += tim;
+                if (pos < lane3SplitTime.Count)
+                {
+                    lane3SplitTimeString += ";";
+                    pos++;
+                }
+            }
+
+            //Respose Time Assignment
+            lane3ResponseTimeString = generateResponseTimeString(lane3ResponseTime);
 
             //splitTimeDisplay.text = "None";
 
@@ -5513,6 +6628,8 @@ public class Shooting : MonoBehaviour
             lane_number_Txt.text = "Lane 2";
 
             float totalPoints = CalculatePoints(point_lane_2);
+            totalPoints = CalculateCIPoints("lane 2", totalPoints);
+
             lane2TrainingScorePoints = totalPoints;
             percentage2 = generatePercentage(numLane2ShotsFired, numLane2ShotsMissed);
 
@@ -5545,7 +6662,7 @@ public class Shooting : MonoBehaviour
             //splitTimeDisplay.text = "None";
 
             //Respose Time Assignment
-            lane2ResponseTimeString = generateResponseString(lane2ResponseTime);
+            lane2ResponseTimeString = generateResponseTimeString(lane2ResponseTime);
 
             plate_score = platesHit; // omp score
 
@@ -5565,6 +6682,8 @@ public class Shooting : MonoBehaviour
             lane_number_Txt.text = "Lane 1";
 
             float totalPoints = CalculatePoints(point_lane_1);
+            totalPoints = CalculateCIPoints("lane 1", totalPoints);
+
             lane1TrainingScorePoints = totalPoints;
             percentage1 = generatePercentage(numLane1ShotsFired, numLane1ShotsMissed);
 
@@ -5609,7 +6728,7 @@ public class Shooting : MonoBehaviour
             //splitTimeDisplay.text = "None";
 
             //Respose Time Assignment
-            lane1ResponseTimeString = generateResponseString(lane1ResponseTime);
+            lane1ResponseTimeString = generateResponseTimeString(lane1ResponseTime);
 
             plate_score = platesHit; // omp score
 
@@ -5624,53 +6743,7 @@ public class Shooting : MonoBehaviour
             }
         }
 
-        if (activeScene.ToLower().Contains("expressionshoot"))
-        {
-            //winnerScore_carGame.text = "WELL DONE: ";
-            winnerScore_carGame.text = (StaticVariableManager.correctTargetsHits + " CORRECT \n" + StaticVariableManager.wrongTargetsHits + " INCORRECT");
-            winnerScore_carGame.color = Color.black;
-        }
-        else if (activeScene.ToLower().Contains("add"))
-        {
-            if (StaticVariableManager.currentProgress == StaticVariableManager.currentGoal)
-            {
-                winnerScore_carGame.text = "WELL DONE!";
-                winnerScore_carGame.color = Color.black;
-            }
-            else if (StaticVariableManager.currentProgress > StaticVariableManager.currentGoal)
-            {
-                int extraValues = StaticVariableManager.currentProgress - StaticVariableManager.currentGoal;
-
-                if (extraValues == 1)
-                {
-                    winnerScore_carGame.text = (extraValues).ToString() + " EXTRA VALUE";
-                }
-                else
-                {
-                    winnerScore_carGame.text = (extraValues).ToString() + " EXTRA VALUES";
-                }
-                winnerScore_carGame.color = Color.black;
-            }
-            else
-            {
-                winnerScore_carGame.text = (StaticVariableManager.currentGoal - StaticVariableManager.currentProgress).ToString() + " VALUES SHORT";
-                winnerScore_carGame.color = Color.black;
-            }
-        }
-        else if (activeScene.ToLower().Contains("colorsequence"))
-        {
-            winnerScore_carGame.text = (StaticVariableManager.correctTargetsHits + " CORRECT \n" + StaticVariableManager.wrongTargetsHits + " INCORRECT");
-            winnerScore_carGame.color = Color.black;
-        }
-        else if (activeScene.ToLower().Contains("cargame"))
-        {
-            HandleCarGameScoring();
-        }
-        else
-        {
-            //winnerScore_carGame.text = (StaticVariableManager.correctNumberHits + " CORRECT \n" + StaticVariableManager.wrongNumberHits + " INCORRECT");
-            //winnerScore_carGame.color = Color.black;
-        }
+        // print("Point Reached...");
 
         if (adminScoreUpdated == false)
         {
@@ -5711,6 +6784,26 @@ public class Shooting : MonoBehaviour
         }
 
     }
+
+    private void UpdateCarGamePoints(string lane, TextMeshProUGUI textComponent)
+    {
+        switch(lane)
+        {
+            case "lane 1":
+                textComponent.text = StaticVariableManager.redCarPoints.ToString();
+                // print("Point reached: " + StaticVariableManager.redCarPoints.ToString());
+                break;
+            case "lane 2":
+                textComponent.text = StaticVariableManager.blueCarPoints.ToString();
+                // print("Point reached: " + StaticVariableManager.blueCarPoints.ToString());
+                break;
+            case "lane 3":
+                textComponent.text = StaticVariableManager.greenCarPoints.ToString();
+                // print("Point reached: " + StaticVariableManager.greenCarPoints.ToString());
+                break;
+        }
+    }
+
     private void manageBaloonScoring()
     {
         float percentage1 = 0;
@@ -5720,6 +6813,7 @@ public class Shooting : MonoBehaviour
         lane1StopSignal.SetActive(false);
         lane2StopSignal.SetActive(false);
         lane3StopSignal.SetActive(false);
+        isCIScene = true; // Enable correct and incorrect score.
 
         if (activeScene.ToLower().Contains("2lane"))
         {
@@ -5731,7 +6825,7 @@ public class Shooting : MonoBehaviour
         {
             lane_number_Txt.text = "Lane 3";
 
-            float totalPoints = (lane3PointsHit * 10) - (5 * lane3_strike_count);
+            float totalPoints = CalculateCIPoints("lane 3", 0);
 
             if (totalPoints < 0)
             {
@@ -5739,32 +6833,18 @@ public class Shooting : MonoBehaviour
             }
             lane3TrainingScorePoints = totalPoints;
             percentage3 = generatePercentage(numLane3ShotsFired, numLane3ShotsMissed);
-
-            int pos = 1;
-            foreach (string tim in lane3ResponseTime)
-            {
-                /*if (lane3SplitTimeSet == false)
-                {
-                    lane3SplitTimeDisplay.text = "";
-                    lane3SplitTimeSet = true;
-                }*/
-                //lane3SplitTimeDisplay.text += tim + "\n";
-
-                lane3ResponseTimeString += tim;
-                if (pos < lane3ResponseTime.Count)
-                {
-                    lane3ResponseTimeString += ":";
-                    pos++;
-                }
-            }
+            lane3ResponseTimeString = generateResponseTimeString(lane3ResponseTime);
+            lane3SplitTimeString = generateSpliTimeString(lane3SplitTime, lane3SplitTimeDisplay, ref lane3SplitTimeSet);
 
             Location.text = "Run Time: " + lane3ActiveTimeCounter.ToString("0.0") + " Sec";
             enemiesKilled.text = "Hit Shots: " + lane3PointsHit;
             civiliansShot.text = "Total points: " + totalPoints;
             strikesScoreText.text = "Shots Missed : " + numLane3ShotsMissed.ToString("0");
             Result.text = percentage3.ToString("0.0") + "%";
+
             admin_Lane3_PercentageTxt.text = percentage3.ToString("0.0") + "%";
             shooter_Lane3_PercentageTxt.text = percentage3.ToString("0.0") + "%";
+
             lane3SplitTimeDisplay.text = "No split time.";
 
             //splitTimeDisplay.text = "None";
@@ -5778,7 +6858,7 @@ public class Shooting : MonoBehaviour
         {
             lane_number_Txt.text = "Lane 2";
 
-            float totalPoints = (lane2PointsHit * 10) - (5 * lane2_strike_count);
+            float totalPoints = CalculateCIPoints("lane 2", 0);
 
             if (totalPoints < 0)
             {
@@ -5786,32 +6866,18 @@ public class Shooting : MonoBehaviour
             }
             lane2TrainingScorePoints = totalPoints;
             percentage2 = generatePercentage(numLane2ShotsFired, numLane2ShotsMissed);
-
-            int pos = 1;
-            foreach (string tim in lane2ResponseTime)
-            {
-                /*if (lane3SplitTimeSet == false)
-                {
-                    lane3SplitTimeDisplay.text = "";
-                    lane3SplitTimeSet = true;
-                }*/
-                //lane3SplitTimeDisplay.text += tim + "\n";
-
-                lane2ResponseTimeString += tim;
-                if (pos < lane2ResponseTime.Count)
-                {
-                    lane2ResponseTimeString += ":";
-                    pos++;
-                }
-            }
+            lane2ResponseTimeString = generateResponseTimeString(lane2ResponseTime);
+            lane2SplitTimeString = generateSpliTimeString(lane2SplitTime, lane2SplitTimeDisplay, ref lane2SplitTimeSet);
 
             Location.text = "Run Time: " + lane2ActiveTimeCounter.ToString("0.0") + " Sec";
             enemiesKilled.text = "Hit Shots: " + lane2PointsHit;
             civiliansShot.text = "Total points: " + totalPoints;
             strikesScoreText.text = "Shots Missed : " + numLane2ShotsMissed.ToString("0");
             Result.text = percentage2.ToString("0.0") + "%";
+
             admin_Lane2_PercentageTxt.text = percentage2.ToString("0.0") + "%";
             shooter_Lane2_PercentageTxt.text = percentage2.ToString("0.0") + "%";
+
             lane2SplitTimeDisplay.text = "No split time.";
             //splitTimeDisplay.text = "None";
 
@@ -5824,7 +6890,7 @@ public class Shooting : MonoBehaviour
         {
             lane_number_Txt.text = "Lane 1";
 
-            float totalPoints = (lane1PointsHit * 10) - (5 * lane1_strike_count);
+            float totalPoints = CalculateCIPoints("lane 1", 0);
 
             if (totalPoints < 0)
             {
@@ -5832,46 +6898,27 @@ public class Shooting : MonoBehaviour
             }
             lane1TrainingScorePoints = totalPoints;
             percentage1 = generatePercentage(numLane1ShotsFired, numLane1ShotsMissed);
-
-            int pos = 1;
-            foreach (string tim in lane1ResponseTime)
-            {
-                /*if (lane3SplitTimeSet == false)
-                {
-                    lane3SplitTimeDisplay.text = "";
-                    lane3SplitTimeSet = true;
-                }*/
-                //lane3SplitTimeDisplay.text += tim + "\n";
-
-                lane1ResponseTimeString += tim;
-                if (pos < lane1ResponseTime.Count)
-                {
-                    lane1ResponseTimeString += ":";
-                    pos++;
-                }
-            }
+            lane1ResponseTimeString = generateResponseTimeString(lane1ResponseTime);
+            lane1SplitTimeString = generateSpliTimeString(lane1SplitTime, lane1SplitTimeDisplay, ref lane1SplitTimeSet);
 
             Location.text = "Run Time: " + lane1ActiveTimeCounter.ToString("0.0") + " Sec";
             enemiesKilled.text = "Hit Shots: " + lane1PointsHit;
             civiliansShot.text = "Total points: " + totalPoints;
             strikesScoreText.text = "Shots Missed : " + numLane1ShotsMissed.ToString("0");
             Result.text = percentage1.ToString("0.0") + "%";
+
             admin_Lane1_PercentageTxt.text = percentage1.ToString("0.0") + "%";
             shooter_Lane1_PercentageTxt.text = percentage1.ToString("0.0") + "%";
+
+
             lane1SplitTimeDisplay.text = "No split time.";
             //splitTimeDisplay.text = "None";
 
-            if(activeScene.ToLower().Contains("1lane"))
-            {
-                winnerScore_carGame.text = (StaticVariableManager.correctTargetsHits + " CORRECT \n" + StaticVariableManager.wrongTargetsHits + " INCORRECT");
-                winnerScore_carGame.color = Color.black;
-            }
             plate_score = platesHit; // omp score
 
             //score.text = "SCORE : " + scoreResult.ToString("0");
             
         }
-
 
         if (adminScoreUpdated == false)
         {
@@ -5880,6 +6927,29 @@ public class Shooting : MonoBehaviour
 
             adminScoreUpdated = true;
         }
+    }
+
+    private float CalculateCIPoints(string lane, float defaultValue)
+    {
+        float points = defaultValue;
+
+        if(isCIScene)
+        {
+            switch (lane)
+            {
+                case "lane 1":
+                    points = StaticVariableManager.lane1CorrectTargetsHits * 10;
+                    break;
+                case "lane 2":
+                    points = StaticVariableManager.lane2CorrectTargetsHits * 10;
+                    break;
+                case "lane 3":
+                    points = StaticVariableManager.lane3CorrectTargetsHits * 10;
+                    break;
+            }
+        }
+
+        return points;
     }
 
     private float CalculatePoints( List<string> lane_points)
@@ -5927,7 +6997,9 @@ public class Shooting : MonoBehaviour
             admin_Lane1_HitTimeTxt.text = lane1ActiveTimeCounter.ToString("0.0") + " sec";
             admin_Lane1_HitShotsTxt.text = lane1PointsHit.ToString("0");
             admin_Lane1_ScoreTxt.text = lane1TrainingScorePoints.ToString("0");
-            
+            if(isCIScene) admin_Lane1_CorrectHitsTxt.text = StaticVariableManager.lane1CorrectTargetsHits.ToString();
+            if (isCIScene) admin_Lane1_IncorrectHitsTxt.text = StaticVariableManager.lane1IncorrectTargetsHits.ToString();
+
             shooter_Lane1_Header.text = lane1Header[0];  //Header
             shooter_Lane1_SplitTime_Header.text = lane1Header[0];  //Header
             shooter_Lane1_ShotsFiredTxt.text = numLane1ShotsFired.ToString("0");
@@ -5935,6 +7007,14 @@ public class Shooting : MonoBehaviour
             shooter_Lane1_HitTimeTxt.text = lane1ActiveTimeCounter.ToString("0.0") + " sec";
             shooter_Lane1_HitShotsTxt.text = lane1PointsHit.ToString("0");
             shooter_Lane1_ScoreTxt.text = lane1TrainingScorePoints.ToString("0");
+            if (isCIScene) shooter_Lane1_CorrectHitsTxt.text = StaticVariableManager.lane1CorrectTargetsHits.ToString();
+            if (isCIScene) shooter_Lane1_IncorrectHitsTxt.text = StaticVariableManager.lane1IncorrectTargetsHits.ToString();
+
+            if (activeScene.Contains("LaneCarGame")) // Assign the proper Car Game points
+            {
+                UpdateCarGamePoints("lane 1", admin_Lane1_ScoreTxt);
+                UpdateCarGamePoints("lane 1", shooter_Lane1_ScoreTxt);
+            }
 
             ManageAdminShooterScorePanel();
         }
@@ -5946,12 +7026,17 @@ public class Shooting : MonoBehaviour
             admin_Lane1_HitTimeTxt.text = lane1ActiveTimeCounter.ToString("0.0") + " sec";
             admin_Lane1_HitShotsTxt.text = lane1PointsHit.ToString("0");
             admin_Lane1_ScoreTxt.text = lane1TrainingScorePoints.ToString("0");
+            if (isCIScene) admin_Lane1_CorrectHitsTxt.text = StaticVariableManager.lane1CorrectTargetsHits.ToString();
+            if (isCIScene) admin_Lane1_IncorrectHitsTxt.text = StaticVariableManager.lane1IncorrectTargetsHits.ToString();
             admin_Lane2_Header.text = lane2Header[0];  //Header
             admin_Lane2_ShotsFiredTxt.text = numLane2ShotsFired.ToString("0");
             admin_Lane2_ShotsMissedTxt.text = numLane2ShotsMissed.ToString("0");
             admin_Lane2_HitTimeTxt.text = lane2ActiveTimeCounter.ToString("0.0") + " sec";
             admin_Lane2_HitShotsTxt.text = lane2PointsHit.ToString("0");
             admin_Lane2_ScoreTxt.text = lane2TrainingScorePoints.ToString("0");
+            if (isCIScene) admin_Lane2_CorrectHitsTxt.text = StaticVariableManager.lane2CorrectTargetsHits.ToString();
+            if (isCIScene) admin_Lane2_IncorrectHitsTxt.text = StaticVariableManager.lane2IncorrectTargetsHits.ToString();
+
             shooter_Lane1_Header.text = lane1Header[0];  //Header
             shooter_Lane1_SplitTime_Header.text = lane1Header[0];  //Header
             shooter_Lane1_ShotsFiredTxt.text = numLane1ShotsFired.ToString("0");
@@ -5959,6 +7044,8 @@ public class Shooting : MonoBehaviour
             shooter_Lane1_HitTimeTxt.text = lane1ActiveTimeCounter.ToString("0.0") + " sec";
             shooter_Lane1_HitShotsTxt.text = lane1PointsHit.ToString("0");
             shooter_Lane1_ScoreTxt.text = lane1TrainingScorePoints.ToString("0");
+            if (isCIScene) shooter_Lane1_CorrectHitsTxt.text = StaticVariableManager.lane1CorrectTargetsHits.ToString();
+            if (isCIScene) shooter_Lane1_IncorrectHitsTxt.text = StaticVariableManager.lane1IncorrectTargetsHits.ToString();
             shooter_Lane2_Header.text = lane2Header[0];  //Header
             shooter_Lane2_SplitTime_Header.text = lane2Header[0];  //Header
             shooter_Lane2_ShotsFiredTxt.text = numLane2ShotsFired.ToString("0");
@@ -5966,8 +7053,21 @@ public class Shooting : MonoBehaviour
             shooter_Lane2_HitTimeTxt.text = lane2ActiveTimeCounter.ToString("0.0") + " sec";
             shooter_Lane2_HitShotsTxt.text = lane2PointsHit.ToString("0");
             shooter_Lane2_ScoreTxt.text = lane2TrainingScorePoints.ToString("0");
+            if (isCIScene) shooter_Lane2_CorrectHitsTxt.text = StaticVariableManager.lane2CorrectTargetsHits.ToString();
+            if (isCIScene) shooter_Lane2_IncorrectHitsTxt.text = StaticVariableManager.lane2IncorrectTargetsHits.ToString();
+
+            if (activeScene.Contains("LaneCarGame")) // Assign the proper Car Game points
+            {
+                UpdateCarGamePoints("lane 1", admin_Lane1_ScoreTxt);
+                UpdateCarGamePoints("lane 1", shooter_Lane1_ScoreTxt);
+
+                UpdateCarGamePoints("lane 2", admin_Lane2_ScoreTxt);
+                UpdateCarGamePoints("lane 2", shooter_Lane2_ScoreTxt);
+            }
 
             ManageAdminShooterScorePanel();
+
+            // print("Point Reached...");
         }
         if (activeScene.ToLower().Contains("3lane"))
         {
@@ -5977,18 +7077,24 @@ public class Shooting : MonoBehaviour
             admin_Lane1_HitTimeTxt.text = lane1ActiveTimeCounter.ToString("0.0") + " sec";
             admin_Lane1_HitShotsTxt.text = lane1PointsHit.ToString("0");
             admin_Lane1_ScoreTxt.text = lane1TrainingScorePoints.ToString("0");
+            if (isCIScene) admin_Lane1_CorrectHitsTxt.text = StaticVariableManager.lane1CorrectTargetsHits.ToString();
+            if (isCIScene) admin_Lane1_IncorrectHitsTxt.text = StaticVariableManager.lane1IncorrectTargetsHits.ToString();
             admin_Lane2_Header.text = lane2Header[0];  //Header
             admin_Lane2_ShotsFiredTxt.text = numLane2ShotsFired.ToString("0");
             admin_Lane2_ShotsMissedTxt.text = numLane2ShotsMissed.ToString("0");
             admin_Lane2_HitTimeTxt.text = lane2ActiveTimeCounter.ToString("0.0") + " sec";
             admin_Lane2_HitShotsTxt.text = lane2PointsHit.ToString("0");
             admin_Lane2_ScoreTxt.text = lane2TrainingScorePoints.ToString("0");
+            if (isCIScene) admin_Lane2_CorrectHitsTxt.text = StaticVariableManager.lane2CorrectTargetsHits.ToString();
+            if (isCIScene) admin_Lane2_IncorrectHitsTxt.text = StaticVariableManager.lane2IncorrectTargetsHits.ToString();
             admin_Lane3_Header.text = lane3Header[0];  //Header
             admin_Lane3_ShotsFiredTxt.text = numLane3ShotsFired.ToString("0");
             admin_Lane3_ShotsMissedTxt.text = numLane3ShotsMissed.ToString("0");
             admin_Lane3_HitTimeTxt.text = lane3ActiveTimeCounter.ToString("0.0") + " sec";
             admin_Lane3_HitShotsTxt.text = lane3PointsHit.ToString("0");
             admin_Lane3_ScoreTxt.text = lane3TrainingScorePoints.ToString("0");
+            if (isCIScene) admin_Lane3_CorrectHitsTxt.text = StaticVariableManager.lane3CorrectTargetsHits.ToString();
+            if (isCIScene) admin_Lane3_IncorrectHitsTxt.text = StaticVariableManager.lane3IncorrectTargetsHits.ToString();
 
             shooter_Lane1_Header.text = lane1Header[0];  //Header
             shooter_Lane1_SplitTime_Header.text = lane1Header[0];  //Header
@@ -5997,6 +7103,8 @@ public class Shooting : MonoBehaviour
             shooter_Lane1_HitTimeTxt.text = lane1ActiveTimeCounter.ToString("0.0") + " sec";
             shooter_Lane1_HitShotsTxt.text = lane1PointsHit.ToString("0");
             shooter_Lane1_ScoreTxt.text = lane1TrainingScorePoints.ToString("0");
+            if (isCIScene) shooter_Lane1_CorrectHitsTxt.text = StaticVariableManager.lane1CorrectTargetsHits.ToString();
+            if (isCIScene) shooter_Lane1_IncorrectHitsTxt.text = StaticVariableManager.lane1IncorrectTargetsHits.ToString();
             shooter_Lane2_Header.text = lane2Header[0];  //Header
             shooter_Lane2_SplitTime_Header.text = lane2Header[0];  //Header
             shooter_Lane2_ShotsFiredTxt.text = numLane2ShotsFired.ToString("0");
@@ -6004,6 +7112,8 @@ public class Shooting : MonoBehaviour
             shooter_Lane2_HitTimeTxt.text = lane2ActiveTimeCounter.ToString("0.0") + " sec";
             shooter_Lane2_HitShotsTxt.text = lane2PointsHit.ToString("0");
             shooter_Lane2_ScoreTxt.text = lane2TrainingScorePoints.ToString("0");
+            if (isCIScene) shooter_Lane2_CorrectHitsTxt.text = StaticVariableManager.lane2CorrectTargetsHits.ToString();
+            if (isCIScene) shooter_Lane2_IncorrectHitsTxt.text = StaticVariableManager.lane2IncorrectTargetsHits.ToString();
             shooter_Lane3_Header.text = lane3Header[0];  //Header
             shooter_Lane3_SplitTime_Header.text = lane3Header[0];  //Header
             shooter_Lane3_ShotsFiredTxt.text = numLane3ShotsFired.ToString("0");
@@ -6011,13 +7121,29 @@ public class Shooting : MonoBehaviour
             shooter_Lane3_HitTimeTxt.text = lane3ActiveTimeCounter.ToString("0.0") + " sec";
             shooter_Lane3_HitShotsTxt.text = lane3PointsHit.ToString("0");
             shooter_Lane3_ScoreTxt.text = lane3TrainingScorePoints.ToString("0");
+            if (isCIScene) shooter_Lane3_CorrectHitsTxt.text = StaticVariableManager.lane3CorrectTargetsHits.ToString();
+            if (isCIScene) shooter_Lane3_IncorrectHitsTxt.text = StaticVariableManager.lane3IncorrectTargetsHits.ToString();
+
+            if (activeScene.Contains("LaneCarGame")) // Assign the proper Car Game points
+            {
+                UpdateCarGamePoints("lane 1", admin_Lane1_ScoreTxt);
+                UpdateCarGamePoints("lane 1", shooter_Lane1_ScoreTxt);
+
+                UpdateCarGamePoints("lane 2", admin_Lane2_ScoreTxt);
+                UpdateCarGamePoints("lane 2", shooter_Lane2_ScoreTxt);
+
+                UpdateCarGamePoints("lane 3", admin_Lane3_ScoreTxt);
+                UpdateCarGamePoints("lane 3", shooter_Lane3_ScoreTxt);
+            }
 
             ManageAdminShooterScorePanel();
         }
     }
     private void ManageAdminShooterScorePanel()
     {
-        if(activeScene.ToLower().Contains("cargame") || activeScene.ToLower().Contains("baloon"))
+        if(activeScene.ToLower().Contains("cargame") || activeScene.ToLower().Contains("baloon") ||
+            activeScene.ToLower().Contains("claypigeon") || activeScene.ToLower().Contains("risingshape") 
+            || activeScene.ToLower().Contains("colorsequence") || activeScene.ToLower().Contains("sequencenum"))
         {
             adminScorePanel.SetActive(true);
             shooterScorePanel.SetActive(true);
@@ -6028,19 +7154,19 @@ public class Shooting : MonoBehaviour
             //shooterScorePanel.SetActive(true);
         }
     }
-    private string generateResponseString(List<string> laneResponseTime)
+    private string generateResponseTimeString(List<string> laneResponseTime)
     {
         int pos = 1;
         string tempResponseString = "";
 
         //print("RRE: Response data size is " + laneResponseTime.Count);
-        foreach (string tim in laneResponseTime)
+        foreach (string time in laneResponseTime)
         {
             
             if (pos <= laneResponseTime.Count)
             {
                 //print("RRE: time" + tim);
-                tempResponseString += tim;
+                tempResponseString += time;
                 if (pos < laneResponseTime.Count)
                 {
                     tempResponseString += "-";
@@ -6051,11 +7177,39 @@ public class Shooting : MonoBehaviour
         //print("RRE: Response is " + tempResponseString);
         return tempResponseString;
     }
+
+    private string generateSpliTimeString( List<string> splitTimes, TextMeshProUGUI textDisplay, ref bool isSplitTimeSet)
+    {
+        string splitTimeString = "";
+        int pos = 1;
+        foreach (string time in splitTimes)
+        {
+            if (isSplitTimeSet == false)
+            {
+                textDisplay.text = "";
+                isSplitTimeSet = true;
+            }
+            textDisplay.text += time + "\n";
+
+            splitTimeString += time;
+            if (pos < lane1SplitTime.Count)
+            {
+                splitTimeString += ";";
+                pos++;
+            }
+
+        }
+
+        return splitTimeString;
+    }
+
     private void constructSaveData(float perc1, float perc2, float perc3)
     {
         Scoring.simulation_type = "training";
         if (Scoring.simulation_type == "training")
         {
+            // print("Test: Trainee - " + lane1TraineeName);
+
             string numLanes = "0";
             sceneScores = new List<string>();
             scenePercentages = new List<string>();
@@ -6084,6 +7238,7 @@ public class Shooting : MonoBehaviour
             {
                 lane1Header = new string[2];
                 lane1TraineeName = GetTrainees.TraineeLane_1;
+
                 if(TestConditionsManager.lane1TraineeName.ToLower().Contains("lane"))
                 {
                     lane1Header[0] = TestConditionsManager.lane1TraineeName;
@@ -6688,10 +7843,14 @@ public class Shooting : MonoBehaviour
             //----------------------------
             remoteEndPoint = new IPEndPoint(IPAddress.Parse(IP), Sportnum);
 
-            // Daten mit der UTF8-Kodierung in das Bin�rformat kodieren.
+            // Daten mit der UTF8-Kodierung in das Bin rformat kodieren.
             byte[] data = Encoding.UTF8.GetBytes(testStr);
             // print("sending " + testStr + " to " + remoteEndPoint);
             // Den message zum Remote-Client senden.
+            udpClientS.Send(data, data.Length, remoteEndPoint);
+            udpClientS.Send(data, data.Length, remoteEndPoint);
+            udpClientS.Send(data, data.Length, remoteEndPoint);
+            udpClientS.Send(data, data.Length, remoteEndPoint);
             udpClientS.Send(data, data.Length, remoteEndPoint);
         }
         catch (Exception e)
@@ -6726,6 +7885,9 @@ public class Shooting : MonoBehaviour
     }
     private void ResetStaticVariables()
     {
+        StaticVariableManager.isGunFired = false;
+        // StaticVariableManager.recentPoints.Clear();
+
         StaticVariableManager.isTrainingPause = trainingPaused;
         StaticVariableManager.isStopTraining = false;
         StaticVariableManager.isTimeOut = false;
@@ -6770,8 +7932,12 @@ public class Shooting : MonoBehaviour
         //Color Sequence
         StaticVariableManager.isColorDisplayed = false;
         StaticVariableManager.sequenceCreated = false;
-        StaticVariableManager.correctTargetsHits = 0;
-        StaticVariableManager.wrongTargetsHits = 0;
+        StaticVariableManager.lane1CorrectTargetsHits = 0;
+        StaticVariableManager.lane2CorrectTargetsHits = 0;
+        StaticVariableManager.lane3CorrectTargetsHits = 0;
+        StaticVariableManager.lane1IncorrectTargetsHits = 0;
+        StaticVariableManager.lane2IncorrectTargetsHits = 0;
+        StaticVariableManager.lane3IncorrectTargetsHits = 0;
 
         // Shots Replay Variables
         StaticVariableManager.currLane1Targets.Clear();
@@ -6784,7 +7950,58 @@ public class Shooting : MonoBehaviour
         StaticVariableManager.lane2TargetStartCounts = 0;
         StaticVariableManager.lane3TargetStartCounts = 0;
         StaticVariableManager.lanePlatesDisabledCount = 0;
+        StaticVariableManager.lanePlatesDisabled = false;
         StaticVariableManager.isPlatesDisplayed = false;
+        ShotsReplayManager.isShotsReplayOpen = false;
+
+        // IPSC Extended
+        StaticVariableManager.numTarget1Hits = 0;
+        StaticVariableManager.numTarget2Hits = 0;
+        StaticVariableManager.numTarget3Hits = 0;
+        StaticVariableManager.numTarget4Hits = 0;
+        StaticVariableManager.numTarget5Hits = 0;
+        StaticVariableManager.numIPSCPole1Shots = 0;
+        StaticVariableManager.numIPSCPole2Shots = 0;
+        StaticVariableManager.numIPSCPole3Shots = 0;
+        StaticVariableManager.numIPSCSlider1Shots = 0;
+        StaticVariableManager.numIPSCSlider2Shots = 0;
+
+
+        // Dueling Tree
+        StaticVariableManager.duelingTreeS1Points = 0;
+        StaticVariableManager.duelingTreeS2Points = 0;
+        StaticVariableManager.duelingTreeComplete = false;
+
+        // Target Recognition
+        StaticVariableManager.numCiviliansHit = 0;
+        StaticVariableManager.numSuspectsHit = 0;
+        StaticVariableManager.numSuspectHeadShot = 0;
+        StaticVariableManager.numSuspectBodyShot = 0;
+        StaticVariableManager.TRTShootSequence.Clear();
+        StaticVariableManager.TRTFollowUpSequence = "";
+        StaticVariableManager.TRTTargetsShot.Clear();
+        StaticVariableManager.isTRTTrainingComplete = false;
+        StaticVariableManager.isCorrectTRTRequence = false;
+        StaticVariableManager.isThreatAvailable = false;
+
+        // Video Scenario
+        StaticVariableManager.isStartVideoTime = false;
+        StaticVariableManager.isTrainingEndReached = false;
+        StaticVariableManager.isVideoTrainingComplete = false;
+        StaticVariableManager.isThreatShot = false;
+        StaticVariableManager.isNoneThreatShot = false;
+        StaticVariableManager.isVideoShotFired = false;
+        StaticVariableManager.numVideoThreatsShot = 0;
+        StaticVariableManager.numVideoNoneThreatsShot = 0;
+        StaticVariableManager.videoThreatsShot.Clear();
+        StaticVariableManager.currentSetVideo = "";
+        StaticVariableManager.isLastVideoNTS = false;
+        StaticVariableManager.initializeStepBack = false;
+        StaticVariableManager.isHeadShot = false;
+        StaticVariableManager.currSetVideoIndex = 0;
+
+        // Hunting scenarion
+        StaticVariableManager.isBearKilledPlayer = false;
 
         //Main Variables
         point_lane_1 = new List<string>();
@@ -6834,6 +8051,21 @@ public class Shooting : MonoBehaviour
         ForestSound2 = gameObject.AddComponent<AudioSource>();
         ForestSound2.clip = ForestAudio2;
 
+        BirdHuntingSound = gameObject.AddComponent <AudioSource>();
+        BirdHuntingSound.clip = birdHuntingIdleAudio;
+
+        if(TestConditionsManager.timeOfDay.ToLower().Contains("day"))
+        {
+            HuntingForestSound = gameObject.AddComponent<AudioSource>(); // Hunting forest
+            if(daytime_HuntingForestAudio != null) HuntingForestSound.clip = daytime_HuntingForestAudio;
+        }
+        else if (TestConditionsManager.timeOfDay.ToLower().Contains("night"))
+        {
+            HuntingForestSound = gameObject.AddComponent<AudioSource>(); // Hunting forest
+            if(nighttime_HuntingForestAudio != null) HuntingForestSound.clip = nighttime_HuntingForestAudio;
+        }
+
+
         mallTalkSound = gameObject.AddComponent<AudioSource>();
         mallTalkSound.clip = mallTalkAudio;
 
@@ -6847,10 +8079,12 @@ public class Shooting : MonoBehaviour
     {
         if (buzzerFlag == false)
         {
+            resetIndoorPapers();
+            chrono = false;
             buzzerFlag = true;
             buzzerTime = 6;
-            startTime = float.Parse(TimeLimit.text);
-            rangeTime = TimeLimit.text;
+            startTime = TestConditionsManager.total_test_time;
+            rangeTime = startTime.ToString();
         }
         else
         {
@@ -6957,8 +8191,17 @@ public class Shooting : MonoBehaviour
 
         if(!activeScene.ToLower().Contains("calibration") && !activeScene.ToLower().Contains("range"))
         {
-            process_result = check_canvas(process_result, adminCanvas);
-            process_result = check_canvas(process_result, countDownCanvas);
+            GameObject canvas;
+
+            canvas = GameObject.FindGameObjectWithTag("LaneSplitterCanvas");
+            process_result = check_canvas(process_result, canvas);
+
+            canvas = GameObject.FindGameObjectWithTag("StartCanvas");
+            process_result = check_canvas(process_result, canvas);
+
+            canvas = GameObject.FindGameObjectWithTag("AdminCanva");
+            process_result = check_canvas(process_result, canvas);
+
         }
 
         return process_result;
@@ -6988,7 +8231,7 @@ public class Shooting : MonoBehaviour
                     || ui_element.name.ToLower().Contains("exit") || ui_element.name.ToLower().Contains("distance manager") || ui_element.name.ToLower().Contains("target control panel")
                     || ui_element.name.ToLower().Contains("button background") || ui_element.name.ToLower().Contains("end") || ui_element.name.ToLower().Contains("score")
                     || ui_element.name.ToLower().Contains("distance manager") || ui_element.name.ToLower().Contains("next") || ui_element.name.ToLower().Contains("prev")
-                    || ui_element.name.ToLower().Contains("control"))
+                    || ui_element.name.ToLower().Contains("control") || ui_element.name.ToLower().Contains("Table Speed Panel")) // Table Speed Panel
                 {
                     status = true;
                     // print("Element pressed is: " + ui_element.name);
@@ -6999,7 +8242,7 @@ public class Shooting : MonoBehaviour
         return status;
     }
 
-    private void ResetUIPanels()
+    private void SetUIPanels()
     {
         //Set Canvas
         adminCanvas = GameObject.FindGameObjectWithTag("LaneSplitterCanvas");

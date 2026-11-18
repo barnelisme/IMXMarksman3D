@@ -31,7 +31,16 @@ public class SliderStartController : MonoBehaviour
     [SerializeField] private Slider levelSettingSlider;
     [SerializeField] private TextMeshProUGUI levelSettingTxt;
 
-    [Header("Standard Sliders")]
+    [Header("3D Clay Pigeon")]
+    [SerializeField] private Slider launchForce;
+    [SerializeField] private Slider upwardsBias;
+    [SerializeField] private Slider delayAfterShot;
+    public TextMeshProUGUI launchForceTxt;
+    public TextMeshProUGUI upwardsBiasTxt;
+    public TextMeshProUGUI delayAfterShotTxt;
+
+
+    [Header("Standard Texts")]
     public TextMeshProUGUI standByTimeTxt;
     public TextMeshProUGUI shootTimeTxt;
     public TextMeshProUGUI tableSpeedTxt;
@@ -46,6 +55,44 @@ public class SliderStartController : MonoBehaviour
         if(activeScene.ToLower().Contains("suspectshoot"))
         {
             if(activeScene.ToLower().Contains("closeup"))
+            {
+                levelSettingSlider.value = StaticVariableManager.trainingLevel;
+                levelSettingTxt.text = StaticVariableManager.trainingLevel.ToString();
+
+                switch (StaticVariableManager.trainingLevel)
+                {
+                    case 1:
+                        StaticVariableManager.limitTime = StaticVariableManager.level_1_time;
+                        break;
+                    case 2:
+                        StaticVariableManager.limitTime = StaticVariableManager.level_2_time;
+                        break;
+                    case 3:
+                        StaticVariableManager.limitTime = StaticVariableManager.level_3_time;
+                        break;
+                    case 4:
+                        StaticVariableManager.limitTime = StaticVariableManager.level_4_time;
+                        break;
+                    case 5:
+                        StaticVariableManager.limitTime = StaticVariableManager.level_5_time;
+                        break;
+                }
+
+                shootTimeTxt.text = "Limit Time: " + StaticVariableManager.limitTime.ToString("0");
+
+            }
+            else
+            {
+                standbyTimeSlider.value = StaticVariableManager.standByTime;
+                shootTimeSlider.value = StaticVariableManager.shootTime;
+                standByTimeTxt.text = StaticVariableManager.standByTime.ToString("0");
+                shootTimeTxt.text = StaticVariableManager.shootTime.ToString("0");
+                //print("RRE: Suspect time..:" + StaticVariableManager.shootTime);
+            }
+        }
+        if (activeScene.ToLower().Contains("targetrecognition"))
+        {
+            if (activeScene.ToLower().Contains("closeup"))
             {
                 levelSettingSlider.value = StaticVariableManager.trainingLevel;
                 levelSettingTxt.text = StaticVariableManager.trainingLevel.ToString();
@@ -108,8 +155,20 @@ public class SliderStartController : MonoBehaviour
         }
         else if (activeScene.ToLower().Contains("claypigeon") || activeScene.ToLower().Contains("shapeplat"))
         {
-            tableSpeed.value = StaticVariableManager.pigeonSpeed;
-            tableSpeedTxt.text = StaticVariableManager.pigeonSpeed.ToString("0");
+            if (activeScene.ToLower().Contains("3d"))
+            {
+                launchForceTxt.text = StaticVariableManager.launchForce.ToString();
+                upwardsBiasTxt.text = StaticVariableManager.upwardsBias.ToString("0.0");
+                delayAfterShotTxt.text = StaticVariableManager.delayAfterHit.ToString();
+                launchForce.value = StaticVariableManager.launchForce;
+                upwardsBias.value = StaticVariableManager.upwardsBias;
+                delayAfterShot.value = StaticVariableManager.delayAfterHit;
+            }
+            else
+            {
+                tableSpeed.value = StaticVariableManager.pigeonSpeed;
+                tableSpeedTxt.text = StaticVariableManager.pigeonSpeed.ToString("0");
+            }
         }
         else if (activeScene.ToLower().Contains("animaltarget"))
         {

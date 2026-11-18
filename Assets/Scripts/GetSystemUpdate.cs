@@ -151,13 +151,13 @@ public class GetSystemUpdate : MonoBehaviour
 
     private void writeComsToFile(string val)
     {
-        print("Encrypting Comms....");
-        Encryption encrypt = new Encryption();
-        string base64 = encrypt.AESEncryption(val);//encrypt username and password
+        // print("Encrypting Comms....");
+        // Encryption encrypt = new Encryption();
+        // string base64 = encrypt.AESEncryption(val);//encrypt username and password
 
-        print("comms Data Encrypted:" + base64);
-        FileManager.CreateFile(comsTxtSavePath);
-        FileManager.WriteDataToFile(comsTxtSavePath, base64);
+        // print("comms Data Encrypted:" + base64);
+        // FileManager.CreateFile(comsTxtSavePath);
+        FileManager.incriptToFile(comsTxtSavePath, val);
     }
 
     public void LoadComsFromFile()
@@ -165,11 +165,10 @@ public class GetSystemUpdate : MonoBehaviour
 
         try
         {
-            string base64 = FileManager.ReadFromFile(comsTxtSavePath);
+            // string base64 = FileManager.ReadFromFile(comsTxtSavePath);
+            // Encryption encrypt = new Encryption();
 
-            Encryption encrypt = new Encryption();
-
-            fileMessage = encrypt.AESDecryption(base64);                    //decryption code                  //decryption code
+            fileMessage = FileManager.decryptFile(comsTxtSavePath);                    //decryption code                  //decryption code
             //print("Acc Data is " + fileMessage);
 
         }

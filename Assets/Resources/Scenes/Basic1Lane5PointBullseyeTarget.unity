@@ -394,7 +394,6 @@ GameObject:
   - component: {fileID: 34445435}
   - component: {fileID: 34445434}
   - component: {fileID: 34445436}
-  - component: {fileID: 34445437}
   - component: {fileID: 34445438}
   - component: {fileID: 34445439}
   m_Layer: 0
@@ -598,20 +597,6 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!114 &34445437
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 34445427}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6f2d305b9ded799449b6cfc8e3e353a6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  adminDistanceDisplay: {fileID: 1082810576}
-  shooterDistanceDisplay: {fileID: 0}
 --- !u!114 &34445438
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -858,6 +843,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetText: {fileID: 2056768236}
   targetController: {fileID: 0}
+  pepperBase: {fileID: 0}
 --- !u!23 &77680201
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -989,7 +975,6 @@ GameObject:
   - component: {fileID: 94195447}
   - component: {fileID: 94195446}
   - component: {fileID: 94195448}
-  - component: {fileID: 94195449}
   - component: {fileID: 94195450}
   - component: {fileID: 94195451}
   m_Layer: 0
@@ -1193,20 +1178,6 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!114 &94195449
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 94195439}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6f2d305b9ded799449b6cfc8e3e353a6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  adminDistanceDisplay: {fileID: 1082810576}
-  shooterDistanceDisplay: {fileID: 0}
 --- !u!114 &94195450
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1305,6 +1276,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetText: {fileID: 2056768236}
   targetController: {fileID: 0}
+  pepperBase: {fileID: 0}
 --- !u!23 &99950365
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1953,6 +1925,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetText: {fileID: 2056768236}
   targetController: {fileID: 0}
+  pepperBase: {fileID: 0}
 --- !u!23 &279289191
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3105,6 +3078,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetText: {fileID: 2056768236}
   targetController: {fileID: 0}
+  pepperBase: {fileID: 0}
 --- !u!23 &604739162
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3479,6 +3453,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetText: {fileID: 2056768236}
   targetController: {fileID: 0}
+  pepperBase: {fileID: 0}
 --- !u!23 &705281618
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3754,6 +3729,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetText: {fileID: 2056768236}
   targetController: {fileID: 0}
+  pepperBase: {fileID: 0}
 --- !u!23 &802144874
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -4073,7 +4049,6 @@ GameObject:
   - component: {fileID: 883644441}
   - component: {fileID: 883644440}
   - component: {fileID: 883644442}
-  - component: {fileID: 883644443}
   - component: {fileID: 883644444}
   - component: {fileID: 883644445}
   m_Layer: 0
@@ -4277,20 +4252,6 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!114 &883644443
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 883644433}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6f2d305b9ded799449b6cfc8e3e353a6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  adminDistanceDisplay: {fileID: 1082810576}
-  shooterDistanceDisplay: {fileID: 0}
 --- !u!114 &883644444
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4756,6 +4717,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetText: {fileID: 2056768236}
   targetController: {fileID: 0}
+  pepperBase: {fileID: 0}
 --- !u!23 &953385661
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -4966,6 +4928,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetText: {fileID: 2056768236}
   targetController: {fileID: 0}
+  pepperBase: {fileID: 0}
 --- !u!23 &988892447
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -6061,6 +6024,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetText: {fileID: 2056768236}
   targetController: {fileID: 0}
+  pepperBase: {fileID: 0}
 --- !u!23 &1320392447
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -6185,6 +6149,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetText: {fileID: 2056768236}
   targetController: {fileID: 0}
+  pepperBase: {fileID: 0}
 --- !u!23 &1321355039
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -7294,6 +7259,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetText: {fileID: 2056768236}
   targetController: {fileID: 0}
+  pepperBase: {fileID: 0}
 --- !u!23 &1516063984
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -8134,6 +8100,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetText: {fileID: 2056768236}
   targetController: {fileID: 0}
+  pepperBase: {fileID: 0}
 --- !u!23 &1630880812
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -8258,6 +8225,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetText: {fileID: 2056768236}
   targetController: {fileID: 0}
+  pepperBase: {fileID: 0}
 --- !u!23 &1691873903
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -9465,6 +9433,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetText: {fileID: 2056768236}
   targetController: {fileID: 0}
+  pepperBase: {fileID: 0}
 --- !u!23 &1806343348
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -9589,6 +9558,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetText: {fileID: 2056768236}
   targetController: {fileID: 0}
+  pepperBase: {fileID: 0}
 --- !u!23 &1816754240
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -9925,6 +9895,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetText: {fileID: 2056768236}
   targetController: {fileID: 0}
+  pepperBase: {fileID: 0}
 --- !u!23 &1853735315
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -10151,6 +10122,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetText: {fileID: 2056768236}
   targetController: {fileID: 0}
+  pepperBase: {fileID: 0}
 --- !u!23 &1922811672
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -11474,6 +11446,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetText: {fileID: 2056768236}
   targetController: {fileID: 0}
+  pepperBase: {fileID: 0}
 --- !u!114 &848525033146712914
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11488,6 +11461,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetText: {fileID: 2056768236}
   targetController: {fileID: 0}
+  pepperBase: {fileID: 0}
 --- !u!114 &848525034694718063
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11502,6 +11476,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetText: {fileID: 2056768236}
   targetController: {fileID: 0}
+  pepperBase: {fileID: 0}
 --- !u!114 &3205792712136643113
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11516,6 +11491,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetText: {fileID: 2056768236}
   targetController: {fileID: 0}
+  pepperBase: {fileID: 0}
 --- !u!114 &3205792713142707630
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11530,6 +11506,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetText: {fileID: 2056768236}
   targetController: {fileID: 0}
+  pepperBase: {fileID: 0}
 --- !u!114 &3205792713513518722
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11544,6 +11521,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetText: {fileID: 2056768236}
   targetController: {fileID: 0}
+  pepperBase: {fileID: 0}
 --- !u!1001 &4463796229073289923
 PrefabInstance:
   m_ObjectHideFlags: 0
